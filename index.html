@@ -40,8 +40,10 @@
         }
 
         .header {
-            text-align: left;
-            padding: 20px 24px 16px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 24px;
             background: transparent;
             border: none;
             border-bottom: 1px solid #21262d;
@@ -49,18 +51,80 @@
             flex-shrink: 0;
         }
 
-        .header h1 {
-            font-size: 1.5em;
-            font-weight: 600;
-            color: #c9d1d9;
-            margin-bottom: 4px;
-            text-shadow: none;
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
         }
 
-        .header .last-updated {
-            font-size: 0.75em;
+        .github-icon {
+            width: 32px;
+            height: 32px;
+            fill: #c9d1d9;
+        }
+
+        .header h1 {
+            font-size: 1.25em;
+            font-weight: 600;
+            color: #c9d1d9;
+            margin: 0;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .live-indicator {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.875em;
             color: #7d8590;
-            margin-top: 0;
+        }
+
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background: #3fb950;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .live-dot.paused {
+            background: #7d8590;
+            animation: none;
+        }
+
+        .pause-button {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: transparent;
+            border: 1px solid #30363d;
+            color: #c9d1d9;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.875em;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .pause-button:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: #8b949e;
+        }
+
+        .pause-icon {
+            font-size: 1em;
+        }
+
+        .timestamp {
+            font-size: 0.875em;
+            color: #7d8590;
+            min-width: 80px;
+            text-align: right;
         }
 
         .dashboard-container {
@@ -137,10 +201,21 @@
         .section-header h2 {
             font-size: 1em;
             font-weight: 600;
-            color: #c9d1d9;
             letter-spacing: 1px;
             text-transform: uppercase;
             margin: 0;
+        }
+
+        #blog-section .section-header h2 {
+            color: #58a6ff;
+        }
+
+        #changelog-section .section-header h2 {
+            color: #8250df;
+        }
+
+        #status-section .section-header h2 {
+            color: #2da44e;
         }
 
         /* Modern Dashboard: Column Header Accents */
@@ -249,13 +324,13 @@
             display: inline-block;
             background: #6e7681;
             color: #ffffff;
-            padding: 5px 10px;
-            border-radius: 4px;
+            padding: 2px 6px;
+            border-radius: 3px;
             font-size: 0.6875em;
             font-weight: 600;
             text-transform: uppercase;
-            margin-bottom: 8px;
-            letter-spacing: 0.75px;
+            margin-left: 8px;
+            letter-spacing: 0.5px;
         }
 
         .changelog-badge-new-feature {
@@ -317,6 +392,18 @@
             margin-right: 8px;
         }
 
+        .status-symbol-operational {
+            color: #2da44e;
+        }
+
+        .status-symbol-minor {
+            color: #bf8700;
+        }
+
+        .status-symbol-major {
+            color: #cf222e;
+        }
+
         /* Item preview - visible 1-line truncated descriptions */
         .item-preview {
             display: -webkit-box;
@@ -333,6 +420,18 @@
             font-size: 0.75em;
             color: #7d8590;
             font-style: normal;
+        }
+
+        .status-text {
+            display: inline-block;
+            font-size: 0.6875em;
+            color: #8b949e;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 2px 6px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.05);
+            margin-left: 8px;
         }
 
         .status-indicator {
@@ -412,15 +511,29 @@
     <div class="refresh-progress" id="refreshProgress"></div>
     
     <div class="header">
-        <h1>GitHub Updates Dashboard</h1>
-        <div class="last-updated" id="lastUpdated">Loading...</div>
+        <div class="header-left">
+            <svg class="github-icon" viewBox="0 0 16 16" version="1.1" aria-hidden="true">
+                <path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path>
+            </svg>
+            <h1>GitHub Updates</h1>
+        </div>
+        <div class="header-right">
+            <div class="live-indicator">
+                <span class="live-dot" id="liveDot"></span>
+                <span id="liveText">Live</span>
+            </div>
+            <button class="pause-button" id="pauseButton">
+                <span class="pause-icon" id="pauseIcon">⏸</span>
+                <span id="pauseText">Pause</span>
+            </button>
+            <div class="timestamp" id="timestamp">--:-- --</div>
+        </div>
     </div>
 
     <div class="dashboard-container">
         <div class="section" id="blog-section">
             <div class="section-header">
-                <span class="icon">📝</span>
-                <h2>GitHub Blog</h2>
+                <h2>Blog</h2>
             </div>
             <div class="section-content">
                 <div id="blog-content" class="loading">Loading blog posts...</div>
@@ -429,7 +542,6 @@
 
         <div class="section" id="changelog-section">
             <div class="section-header">
-                <span class="icon">📋</span>
                 <h2>Changelog</h2>
             </div>
             <div class="section-content">
@@ -439,8 +551,7 @@
 
         <div class="section" id="status-section">
             <div class="section-header">
-                <span class="icon">⚡</span>
-                <h2>Status & Incidents</h2>
+                <h2>Status</h2>
             </div>
             <div class="section-content">
                 <div id="status-content" class="loading">Loading status...</div>
@@ -536,7 +647,8 @@
                 }
 
                 // TV Display: Limit to 8 items to fit on screen without scrolling
-                container.innerHTML = data.items.slice(0, 8).map(item => `
+                const displayCount = Math.min(8, data.items.length);
+                container.innerHTML = data.items.slice(0, displayCount).map(item => `
                     <div class="item blog-item">
                         <div class="item-title">
                             <a href="${item.link}" target="_blank">${item.title}</a>
@@ -571,7 +683,8 @@
                 }
 
                 // TV Display: Limit to 8 items to fit on screen without scrolling
-                container.innerHTML = data.items.slice(0, 8).map(item => {
+                const displayCount = Math.min(8, data.items.length);
+                container.innerHTML = data.items.slice(0, displayCount).map(item => {
                     const badge = detectBadgeType(item.title, item.description || item.content || '');
                     const categories = item.categories && item.categories.length > 0 
                         ? item.categories.join(', ') 
@@ -579,7 +692,6 @@
                     
                     return `
                         <div class="item changelog-item">
-                            <div class="changelog-badge ${badge.class}">[${badge.type}]</div>
                             <div class="item-title">
                                 <a href="${item.link}" target="_blank">${item.title}</a>
                             </div>
@@ -587,7 +699,9 @@
                                 ${truncate(stripHtml(item.description || item.content || ''), 120)}
                             </div>
                             <div class="item-date">
-                                ${formatDate(item.pubDate)}${categories ? `<span class="changelog-category">${categories}</span>` : ''}
+                                ${formatDate(item.pubDate)}
+                                <span class="changelog-badge ${badge.class}">[${badge.type}]</span>
+                                ${categories ? `<span class="changelog-category">${categories}</span>` : ''}
                             </div>
                         </div>
                     `;
@@ -620,14 +734,19 @@
                 }
 
                 // TV Display: Limit to 7 status items (cards are more compact now)
-                container.innerHTML = data.incidents.slice(0, 7).map(incident => {
+                const displayCount = Math.min(7, data.incidents.length);
+                container.innerHTML = data.incidents.slice(0, displayCount).map(incident => {
                     const impact = incident.impact;
                     const isResolved = incident.status === 'resolved';
-                    const severityClass = impact === 'critical' || impact === 'major' 
-                        ? 'status-card-major' 
-                        : impact === 'minor' 
-                            ? 'status-card-minor' 
-                            : 'status-card-operational';
+                    
+                    // If resolved, always show green. Otherwise use severity color.
+                    const severityClass = isResolved 
+                        ? 'status-card-operational'
+                        : impact === 'critical' || impact === 'major' 
+                            ? 'status-card-major' 
+                            : impact === 'minor' 
+                                ? 'status-card-minor' 
+                                : 'status-card-operational';
                     
                     const symbol = impact === 'critical' || impact === 'major' 
                         ? '■' 
@@ -635,13 +754,25 @@
                             ? '▲' 
                             : '●';
                     
+                    const symbolClass = impact === 'critical' || impact === 'major'
+                        ? 'status-symbol-major'
+                        : impact === 'minor'
+                            ? 'status-symbol-minor'
+                            : 'status-symbol-operational';
+                    
                     // For resolved incidents, skip boilerplate. For active, show brief update.
+                    const statusText = incident.status.replace(/_/g, ' ');
+                    
                     if (isResolved) {
                         return `
                             <div class="item status-card ${severityClass}">
                                 <div class="item-title">
-                                    <span class="status-symbol">${symbol}</span>
-                                    ${incident.name} — ${formatDate(incident.created_at)}
+                                    <span class="status-symbol ${symbolClass}">${symbol}</span>
+                                    ${incident.name}
+                                </div>
+                                <div class="item-date">
+                                    ${formatDate(incident.created_at)}
+                                    <span class="status-text">${statusText}</span>
                                 </div>
                             </div>
                         `;
@@ -653,13 +784,16 @@
                         return `
                             <div class="item status-card ${severityClass}">
                                 <div class="item-title">
-                                    <span class="status-symbol">${symbol}</span>
+                                    <span class="status-symbol ${symbolClass}">${symbol}</span>
                                     ${incident.name}
                                 </div>
                                 <div class="item-preview">
                                     ${updateText}
                                 </div>
-                                <div class="item-date">${formatDate(incident.created_at)}</div>
+                                <div class="item-date">
+                                    ${formatDate(incident.created_at)}
+                                    <span class="status-text">${statusText}</span>
+                                </div>
                             </div>
                         `;
                     }
@@ -671,15 +805,55 @@
             }
         }
 
-        // Update last updated timestamp
+        // Pause/Resume state
+        let isPaused = false;
+        let refreshIntervalId = null;
+
+        // Update timestamp
         function updateTimestamp() {
             const now = new Date();
-            document.getElementById('lastUpdated').textContent = 
-                `Last updated: ${now.toLocaleTimeString('en-US', { 
+            document.getElementById('timestamp').textContent = 
+                now.toLocaleTimeString('en-US', { 
                     hour: '2-digit', 
-                    minute: '2-digit',
-                    second: '2-digit'
-                })}`;
+                    minute: '2-digit'
+                });
+        }
+
+        // Toggle pause/resume
+        function togglePause() {
+            isPaused = !isPaused;
+            const pauseButton = document.getElementById('pauseButton');
+            const pauseIcon = document.getElementById('pauseIcon');
+            const pauseText = document.getElementById('pauseText');
+            const liveText = document.getElementById('liveText');
+            const liveDot = document.getElementById('liveDot');
+            
+            if (isPaused) {
+                // Pause mode
+                pauseIcon.textContent = '▶';
+                pauseText.textContent = 'Resume';
+                liveText.textContent = 'Paused';
+                liveDot.classList.add('paused');
+                
+                // Clear refresh interval
+                if (refreshIntervalId) {
+                    clearInterval(refreshIntervalId);
+                }
+                if (progressInterval) {
+                    clearInterval(progressInterval);
+                }
+                document.getElementById('refreshProgress').style.width = '0%';
+            } else {
+                // Resume mode
+                pauseIcon.textContent = '⏸';
+                pauseText.textContent = 'Pause';
+                liveText.textContent = 'Live';
+                liveDot.classList.remove('paused');
+                
+                // Restart refresh interval
+                fetchAllData();
+                refreshIntervalId = setInterval(fetchAllData, REFRESH_INTERVAL);
+            }
         }
 
         // Refresh Progress Bar Animation
@@ -723,6 +897,7 @@
 
         // Fetch all data
         async function fetchAllData() {
+            if (isPaused) return;
             updateTimestamp();
             startProgressBar();
             await Promise.all([
@@ -733,10 +908,17 @@
         }
 
         // Initialize dashboard
+        updateTimestamp();
         fetchAllData();
-
+        
         // Auto-refresh every 5 minutes
-        setInterval(fetchAllData, REFRESH_INTERVAL);
+        refreshIntervalId = setInterval(fetchAllData, REFRESH_INTERVAL);
+        
+        // Pause button handler
+        document.getElementById('pauseButton').addEventListener('click', togglePause);
+        
+        // Update timestamp every second
+        setInterval(updateTimestamp, 1000);
     </script>
 </body>
 </html>
