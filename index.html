@@ -138,25 +138,6 @@
             align-items: start;
         }
 
-        /* Modern Dashboard: Column Separators */
-        .dashboard-container::before,
-        .dashboard-container::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            bottom: 0;
-            width: 1px;
-            background: rgba(255, 255, 255, 0.08);
-        }
-
-        .dashboard-container::before {
-            left: calc(33.333% + 16px);
-        }
-
-        .dashboard-container::after {
-            left: calc(66.666% + 16px);
-        }
-
         .section {
             background: transparent;
             border-radius: 0;
@@ -183,7 +164,7 @@
             bottom: 0;
             left: 0;
             right: 0;
-            height: 60px;
+            height: 30px;
             background: linear-gradient(to bottom, transparent, #0d1117);
             pointer-events: none;
         }
@@ -254,18 +235,18 @@
         }
 
         .item {
-            background: transparent;
-            border-radius: 0;
-            padding: 10px 0;
-            margin-bottom: 0;
-            border: none;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 12px;
             transition: all 0.2s ease;
         }
 
         .item:hover {
-            background-color: rgba(255, 255, 255, 0.03);
-            border-bottom-color: rgba(255, 255, 255, 0.1);
+            background-color: rgba(255, 255, 255, 0.05);
+            border-color: #8b949e;
+            transform: translateY(-1px);
         }
 
         .item-title {
@@ -274,6 +255,7 @@
             color: #c9d1d9;
             margin-bottom: 4px;
             line-height: 1.3;
+            text-align: left;
         }
 
         .item-title a {
@@ -293,31 +275,22 @@
 
         /* Blog-specific styling - Modern Card Treatment */
         .blog-item {
-            border-left: 5px solid #1f6feb;
-            padding-left: 16px;
-            padding-right: 12px;
-            background: rgba(255, 255, 255, 0.02);
-            border-radius: 0 4px 4px 0;
-            transition: all 0.2s ease;
+            border-left: 3px solid #1f6feb;
         }
 
         .blog-item:hover {
-            padding-left: 20px;
-            background: rgba(31, 111, 235, 0.08);
-            transform: translateX(2px);
+            border-left-color: #58a6ff;
+            box-shadow: 0 4px 12px rgba(31, 111, 235, 0.15);
         }
 
         /* Changelog-specific styling */
         .changelog-item {
-            border-left: 4px solid #484f58;
-            padding-left: 16px;
-            padding-right: 12px;
-            transition: all 0.2s ease;
+            border-left: 3px solid #8250df;
         }
 
         .changelog-item:hover {
-            border-color: #6e7681;
-            background: rgba(255, 255, 255, 0.03);
+            border-left-color: #a371f7;
+            box-shadow: 0 4px 12px rgba(130, 80, 223, 0.15);
         }
 
         .changelog-badge {
@@ -329,7 +302,7 @@
             font-size: 0.6875em;
             font-weight: 600;
             text-transform: uppercase;
-            margin-left: 8px;
+            margin-right: 4px;
             letter-spacing: 0.5px;
         }
 
@@ -357,34 +330,81 @@
             display: inline;
             font-size: 0.6875em;
             color: #6e7681;
-            margin-left: 8px;
+            margin-right: 4px;
         }
 
         .changelog-category::before {
             content: '• ';
         }
 
+        /* Blog badge styling - reuse changelog badge styles */
+        .blog-badge {
+            display: inline;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 0.6875em;
+            font-weight: 600;
+            margin-right: 4px;
+            background: #1f6feb;
+            color: #ffffff;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .blog-badge-release {
+            background: #1f6feb;
+        }
+
+        .blog-badge-security {
+            background: #cf222e;
+        }
+
+        .blog-badge-community {
+            background: #8250df;
+        }
+
+        .blog-badge-engineering {
+            background: #238636;
+        }
+
+        .blog-category {
+            display: inline;
+            font-size: 0.6875em;
+            color: #6e7681;
+            margin-right: 4px;
+        }
+
+        .blog-category::before {
+            content: '• ';
+        }
+
         /* Status card styling */
         .status-card {
-            border: 2px solid;
-            border-radius: 6px;
-            padding: 12px;
-            margin-bottom: 12px;
+            border-left: 3px solid;
+        }
+
+        .status-card:hover {
+            box-shadow: 0 4px 12px rgba(45, 164, 78, 0.15);
         }
 
         .status-card-operational {
-            border-color: #2da44e;
-            background: rgba(45, 164, 78, 0.15);
+            border-left-color: #2da44e;
         }
 
         .status-card-minor {
-            border-color: #bf8700;
-            background: rgba(191, 135, 0, 0.15);
+            border-left-color: #bf8700;
+        }
+
+        .status-card-minor:hover {
+            box-shadow: 0 4px 12px rgba(191, 135, 0, 0.15);
         }
 
         .status-card-major {
-            border-color: #cf222e;
-            background: rgba(207, 34, 46, 0.15);
+            border-left-color: #cf222e;
+        }
+
+        .status-card-major:hover {
+            box-shadow: 0 4px 12px rgba(207, 34, 46, 0.15);
         }
 
         .status-symbol {
@@ -404,6 +424,27 @@
             color: #cf222e;
         }
 
+        .status-divider {
+            margin: 16px 0;
+            padding: 8px 0;
+            border-top: 1px solid #30363d;
+            border-bottom: 1px solid #30363d;
+            text-align: center;
+            font-size: 0.75em;
+            font-weight: 600;
+            color: #7d8590;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .status-card.resolved {
+            opacity: 0.7;
+        }
+
+        .status-card.resolved:hover {
+            opacity: 0.85;
+        }
+
         /* Item preview - visible 1-line truncated descriptions */
         .item-preview {
             display: -webkit-box;
@@ -414,12 +455,16 @@
             color: #8b949e;
             line-height: 1.5;
             margin-bottom: 6px;
+            text-align: left;
         }
 
         .item-date {
             font-size: 0.75em;
             color: #7d8590;
             font-style: normal;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         .status-text {
@@ -431,7 +476,7 @@
             padding: 2px 6px;
             border-radius: 3px;
             background: rgba(255, 255, 255, 0.05);
-            margin-left: 8px;
+            margin-right: 4px;
         }
 
         .status-indicator {
@@ -480,12 +525,6 @@
         @media (max-width: 1600px) {
             .dashboard-container {
                 grid-template-columns: 1fr;
-            }
-            
-            /* Hide column separators on mobile */
-            .dashboard-container::before,
-            .dashboard-container::after {
-                display: none;
             }
         }
 
@@ -630,6 +669,61 @@
             return { type: 'UPDATE', class: '' };
         }
 
+        // Detect blog post badge from title and content
+        function detectBlogBadgeType(title, content) {
+            const combined = `${title} ${content}`.toLowerCase();
+            
+            // Check for release announcements
+            if (combined.includes('release') || combined.includes('available') || combined.includes('announcing')) {
+                return { type: 'RELEASE', class: 'blog-badge-release' };
+            }
+            
+            // Check for security content
+            if (combined.includes('security') || combined.includes('vulnerability') || combined.includes('cve-')) {
+                return { type: 'SECURITY', class: 'blog-badge-security' };
+            }
+            
+            // Check for community content
+            if (combined.includes('community') || combined.includes('open source') || combined.includes('maintainer')) {
+                return { type: 'COMMUNITY', class: 'blog-badge-community' };
+            }
+            
+            // Check for engineering content
+            if (combined.includes('engineering') || combined.includes('technical') || combined.includes('architecture')) {
+                return { type: 'ENGINEERING', class: 'blog-badge-engineering' };
+            }
+            
+            return { type: 'POST', class: '' };
+        }
+
+        // Format categories to fit within a character limit
+        function formatCategories(categories, maxLength = 35) {
+            if (!categories || categories.length === 0) {
+                return '';
+            }
+            
+            let result = [];
+            let currentLength = 0;
+            
+            for (let i = 0; i < categories.length; i++) {
+                const category = categories[i];
+                const addition = i === 0 ? category : `, ${category}`;
+                const newLength = currentLength + addition.length;
+                
+                if (newLength > maxLength && result.length > 0) {
+                    // Would exceed limit, add "+N more" indicator
+                    const remaining = categories.length - i;
+                    result.push(` +${remaining}`);
+                    break;
+                }
+                
+                result.push(i === 0 ? category : `, ${category}`);
+                currentLength = newLength;
+            }
+            
+            return result.join('');
+        }
+
         // Fetch GitHub Blog
         async function fetchBlog() {
             try {
@@ -646,19 +740,31 @@
                     return;
                 }
 
-                // TV Display: Limit to 8 items to fit on screen without scrolling
-                const displayCount = Math.min(8, data.items.length);
-                container.innerHTML = data.items.slice(0, displayCount).map(item => `
-                    <div class="item blog-item">
-                        <div class="item-title">
-                            <a href="${item.link}" target="_blank">${item.title}</a>
+                // Render all items - container overflow will handle display
+                container.innerHTML = data.items.map(item => {
+                    const badge = detectBlogBadgeType(item.title, item.description || item.content || '');
+                    const categories = item.categories && item.categories.length > 0 
+                        ? formatCategories(item.categories) 
+                        : '';
+                    
+                    return `
+                        <div class="item blog-item">
+                            <div class="item-title">
+                                <a href="${item.link}" target="_blank">${item.title}</a>
+                            </div>
+                            <div class="item-preview">
+                                ${truncate(stripHtml(item.description || item.content || ''), 150)}
+                            </div>
+                            <div class="item-date">
+                                <span>
+                                    ${badge.type !== 'POST' ? `<span class="blog-badge ${badge.class}">[${badge.type}]</span>` : ''}
+                                    ${categories ? `<span class="blog-category">${categories}</span>` : ''}
+                                </span>
+                                <span>${formatDate(item.pubDate)}</span>
+                            </div>
                         </div>
-                        <div class="item-preview">
-                            ${truncate(stripHtml(item.description || item.content || ''), 150)}
-                        </div>
-                        <div class="item-date">${formatDate(item.pubDate)}</div>
-                    </div>
-                `).join('');
+                    `;
+                }).join('');
             } catch (error) {
                 console.error('Error fetching blog:', error);
                 document.getElementById('blog-content').innerHTML = 
@@ -682,12 +788,11 @@
                     return;
                 }
 
-                // TV Display: Limit to 8 items to fit on screen without scrolling
-                const displayCount = Math.min(8, data.items.length);
-                container.innerHTML = data.items.slice(0, displayCount).map(item => {
+                // Render all items - container overflow will handle display
+                container.innerHTML = data.items.map(item => {
                     const badge = detectBadgeType(item.title, item.description || item.content || '');
                     const categories = item.categories && item.categories.length > 0 
-                        ? item.categories.join(', ') 
+                        ? formatCategories(item.categories) 
                         : '';
                     
                     return `
@@ -699,9 +804,11 @@
                                 ${truncate(stripHtml(item.description || item.content || ''), 120)}
                             </div>
                             <div class="item-date">
-                                ${formatDate(item.pubDate)}
-                                <span class="changelog-badge ${badge.class}">[${badge.type}]</span>
-                                ${categories ? `<span class="changelog-category">${categories}</span>` : ''}
+                                <span>
+                                    <span class="changelog-badge ${badge.class}">[${badge.type}]</span>
+                                    ${categories ? `<span class="changelog-category">${categories}</span>` : ''}
+                                </span>
+                                <span>${formatDate(item.pubDate)}</span>
                             </div>
                         </div>
                     `;
@@ -733,11 +840,13 @@
                     return;
                 }
 
-                // TV Display: Limit to 7 status items (cards are more compact now)
-                const displayCount = Math.min(7, data.incidents.length);
-                container.innerHTML = data.incidents.slice(0, displayCount).map(incident => {
+                // Separate active and resolved incidents
+                const activeIncidents = data.incidents.filter(inc => inc.status !== 'resolved');
+                const resolvedIncidents = data.incidents.filter(inc => inc.status === 'resolved');
+                
+                // Function to render an incident card
+                const renderIncident = (incident, isResolved) => {
                     const impact = incident.impact;
-                    const isResolved = incident.status === 'resolved';
                     
                     // If resolved, always show green. Otherwise use severity color.
                     const severityClass = isResolved 
@@ -760,19 +869,19 @@
                             ? 'status-symbol-minor'
                             : 'status-symbol-operational';
                     
-                    // For resolved incidents, skip boilerplate. For active, show brief update.
                     const statusText = incident.status.replace(/_/g, ' ');
+                    const resolvedClass = isResolved ? ' resolved' : '';
                     
                     if (isResolved) {
                         return `
-                            <div class="item status-card ${severityClass}">
+                            <div class="item status-card ${severityClass}${resolvedClass}">
                                 <div class="item-title">
                                     <span class="status-symbol ${symbolClass}">${symbol}</span>
                                     ${incident.name}
                                 </div>
                                 <div class="item-date">
-                                    ${formatDate(incident.created_at)}
                                     <span class="status-text">${statusText}</span>
+                                    <span>${formatDate(incident.created_at)}</span>
                                 </div>
                             </div>
                         `;
@@ -782,7 +891,7 @@
                             : `Status: ${incident.status.replace(/_/g, ' ').toUpperCase()}`;
                         
                         return `
-                            <div class="item status-card ${severityClass}">
+                            <div class="item status-card ${severityClass}${resolvedClass}">
                                 <div class="item-title">
                                     <span class="status-symbol ${symbolClass}">${symbol}</span>
                                     ${incident.name}
@@ -791,13 +900,54 @@
                                     ${updateText}
                                 </div>
                                 <div class="item-date">
-                                    ${formatDate(incident.created_at)}
                                     <span class="status-text">${statusText}</span>
+                                    <span>${formatDate(incident.created_at)}</span>
                                 </div>
                             </div>
                         `;
                     }
-                }).join('');
+                };
+                
+                // If no active incidents, show operational status
+                if (activeIncidents.length === 0) {
+                    let html = `
+                        <div class="item status-card status-card-operational">
+                            <div class="item-title">
+                                <span class="status-symbol">●</span>
+                                All Systems Operational
+                            </div>
+                        </div>
+                    `;
+                    
+                    // Add resolved section if there are any
+                    if (resolvedIncidents.length > 0) {
+                        html += '<div class="status-divider">Resolved</div>';
+                        html += resolvedIncidents.map(inc => renderIncident(inc, true)).join('');
+                    }
+                    
+                    container.innerHTML = html;
+                    return;
+                }
+                
+                // Build HTML with active first, then divider, then resolved
+                let html = '';
+                
+                // Active incidents section
+                if (activeIncidents.length > 0) {
+                    html += activeIncidents.map(inc => renderIncident(inc, false)).join('');
+                }
+                
+                // Divider if both sections exist
+                if (activeIncidents.length > 0 && resolvedIncidents.length > 0) {
+                    html += '<div class="status-divider">Resolved</div>';
+                }
+                
+                // Resolved incidents section
+                if (resolvedIncidents.length > 0) {
+                    html += resolvedIncidents.map(inc => renderIncident(inc, true)).join('');
+                }
+                
+                container.innerHTML = html;
             } catch (error) {
                 console.error('Error fetching status:', error);
                 document.getElementById('status-content').innerHTML = 
