@@ -125,11 +125,11 @@ Done.
 ### Step 5: Install Required Packages
 
 ```bash
-sudo apt install -y chromium-browser unclutter x11-xserver-utils xinit openbox
+sudo apt install -y chromium unclutter x11-xserver-utils xinit openbox
 ```
 
 **Packages installed**:
-- `chromium-browser` - Web browser for dashboard display
+- `chromium` - Web browser for dashboard display
 - `unclutter` - Hides mouse cursor
 - `x11-xserver-utils` - Includes xset for screen management
 - `xinit` - X11 session starter
@@ -141,7 +141,7 @@ Reading package lists... Done
 Building dependency tree... Done
 ...
 The following NEW packages will be installed:
-  chromium-browser chromium-browser-l10n ... openbox unclutter x11-xserver-utils xinit
+  chromium chromium-common ... openbox unclutter x11-xserver-utils xinit
 ...
 Processing triggers for man-db ...
 ```
@@ -303,7 +303,7 @@ unclutter -idle 1 -root &
 sleep 5
 
 # Launch Chromium in kiosk mode
-chromium-browser \
+chromium \
   --kiosk \
   --noerrdialogs \
   --disable-infobars \
@@ -481,7 +481,7 @@ free -h
 pgrep chromium
 
 # Kill it
-sudo killall chromium-browser
+sudo killall chromium
 ```
 
 **Expected**: Systemd should automatically restart kiosk service within 10 seconds.
