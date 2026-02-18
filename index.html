@@ -15,18 +15,38 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
             background: #0d1117;
             color: #c9d1d9;
-            padding: 20px;
-            overflow-x: hidden;
+            padding: 0;
+            margin: 0;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Modern Dashboard: Refresh Progress Bar */
+        .refresh-progress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 0%;
+            height: 2px;
+            background: linear-gradient(90deg, #1f6feb 0%, #58a6ff 100%);
+            z-index: 1000;
+            transition: width 1s linear;
+        }
+
+        .refresh-progress.refreshing {
+            box-shadow: 0 0 8px rgba(31, 111, 235, 0.6);
         }
 
         .header {
             text-align: left;
-            margin-bottom: 24px;
-            padding: 16px 0;
+            padding: 20px 24px 16px 24px;
             background: transparent;
             border: none;
             border-bottom: 1px solid #21262d;
             box-shadow: none;
+            flex-shrink: 0;
         }
 
         .header h1 {
@@ -46,8 +66,31 @@
         .dashboard-container {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 24px;
-            margin-bottom: 20px;
+            gap: 32px;
+            padding: 24px;
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+            align-items: start;
+        }
+
+        /* Modern Dashboard: Column Separators */
+        .dashboard-container::before,
+        .dashboard-container::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 1px;
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .dashboard-container::before {
+            left: calc(33.333% + 16px);
+        }
+
+        .dashboard-container::after {
+            left: calc(66.666% + 16px);
         }
 
         .section {
@@ -57,41 +100,78 @@
             box-shadow: none;
             border: none;
             backdrop-filter: none;
-            min-height: 600px;
-            max-height: 800px;
-            overflow-y: auto;
+            height: 100%;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
         }
 
-        .section::-webkit-scrollbar {
-            width: 8px;
+        .section-content {
+            flex: 1;
+            overflow: hidden;
+            position: relative;
         }
-
-        .section::-webkit-scrollbar-track {
-            background: #161b22;
-            border-radius: 4px;
-        }
-
-        .section::-webkit-scrollbar-thumb {
-            background: #30363d;
-            border-radius: 4px;
-        }
-
-        .section::-webkit-scrollbar-thumb:hover {
-            background: #484f58;
+        
+        /* TV Display: Subtle fade at bottom to indicate limited view */
+        .section-content::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: linear-gradient(to bottom, transparent, #0d1117);
+            pointer-events: none;
         }
 
         .section-header {
             display: flex;
             align-items: center;
-            margin-bottom: 16px;
-            padding-bottom: 8px;
-            border-bottom: 1px solid #21262d;
+            margin-bottom: 6px;
+            padding: 6px 0;
+            background: transparent;
+            border-radius: 0;
+            position: relative;
         }
 
         .section-header h2 {
-            font-size: 1.25em;
+            font-size: 1em;
             font-weight: 600;
             color: #c9d1d9;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin: 0;
+        }
+
+        /* Modern Dashboard: Column Header Accents */
+        #blog-section .section-header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: #1f6feb;
+        }
+
+        #changelog-section .section-header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, #8250df 0%, #0969da 100%);
+        }
+
+        #status-section .section-header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: #2da44e;
         }
 
         .section-header .icon {
@@ -101,24 +181,24 @@
         .item {
             background: transparent;
             border-radius: 0;
-            padding: 12px 0;
+            padding: 10px 0;
             margin-bottom: 0;
             border: none;
-            border-bottom: 1px solid #21262d;
-            transition: background-color 0.2s;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            transition: all 0.2s ease;
         }
 
         .item:hover {
-            background-color: #161b22;
-            border-bottom-color: #21262d;
+            background-color: rgba(255, 255, 255, 0.03);
+            border-bottom-color: rgba(255, 255, 255, 0.1);
         }
 
         .item-title {
-            font-size: 1.125em;
+            font-size: 1.0625em;
             font-weight: 400;
             color: #c9d1d9;
             margin-bottom: 4px;
-            line-height: 1.4;
+            line-height: 1.3;
         }
 
         .item-title a {
@@ -134,6 +214,119 @@
 
         .item-description {
             display: none;
+        }
+
+        /* Blog-specific styling - Modern Card Treatment */
+        .blog-item {
+            border-left: 5px solid #1f6feb;
+            padding-left: 16px;
+            padding-right: 12px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 0 4px 4px 0;
+            transition: all 0.2s ease;
+        }
+
+        .blog-item:hover {
+            padding-left: 20px;
+            background: rgba(31, 111, 235, 0.08);
+            transform: translateX(2px);
+        }
+
+        /* Changelog-specific styling */
+        .changelog-item {
+            border-left: 4px solid #484f58;
+            padding-left: 16px;
+            padding-right: 12px;
+            transition: all 0.2s ease;
+        }
+
+        .changelog-item:hover {
+            border-color: #6e7681;
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .changelog-badge {
+            display: inline-block;
+            background: #6e7681;
+            color: #ffffff;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 0.6875em;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+            letter-spacing: 0.75px;
+        }
+
+        .changelog-badge-new-feature {
+            background: #8250df;
+        }
+
+        .changelog-badge-improvement {
+            background: #0969da;
+        }
+
+        .changelog-badge-bug-fix {
+            background: #1a7f37;
+        }
+
+        .changelog-badge-ui-change {
+            background: #bc4c00;
+        }
+
+        .changelog-badge-deprecation {
+            background: #cf222e;
+        }
+
+        .changelog-category {
+            display: inline;
+            font-size: 0.6875em;
+            color: #6e7681;
+            margin-left: 8px;
+        }
+
+        .changelog-category::before {
+            content: '• ';
+        }
+
+        /* Status card styling */
+        .status-card {
+            border: 2px solid;
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 12px;
+        }
+
+        .status-card-operational {
+            border-color: #2da44e;
+            background: rgba(45, 164, 78, 0.15);
+        }
+
+        .status-card-minor {
+            border-color: #bf8700;
+            background: rgba(191, 135, 0, 0.15);
+        }
+
+        .status-card-major {
+            border-color: #cf222e;
+            background: rgba(207, 34, 46, 0.15);
+        }
+
+        .status-symbol {
+            font-size: 1.25em;
+            margin-right: 8px;
+        }
+
+        /* Item preview - visible 1-line truncated descriptions */
+        .item-preview {
+            display: -webkit-box;
+            -webkit-line-clamp: 1;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            font-size: 0.8125em;
+            color: #8b949e;
+            line-height: 1.5;
+            margin-bottom: 6px;
         }
 
         .item-date {
@@ -189,6 +382,12 @@
             .dashboard-container {
                 grid-template-columns: 1fr;
             }
+            
+            /* Hide column separators on mobile */
+            .dashboard-container::before,
+            .dashboard-container::after {
+                display: none;
+            }
         }
 
         /* Animation for new items */
@@ -209,6 +408,9 @@
     </style>
 </head>
 <body>
+    <!-- Modern Dashboard: Refresh Progress Bar -->
+    <div class="refresh-progress" id="refreshProgress"></div>
+    
     <div class="header">
         <h1>GitHub Updates Dashboard</h1>
         <div class="last-updated" id="lastUpdated">Loading...</div>
@@ -220,7 +422,9 @@
                 <span class="icon">📝</span>
                 <h2>GitHub Blog</h2>
             </div>
-            <div id="blog-content" class="loading">Loading blog posts...</div>
+            <div class="section-content">
+                <div id="blog-content" class="loading">Loading blog posts...</div>
+            </div>
         </div>
 
         <div class="section" id="changelog-section">
@@ -228,7 +432,9 @@
                 <span class="icon">📋</span>
                 <h2>Changelog</h2>
             </div>
-            <div id="changelog-content" class="loading">Loading changelog...</div>
+            <div class="section-content">
+                <div id="changelog-content" class="loading">Loading changelog...</div>
+            </div>
         </div>
 
         <div class="section" id="status-section">
@@ -236,7 +442,9 @@
                 <span class="icon">⚡</span>
                 <h2>Status & Incidents</h2>
             </div>
-            <div id="status-content" class="loading">Loading status...</div>
+            <div class="section-content">
+                <div id="status-content" class="loading">Loading status...</div>
+            </div>
         </div>
     </div>
 
@@ -288,6 +496,29 @@
             return text.substring(0, maxLength) + '...';
         }
 
+        // Detect changelog badge type based on keywords
+        function detectBadgeType(title, description) {
+            const text = (title + ' ' + description).toLowerCase();
+            
+            if (text.match(/\b(introducing|new|announcing|available|launched|release)\b/)) {
+                return { type: 'NEW FEATURE', class: 'changelog-badge-new-feature' };
+            }
+            if (text.match(/\b(improved|faster|enhanced|better|performance|optimiz)\b/)) {
+                return { type: 'IMPROVEMENT', class: 'changelog-badge-improvement' };
+            }
+            if (text.match(/\b(fix|resolved|corrected|bug|issue)\b/)) {
+                return { type: 'BUG FIX', class: 'changelog-badge-bug-fix' };
+            }
+            if (text.match(/\b(UI|design|interface|visual|redesign)\b/)) {
+                return { type: 'UI CHANGE', class: 'changelog-badge-ui-change' };
+            }
+            if (text.match(/\b(deprecat|removing|sunset|legacy|discontinu)\b/)) {
+                return { type: 'DEPRECATION', class: 'changelog-badge-deprecation' };
+            }
+            
+            return { type: 'UPDATE', class: '' };
+        }
+
         // Fetch GitHub Blog
         async function fetchBlog() {
             try {
@@ -304,13 +535,14 @@
                     return;
                 }
 
-                container.innerHTML = data.items.slice(0, 10).map(item => `
-                    <div class="item">
+                // TV Display: Limit to 8 items to fit on screen without scrolling
+                container.innerHTML = data.items.slice(0, 8).map(item => `
+                    <div class="item blog-item">
                         <div class="item-title">
                             <a href="${item.link}" target="_blank">${item.title}</a>
                         </div>
-                        <div class="item-description">
-                            ${truncate(stripHtml(item.description || item.content || ''), 200)}
+                        <div class="item-preview">
+                            ${truncate(stripHtml(item.description || item.content || ''), 150)}
                         </div>
                         <div class="item-date">${formatDate(item.pubDate)}</div>
                     </div>
@@ -338,17 +570,28 @@
                     return;
                 }
 
-                container.innerHTML = data.items.slice(0, 10).map(item => `
-                    <div class="item">
-                        <div class="item-title">
-                            <a href="${item.link}" target="_blank">${item.title}</a>
+                // TV Display: Limit to 8 items to fit on screen without scrolling
+                container.innerHTML = data.items.slice(0, 8).map(item => {
+                    const badge = detectBadgeType(item.title, item.description || item.content || '');
+                    const categories = item.categories && item.categories.length > 0 
+                        ? item.categories.join(', ') 
+                        : '';
+                    
+                    return `
+                        <div class="item changelog-item">
+                            <div class="changelog-badge ${badge.class}">[${badge.type}]</div>
+                            <div class="item-title">
+                                <a href="${item.link}" target="_blank">${item.title}</a>
+                            </div>
+                            <div class="item-preview">
+                                ${truncate(stripHtml(item.description || item.content || ''), 120)}
+                            </div>
+                            <div class="item-date">
+                                ${formatDate(item.pubDate)}${categories ? `<span class="changelog-category">${categories}</span>` : ''}
+                            </div>
                         </div>
-                        <div class="item-description">
-                            ${truncate(stripHtml(item.description || item.content || ''), 200)}
-                        </div>
-                        <div class="item-date">${formatDate(item.pubDate)}</div>
-                    </div>
-                `).join('');
+                    `;
+                }).join('');
             } catch (error) {
                 console.error('Error fetching changelog:', error);
                 document.getElementById('changelog-content').innerHTML = 
@@ -366,41 +609,60 @@
                 
                 if (!data.incidents || data.incidents.length === 0) {
                     container.innerHTML = `
-                        <div class="item">
+                        <div class="item status-card status-card-operational">
                             <div class="item-title">
-                                <span class="status-indicator status-operational"></span>
+                                <span class="status-symbol">●</span>
                                 All Systems Operational
-                            </div>
-                            <div class="item-description">
-                                No incidents reported. GitHub services are running smoothly.
                             </div>
                         </div>
                     `;
                     return;
                 }
 
-                container.innerHTML = data.incidents.slice(0, 10).map(incident => {
-                    const statusClass = incident.impact === 'critical' || incident.impact === 'major' 
-                        ? 'status-major' 
-                        : incident.impact === 'minor' 
-                            ? 'status-minor' 
-                            : 'status-operational';
+                // TV Display: Limit to 7 status items (cards are more compact now)
+                container.innerHTML = data.incidents.slice(0, 7).map(incident => {
+                    const impact = incident.impact;
+                    const isResolved = incident.status === 'resolved';
+                    const severityClass = impact === 'critical' || impact === 'major' 
+                        ? 'status-card-major' 
+                        : impact === 'minor' 
+                            ? 'status-card-minor' 
+                            : 'status-card-operational';
                     
-                    return `
-                        <div class="item">
-                            <div class="item-title">
-                                <span class="status-indicator ${statusClass}"></span>
-                                ${incident.name}
+                    const symbol = impact === 'critical' || impact === 'major' 
+                        ? '■' 
+                        : impact === 'minor' 
+                            ? '▲' 
+                            : '●';
+                    
+                    // For resolved incidents, skip boilerplate. For active, show brief update.
+                    if (isResolved) {
+                        return `
+                            <div class="item status-card ${severityClass}">
+                                <div class="item-title">
+                                    <span class="status-symbol">${symbol}</span>
+                                    ${incident.name} — ${formatDate(incident.created_at)}
+                                </div>
                             </div>
-                            <div class="item-description">
-                                Status: ${incident.status.replace(/_/g, ' ').toUpperCase()}
-                                ${incident.incident_updates && incident.incident_updates.length > 0 
-                                    ? `<br>${stripHtml(incident.incident_updates[0].body)}` 
-                                    : ''}
+                        `;
+                    } else {
+                        const updateText = incident.incident_updates && incident.incident_updates.length > 0 
+                            ? truncate(stripHtml(incident.incident_updates[0].body), 100)
+                            : `Status: ${incident.status.replace(/_/g, ' ').toUpperCase()}`;
+                        
+                        return `
+                            <div class="item status-card ${severityClass}">
+                                <div class="item-title">
+                                    <span class="status-symbol">${symbol}</span>
+                                    ${incident.name}
+                                </div>
+                                <div class="item-preview">
+                                    ${updateText}
+                                </div>
+                                <div class="item-date">${formatDate(incident.created_at)}</div>
                             </div>
-                            <div class="item-date">${formatDate(incident.created_at)}</div>
-                        </div>
-                    `;
+                        `;
+                    }
                 }).join('');
             } catch (error) {
                 console.error('Error fetching status:', error);
@@ -420,9 +682,49 @@
                 })}`;
         }
 
+        // Refresh Progress Bar Animation
+        let progressInterval;
+        let progressStartTime;
+
+        function startProgressBar() {
+            const progressBar = document.getElementById('refreshProgress');
+            progressStartTime = Date.now();
+            
+            // Reset progress bar
+            progressBar.style.width = '0%';
+            progressBar.classList.remove('refreshing');
+            
+            // Clear any existing interval
+            if (progressInterval) {
+                clearInterval(progressInterval);
+            }
+            
+            // Update progress every second
+            progressInterval = setInterval(() => {
+                const elapsed = Date.now() - progressStartTime;
+                const progress = Math.min((elapsed / REFRESH_INTERVAL) * 100, 100);
+                
+                progressBar.style.width = progress + '%';
+                
+                // Add glow effect in last 10 seconds
+                if (progress > 96.67) {
+                    progressBar.classList.add('refreshing');
+                }
+                
+                // Reset when complete
+                if (progress >= 100) {
+                    setTimeout(() => {
+                        progressBar.style.width = '0%';
+                        progressBar.classList.remove('refreshing');
+                    }, 500);
+                }
+            }, 1000);
+        }
+
         // Fetch all data
         async function fetchAllData() {
             updateTimestamp();
+            startProgressBar();
             await Promise.all([
                 fetchBlog(),
                 fetchChangelog(),
@@ -435,9 +737,6 @@
 
         // Auto-refresh every 5 minutes
         setInterval(fetchAllData, REFRESH_INTERVAL);
-
-        // Update timestamp every second
-        setInterval(updateTimestamp, 1000);
     </script>
 </body>
 </html>
