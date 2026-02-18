@@ -188,11 +188,26 @@ Save and restart journald:
 sudo systemctl restart systemd-journald
 ```
 
+**Configure X11 permissions** to allow systemd services to start X server:
+
+```bash
+sudo nano /etc/X11/Xwrapper.config
+```
+
+Change the line `allowed_users=console` to:
+```
+allowed_users=anybody
+```
+
+Save and exit. This prevents "Only console users are allowed to run the X server" errors.
+
 ---
 
 ## Phase 3: Dashboard Setup
 
 ### Step 7: Create Dashboard Directory
+
+**Note**: Replace `/home/pi/` with your actual home directory if using a different username.
 
 ```bash
 # Create directory for dashboard files
@@ -202,6 +217,8 @@ mkdir -p /home/pi/dashboard
 ### Step 8: Transfer Dashboard File
 
 **From your computer** (in the github-latest-dashboard project directory):
+
+**Note**: Replace `pi@` and `/home/pi/` with your actual username if different (e.g., `yourusername@` and `/home/yourusername/`).
 
 ```bash
 # Copy index.html to Pi
@@ -213,7 +230,7 @@ scp index.html pi@192.168.x.x:/home/pi/dashboard/
 
 **Expected output**: File transferred successfully.
 
-**Verify on Pi**:
+**Verify on Pi** (adjust path for your username):
 ```bash
 ls -lh /home/pi/dashboard/
 ```
@@ -228,7 +245,11 @@ Create systemd service file:
 sudo nano /etc/systemd/system/dashboard-server.service
 ```
 
-**Paste this content**:
+**⚠️ IMPORTANT**: The service file below uses `User=pi` and `/home/pi/` paths. **If you created a different username during Pi setup**, replace `pi` with your actual username in:
+- `User=pi` → `User=yourusername`
+- `WorkingDirectory=/home/pi/dashboard` → `WorkingDirectory=/home/yourusername/dashboard`
+
+**Paste this content** (customize username if needed):
 
 ```ini
 [Unit]
@@ -282,6 +303,8 @@ curl -I http://localhost:8000
 
 ### Step 10: Create Kiosk Launcher Script
 
+**Note**: Replace `/home/pi/` with your actual home directory if using a different username (e.g., `/home/yourusername/`).
+
 ```bash
 nano /home/pi/start-kiosk.sh
 ```
@@ -324,6 +347,8 @@ chmod +x /home/pi/start-kiosk.sh
 
 ### Step 11: Configure Openbox Autostart
 
+**Note**: Replace `/home/pi/` with your actual home directory if using a different username.
+
 Create openbox config directory:
 
 ```bash
@@ -351,7 +376,11 @@ nano /home/pi/.config/openbox/autostart
 sudo nano /etc/systemd/system/kiosk.service
 ```
 
-**Paste this content**:
+**⚠️ IMPORTANT**: The service file below uses `User=pi` and `/home/pi/` paths. **If you created a different username during Pi setup**, replace `pi` with your actual username in:
+- `User=pi` → `User=yourusername`
+- `XAUTHORITY=/home/pi/.Xauthority` → `XAUTHORITY=/home/yourusername/.Xauthority`
+
+**Paste this content** (customize username if needed):
 
 ```ini
 [Unit]
@@ -362,9 +391,13 @@ Wants=network-online.target dashboard-server.service
 [Service]
 Type=simple
 User=pi
+TTYPath=/dev/tty7
+StandardInput=tty
+StandardOutput=journal
+StandardError=journal
 Environment=DISPLAY=:0
 Environment=XAUTHORITY=/home/pi/.Xauthority
-ExecStart=/usr/bin/startx /usr/bin/openbox-session -- -nocursor
+ExecStart=/usr/bin/startx /usr/bin/openbox-session -- vt7 -nocursor
 Restart=on-failure
 RestartSec=10s
 
@@ -616,6 +649,108 @@ hdmi_drive=2
 **Reboot**:
 ```bash
 sudo reboot
+```
+
+### Kiosk Service Won't Start - "Only console users allowed"
+
+**Error in logs**: `/usr/lib/xorg/Xorg.wrap: Only console users are allowed to run the X server`
+
+**Fix**: Allow systemd services to start X server
+
+```bash
+# Edit X11 wrapper config
+sudo nano /etc/X11/Xwrapper.config
+
+# Change this line:
+# allowed_users=console
+# To:
+allowed_users=anybody
+
+# Save and exit, then restart
+sudo systemctl restart kiosk.service
+```
+
+### Kiosk Service Won't Start - User Error (status=217/USER)
+
+**Error in logs**: `Failed to determine user credentials: No such process` or `status=217/USER`
+
+**Cause**: The service file specifies `User=pi` but your username is different.
+
+**Fix**: Update service files with your actual username
+
+```bash
+# Find your username
+whoami
+
+# Edit kiosk service
+sudo nano /etc/systemd/system/kiosk.service
+
+# Change User=pi to User=yourusername
+# Also update XAUTHORITY path from /home/pi to /home/yourusername
+
+# Edit dashboard server service  
+sudo nano /etc/systemd/system/dashboard-server.service
+
+# Change User=pi to User=yourusername
+# Change WorkingDirectory=/home/pi/dashboard to /home/yourusername/dashboard
+
+# Reload and restart
+sudo systemctl daemon-reload
+sudo systemctl restart dashboard-server.service
+sudo systemctl restart kiosk.service
+```
+
+### Kiosk Service Won't Start - TTY/Console Errors
+
+**Error in logs**: `Cannot open /dev/tty0 (Permission denied)` or `Couldn't get a file descriptor referring to the console`
+
+**Fix**: Add TTY configuration to kiosk service
+
+```bash
+# Edit kiosk service
+sudo nano /etc/systemd/system/kiosk.service
+
+# Add these lines in the [Service] section:
+TTYPath=/dev/tty7
+StandardInput=tty
+StandardOutput=journal
+StandardError=journal
+
+# Change ExecStart line to:
+ExecStart=/usr/bin/startx /usr/bin/openbox-session -- vt7 -nocursor
+
+# Also add user to tty group
+sudo usermod -a -G tty yourusername
+
+# Reload and restart
+sudo systemctl daemon-reload
+sudo systemctl restart kiosk.service
+```
+
+### Cannot Save Files with nano
+
+**Symptom**: When using `sudo nano /etc/systemd/system/somefile.service`, you can't save the file even with sudo.
+
+**Workaround**: Create empty file first, then edit
+
+```bash
+# Create empty file first
+sudo touch /etc/systemd/system/somefile.service
+
+# Then edit it
+sudo nano /etc/systemd/system/somefile.service
+
+# Now saving should work
+```
+
+**Alternative**: Use `tee` to write files directly:
+
+```bash
+sudo tee /etc/systemd/system/somefile.service > /dev/null << 'EOF'
+[Unit]
+Description=My Service
+...
+EOF
 ```
 
 ### SD Card Corruption
