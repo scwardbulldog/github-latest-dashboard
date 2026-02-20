@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Octocat Skater Sprite Animation Reference</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0d1117;
+            color: #c9d1d9;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+            color: #58a6ff;
+        }
+
+        .header p {
+            color: #8b949e;
+            font-size: 1.1em;
+        }
+
+        .canvas-container {
+            background: #0d1117;
+            border: 2px solid #30363d;
+            border-radius: 8px;
+            padding: 30px;
+            margin-bottom: 30px;
+            display: inline-block;
+            /* Show a subtle pattern to demonstrate transparency */
+            background-image: 
+                linear-gradient(45deg, #161b22 25%, transparent 25%),
+                linear-gradient(-45deg, #161b22 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, #161b22 75%),
+                linear-gradient(-45deg, transparent 75%, #161b22 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+        }
+
+        canvas {
+            display: block;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+
+        .controls {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+            min-width: 400px;
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #8b949e;
+            font-size: 0.9em;
+        }
+
+        .control-group input[type="range"] {
+            width: 100%;
+        }
+
+        .control-group .value-display {
+            display: inline-block;
+            min-width: 60px;
+            color: #58a6ff;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        button {
+            background: #238636;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9em;
+            flex: 1;
+        }
+
+        button:hover {
+            background: #2ea043;
+        }
+
+        button.active {
+            background: #1f6feb;
+        }
+
+        .info-panel {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 20px;
+            max-width: 600px;
+        }
+
+        .info-panel h3 {
+            color: #58a6ff;
+            margin-bottom: 15px;
+        }
+
+        .info-panel ul {
+            list-style-position: inside;
+            color: #8b949e;
+            line-height: 1.8;
+        }
+
+        .info-panel code {
+            background: #0d1117;
+            padding: 2px 6px;
+            border-radius: 3px;
+            color: #79c0ff;
+            font-size: 0.9em;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+            padding: 15px;
+            background: #0d1117;
+            border-radius: 6px;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px;
+        }
+
+        .stat-label {
+            color: #8b949e;
+        }
+
+        .stat-value {
+            color: #58a6ff;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🛹 Octocat Skater Sprite Animation v2</h1>
+        <p>Pixel art sprite sheet with real-time chroma key background removal</p>
+    </div>
+
+    <div class="canvas-container">
+        <canvas id="spriteCanvas"></canvas>
+    </div>
+
+    <div class="controls">
+        <div class="control-group">
+            <label>
+                Scale: <span class="value-display" id="scaleDisplay">1x</span>
+            </label>
+            <input type="range" id="scaleSlider" min="1" max="8" value="1" step="1">
+        </div>
+
+        <div class="control-group">
+            <label>
+                FPS: <span class="value-display" id="fpsDisplay">6</span>
+            </label>
+            <input type="range" id="fpsSlider" min="1" max="30" value="6" step="1">
+        </div>
+
+        <div class="control-group">
+            <label>
+                Padding: <span class="value-display" id="paddingDisplay">0px</span>
+            </label>
+            <input type="range" id="paddingSlider" min="0" max="20" value="0" step="1">
+        </div>
+
+        <div class="control-group">
+            <label>
+                Row 0 Offset (Frames 0-4): <span class="value-display" id="offset0Display">44px</span>
+            </label>
+            <input type="range" id="offset0Slider" min="0" max="150" value="44" step="1">
+        </div>
+
+        <div class="control-group">
+            <label>
+                Row 1 Offset (Frames 5-9): <span class="value-display" id="offset1Display">90px</span>
+            </label>
+            <input type="range" id="offset1Slider" min="0" max="150" value="90" step="1">
+        </div>
+
+        <div class="button-group">
+            <button id="playBtn" class="active">▶ Play</button>
+            <button id="pauseBtn">⏸ Pause</button>
+            <button id="resetBtn">⏮ Reset</button>
+        </div>
+
+        <div class="stats">
+            <div class="stat-item">
+                <span class="stat-label">Current Frame:</span>
+                <span class="stat-value" id="currentFrame">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Total Frames:</span>
+                <span class="stat-value" id="totalFrames">10</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Frame Width:</span>
+                <span class="stat-value" id="frameWidth">-</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Frame Height:</span>
+                <span class="stat-value" id="frameHeight">-</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="info-panel">
+        <h3>📐 Sprite Sheet Specifications</h3>
+        <ul>
+            <li><strong>Grid:</strong> <code>5 columns × 3 rows</code></li>
+            <li><strong>Animation Frames:</strong> <code>Row 0 (frames 0-4) + Row 1 (frames 5-9)</code> - 10 total frames</li>
+            <li><strong>Palette Row:</strong> <code>Row 2 (bottom)</code> - Color palette (not rendered)</li>
+            <li><strong>Frame Calculation:</strong> <code>width / 5</code> × <code>height / 3</code></li>
+            <li><strong>Animation Speed:</strong> <code>6 FPS</code> (configurable 1-30)</li>
+            <li><strong>Rendering:</strong> <code>pixelated</code> mode for crisp pixel art</li>
+            <li><strong>Frame Padding:</strong> <code>0px</code> (using vertical offsets instead)</li>
+            <li><strong>Vertical Offset:</strong> Per-row camera tilt (Row 0: 44px, Row 1: 90px)</li>
+            <li><strong>Chroma Key:</strong> <code>#161B22</code> removed via pixel manipulation</li>
+        </ul>
+
+        <h3 style="margin-top: 25px;">🎮 Class Structure</h3>
+        <ul>
+            <li><strong>SpriteAnimator:</strong> ES6+ class for sprite sheet management</li>
+            <li><strong>Image Loading:</strong> Async sprite sheet loading with callbacks</li>
+            <li><strong>Frame Management:</strong> Precise source rect calculation (no palette bleed)</li>
+            <li><strong>Animation Loop:</strong> RequestAnimationFrame with FPS control</li>
+            <li><strong>Chroma Key:</strong> Real-time pixel manipulation using <code>getImageData()</code></li>
+            <li><strong>Color Matching:</strong> Euclidean distance with configurable tolerance</li>
+        </ul>
+    </div>
+
+    <script>
+        /**
+         * SpriteAnimator - Modern ES6+ Sprite Sheet Animation Class
+         * Handles sprite sheet loading, frame calculation, and animation playback
+         */
+        class SpriteAnimator {
+            constructor(config) {
+                this.canvas = config.canvas;
+                this.ctx = this.canvas.getContext('2d');
+                this.spriteSheetPath = config.spriteSheetPath;
+                
+                // Sprite sheet grid configuration
+                this.gridColumns = config.gridColumns || 5;
+                this.gridRows = config.gridRows || 3;
+                this.paletteRows = config.paletteRows || 1; // Rows to exclude from bottom
+                this.framePadding = config.framePadding || 0; // No padding needed with per-row offsets
+                
+                // Vertical offset per row (different camera tilt for each row)
+                this.verticalOffsets = config.verticalOffsets || [44, 90]; // [Row 0: 44px, Row 1: 90px]
+                this.verticalOffset = config.verticalOffset || 0; // Legacy single offset (overridden by per-row)
+                
+                // Animation configuration
+                this.animationRow = config.animationRow || 0;
+                this.fps = config.fps || 6;
+                this.scale = config.scale || 1;
+                
+                // Chroma key configuration
+                this.chromaKeyEnabled = config.chromaKey !== false; // Default true
+                this.chromaKeyColor = config.chromaKeyColor || '#161B22';
+                this.chromaKeyTolerance = config.chromaKeyTolerance || 10;
+                this.backgroundColor = config.backgroundColor || 'transparent';
+                
+                // State
+                this.spriteSheet = null;
+                this.frameWidth = 0;
+                this.frameHeight = 0;
+                // Total frames = columns × (rows - palette rows)
+                this.totalFrames = this.gridColumns * (this.gridRows - this.paletteRows);
+                this.currentFrame = 0;
+                this.isPlaying = false;
+                this.lastFrameTime = 0;
+                
+                // Callbacks
+                this.onLoad = config.onLoad || null;
+                this.onFrameChange = config.onFrameChange || null;
+                
+                // Animation loop reference
+                this.animationId = null;
+                
+                this.loadSpriteSheet();
+            }
+            
+            /**
+             * Load the sprite sheet image asynchronously
+             */
+            loadSpriteSheet() {
+                this.spriteSheet = new Image();
+                this.spriteSheet.onload = () => {
+                    this.calculateFrameDimensions();
+                    this.resizeCanvas();
+                    this.draw();
+                    
+                    if (this.onLoad) {
+                        this.onLoad(this);
+                    }
+                };
+                this.spriteSheet.src = this.spriteSheetPath;
+            }
+            
+            /**
+             * Calculate frame dimensions based on grid
+             * CRITICAL: Excludes palette rows from height calculation
+             */
+            calculateFrameDimensions() {
+                // Frame width is total width divided by columns
+                this.frameWidth = Math.floor(this.spriteSheet.width / this.gridColumns);
+                
+                // Frame height is total height divided by ALL rows (including palette)
+                // This ensures we correctly skip the palette row
+                this.frameHeight = Math.floor(this.spriteSheet.height / this.gridRows);
+                
+                console.log('📐 Frame dimensions calculated:');
+                console.log(`   Sprite sheet size: ${this.spriteSheet.width}x${this.spriteSheet.height}`);
+                console.log(`   Frame size (raw): ${this.frameWidth}x${this.frameHeight}`);
+                console.log(`   Frame size (after ${this.framePadding}px padding): ${this.frameWidth - (this.framePadding * 2)}x${this.frameHeight - (this.framePadding * 2)}`);
+                console.log(`   Total frames: ${this.totalFrames}`);
+            }
+            
+            /**
+             * Resize canvas to fit one frame at current scale
+             */
+            resizeCanvas() {
+                // Calculate display size (excluding padding)
+                const displayWidth = (this.frameWidth - (this.framePadding * 2));
+                const displayHeight = (this.frameHeight - (this.framePadding * 2));
+                
+                this.canvas.width = displayWidth * this.scale;
+                this.canvas.height = displayHeight * this.scale;
+                
+                // Disable image smoothing for pixel-perfect rendering
+                this.ctx.imageSmoothingEnabled = false;
+            }
+            
+            /**
+             * Draw the current frame to the canvas
+             */
+            draw() {
+                // Clear canvas completely
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                // Optional: Fill background if not using transparency
+                if (this.backgroundColor !== 'transparent') {
+                    this.ctx.fillStyle = this.backgroundColor;
+                    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                }
+                
+                if (!this.spriteSheet) return;
+                
+                // Calculate which row and column the current frame is in
+                // Frames 0-4 are in row 0, frames 5-9 are in row 1, etc.
+                const frameRow = Math.floor(this.currentFrame / this.gridColumns);
+                const frameCol = this.currentFrame % this.gridColumns;
+                
+                // Get vertical offset for this specific row
+                const rowOffset = this.verticalOffsets[frameRow] || this.verticalOffset;
+                
+                // Calculate source position on sprite sheet
+                // Add padding offset to avoid bleeding into adjacent frames
+                const sourceX = (frameCol * this.frameWidth) + this.framePadding;
+                const sourceY = (frameRow * this.frameHeight) + this.framePadding + rowOffset;
+                
+                // Source dimensions (with padding trimmed from edges)
+                const sourceWidth = this.frameWidth - (this.framePadding * 2);
+                const sourceHeight = this.frameHeight - (this.framePadding * 2);
+                
+                // Draw the frame (scaled up)
+                this.ctx.drawImage(
+                    this.spriteSheet,
+                    sourceX,              // Source X (with padding offset)
+                    sourceY,              // Source Y (with padding offset)
+                    sourceWidth,          // Source Width (trimmed)
+                    sourceHeight,         // Source Height (trimmed, NEVER includes palette row)
+                    0,                    // Dest X
+                    0,                    // Dest Y
+                    this.canvas.width,    // Dest Width (scaled)
+                    this.canvas.height    // Dest Height (scaled)
+                );
+                
+                // Apply chroma key to remove background color
+                if (this.chromaKeyEnabled) {
+                    this.applyChromaKey();
+                }
+            }
+            
+            /**
+             * Apply chroma key effect - remove background color via pixel manipulation
+             */
+            applyChromaKey() {
+                try {
+                    // Get image data from canvas
+                    const imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+                    const data = imageData.data;
+                    
+                    // Parse target chroma color (hex to RGB)
+                    const chromaRGB = this.hexToRgb(this.chromaKeyColor);
+                    const tolerance = this.chromaKeyTolerance;
+                    
+                    // Loop through all pixels (RGBA format: 4 values per pixel)
+                    for (let i = 0; i < data.length; i += 4) {
+                        const r = data[i];
+                        const g = data[i + 1];
+                        const b = data[i + 2];
+                        
+                        // Calculate color distance from chroma key color
+                        const distance = Math.sqrt(
+                            Math.pow(r - chromaRGB.r, 2) +
+                            Math.pow(g - chromaRGB.g, 2) +
+                            Math.pow(b - chromaRGB.b, 2)
+                        );
+                        
+                        // If pixel matches chroma key color (within tolerance), make it transparent
+                        if (distance < tolerance) {
+                            data[i + 3] = 0; // Set alpha to 0 (fully transparent)
+                        }
+                    }
+                    
+                    // Put modified image data back to canvas
+                    this.ctx.putImageData(imageData, 0, 0);
+                } catch (error) {
+                    console.error('❌ Chroma key error:', error);
+                }
+            }
+            
+            /**
+             * Convert hex color to RGB object
+             */
+            hexToRgb(hex) {
+                // Remove # if present
+                hex = hex.replace('#', '');
+                
+                return {
+                    r: parseInt(hex.substring(0, 2), 16),
+                    g: parseInt(hex.substring(2, 4), 16),
+                    b: parseInt(hex.substring(4, 6), 16)
+                };
+            }
+            
+            /**
+             * Animation loop with FPS control
+             */
+            animate(timestamp) {
+                if (!this.isPlaying) return;
+                
+                const frameInterval = 1000 / this.fps;
+                const elapsed = timestamp - this.lastFrameTime;
+                
+                if (elapsed >= frameInterval) {
+                    // Advance to next frame
+                    const prevFrame = this.currentFrame;
+                    this.currentFrame = (this.currentFrame + 1) % this.totalFrames;
+                    
+                    const frameRow = Math.floor(this.currentFrame / this.gridColumns);
+                    const frameCol = this.currentFrame % this.gridColumns;
+                    
+                    console.log(`🎬 Frame ${prevFrame} → ${this.currentFrame} (Row ${frameRow}, Col ${frameCol})`);
+                    this.draw();
+                    
+                    // Update last frame time
+                    this.lastFrameTime = timestamp - (elapsed % frameInterval);
+                    
+                    // Trigger callback
+                    if (this.onFrameChange) {
+                        this.onFrameChange(this.currentFrame);
+                    }
+                }
+                
+                this.animationId = requestAnimationFrame((ts) => this.animate(ts));
+            }
+            
+            /**
+             * Start animation playback
+             */
+            play() {
+                if (this.isPlaying) return;
+                
+                console.log('▶️ Starting animation playback');
+                this.isPlaying = true;
+                this.lastFrameTime = performance.now();
+                this.animationId = requestAnimationFrame((ts) => this.animate(ts));
+            }
+            
+            /**
+             * Pause animation playback
+             */
+            pause() {
+                this.isPlaying = false;
+                if (this.animationId) {
+                    cancelAnimationFrame(this.animationId);
+                    this.animationId = null;
+                }
+            }
+            
+            /**
+             * Reset to first frame
+             */
+            reset() {
+                this.pause();
+                this.currentFrame = 0;
+                this.draw();
+                
+                if (this.onFrameChange) {
+                    this.onFrameChange(this.currentFrame);
+                }
+            }
+            
+            /**
+             * Update FPS
+             */
+            setFPS(fps) {
+                this.fps = fps;
+            }
+            
+            /**
+             * Update scale and redraw
+             */
+            setScale(scale) {
+                this.scale = scale;
+                this.resizeCanvas();
+                this.draw();
+            }
+            
+            /**
+             * Update frame padding and redraw
+             */
+            setPadding(padding) {
+                this.framePadding = padding;
+                this.resizeCanvas();
+                this.draw();
+            }
+            
+            /**
+             * Update vertical offset and redraw (shifts extraction window up/down)
+             */
+            setVerticalOffset(offset) {
+                this.verticalOffset = offset;
+                this.draw();
+            }
+            
+            /**
+             * Set vertical offset for a specific row
+             */
+            setRowOffset(row, offset) {
+                this.verticalOffsets[row] = offset;
+                this.draw();
+            }
+            
+            /**
+             * Get current animation state
+             */
+            getState() {
+                return {
+                    currentFrame: this.currentFrame,
+                    totalFrames: this.totalFrames,
+                    frameWidth: this.frameWidth,
+                    frameHeight: this.frameHeight,
+                    fps: this.fps,
+                    scale: this.scale,
+                    isPlaying: this.isPlaying
+                };
+            }
+        }
+        
+        // ============================================================================
+        // Application Setup
+        // ============================================================================
+        
+        const canvas = document.getElementById('spriteCanvas');
+        
+        // Initialize sprite animator
+        const animator = new SpriteAnimator({
+            canvas: canvas,
+            spriteSheetPath: 'octocat-skater-v2.png',
+            gridColumns: 5,
+            gridRows: 3,
+            paletteRows: 1,  // Bottom row is color palette
+            framePadding: 0,  // No padding - using per-row vertical offsets instead
+            verticalOffsets: [44, 90],  // Per-row vertical shifts [Row 0: 44px, Row 1: 90px]
+            fps: 6,
+            scale: 1,
+            chromaKey: true,  // Enable chroma key background removal
+            chromaKeyColor: '#161B22',  // Background color to key out
+            chromaKeyTolerance: 10,  // Color matching tolerance
+            backgroundColor: 'transparent',  // Transparent background
+            onLoad: (anim) => {
+                console.log('✅ Sprite sheet loaded successfully');
+                console.log(`   Frame size: ${anim.frameWidth}x${anim.frameHeight}`);
+                console.log(`   Total frames: ${anim.totalFrames}`);
+                
+                // Update UI
+                updateStats();
+                
+                // Auto-play
+                anim.play();
+            },
+            onFrameChange: (frame) => {
+                document.getElementById('currentFrame').textContent = frame;
+            }
+        });
+        
+        // ============================================================================
+        // UI Controls
+        // ============================================================================
+        
+        // Scale slider
+        const scaleSlider = document.getElementById('scaleSlider');
+        const scaleDisplay = document.getElementById('scaleDisplay');
+        
+        scaleSlider.addEventListener('input', (e) => {
+            const scale = parseInt(e.target.value);
+            scaleDisplay.textContent = scale + 'x';
+            animator.setScale(scale);
+        });
+        
+        // FPS slider
+        const fpsSlider = document.getElementById('fpsSlider');
+        const fpsDisplay = document.getElementById('fpsDisplay');
+        
+        fpsSlider.addEventListener('input', (e) => {
+            const fps = parseInt(e.target.value);
+            fpsDisplay.textContent = fps;
+            animator.setFPS(fps);
+        });
+        
+        // Padding slider
+        const paddingSlider = document.getElementById('paddingSlider');
+        const paddingDisplay = document.getElementById('paddingDisplay');
+        
+        paddingSlider.addEventListener('input', (e) => {
+            const padding = parseInt(e.target.value);
+            paddingDisplay.textContent = padding + 'px';
+            animator.setPadding(padding);
+        });
+        
+        // Row 0 offset slider
+        const offset0Slider = document.getElementById('offset0Slider');
+        const offset0Display = document.getElementById('offset0Display');
+        
+        offset0Slider.addEventListener('input', (e) => {
+            const offset = parseInt(e.target.value);
+            offset0Display.textContent = offset + 'px';
+            animator.setRowOffset(0, offset);
+        });
+        
+        // Row 1 offset slider
+        const offset1Slider = document.getElementById('offset1Slider');
+        const offset1Display = document.getElementById('offset1Display');
+        
+        offset1Slider.addEventListener('input', (e) => {
+            const offset = parseInt(e.target.value);
+            offset1Display.textContent = offset + 'px';
+            animator.setRowOffset(1, offset);
+        });
+        
+        // Playback buttons
+        const playBtn = document.getElementById('playBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        
+        playBtn.addEventListener('click', () => {
+            animator.play();
+            playBtn.classList.add('active');
+            pauseBtn.classList.remove('active');
+        });
+        
+        pauseBtn.addEventListener('click', () => {
+            animator.pause();
+            pauseBtn.classList.add('active');
+            playBtn.classList.remove('active');
+        });
+        
+        resetBtn.addEventListener('click', () => {
+            animator.reset();
+            pauseBtn.classList.add('active');
+            playBtn.classList.remove('active');
+        });
+        
+        // Update stats display
+        function updateStats() {
+            const state = animator.getState();
+            document.getElementById('currentFrame').textContent = state.currentFrame;
+            document.getElementById('totalFrames').textContent = state.totalFrames;
+            document.getElementById('frameWidth').textContent = state.frameWidth + 'px';
+            document.getElementById('frameHeight').textContent = state.frameHeight + 'px';
+        }
+    </script>
+</body>
+</html>
