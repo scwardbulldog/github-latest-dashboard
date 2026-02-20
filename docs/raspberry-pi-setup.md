@@ -33,6 +33,7 @@ Complete step-by-step guide to deploying the GitHub Dashboard as a 24/7 kiosk on
 - Password-protected WiFi network (WPA2)
 - Internet access for API calls
 - WiFi credentials (SSID and password)
+- Most modern Raspberry Pi OS versions use NetworkManager for WiFi setup and management. This guide assumes you will use NetworkManager tools (`nmcli` or `nmtui`) for WiFi configuration.
 
 ### Software Requirements
 
@@ -58,9 +59,10 @@ Complete step-by-step guide to deploying the GitHub Dashboard as a 24/7 kiosk on
    - **Set username**: `pi` (or your preference)
    - **Set password**: Choose a secure password
    - **Configure WiFi**: 
-     - SSID: Your network name
-     - Password: Your network password
-     - WiFi country: Your country code (e.g., US)
+    - SSID: Your network name
+    - Password: Your network password
+    - WiFi country: Your country code (e.g., US)
+    - (If using Raspberry Pi Imager, these are set automatically. Otherwise, use NetworkManager tools after first boot.)
    - **Set locale settings**: 
      - Time zone: Your timezone
      - Keyboard layout: Your layout
@@ -325,7 +327,10 @@ unclutter -idle 1 -root &
 # Wait for HTTP server to be ready
 sleep 5
 
-# Launch Chromium in kiosk mode
+# Launch Chromium in kiosk mode with cache disabled
+# The --disk-cache-size=1 and --disable-application-cache flags are critical
+# to prevent Chromium from aggressively caching the HTML file, which would
+# prevent updates from appearing without manually clearing the cache
 chromium \
   --kiosk \
   --noerrdialogs \
@@ -334,6 +339,8 @@ chromium \
   --disable-session-crashed-bubble \
   --disable-features=TranslateUI \
   --check-for-update-interval=31536000 \
+  --disk-cache-size=1 \
+  --disable-application-cache \
   http://localhost:8000
 ```
 
@@ -582,34 +589,46 @@ sudo systemctl restart kiosk.service
 
 ### WiFi Not Connecting
 
-**Check WiFi configuration**:
+**Check WiFi status and manage connections with NetworkManager:**
+
 ```bash
-sudo cat /etc/wpa_supplicant/wpa_supplicant.conf
+# List available WiFi networks
+nmcli device wifi list
+
+# Connect to a WiFi network (creates and activates connection)
+sudo nmcli device wifi connect "YOUR_SSID" password "YOUR_PASSWORD"
+
+# Or use the interactive tool (recommended for most users)
+sudo nmtui
+# (Select 'Activate a connection' or 'Edit a connection' to manage WiFi)
+
+# Show all saved connections
+nmcli connection show
+
+# Check device status
+nmcli device status
+
+# Check if you have an IP address
+ip addr show wlan0
+
+# Test internet connectivity
+ping -c 3 8.8.8.8
 ```
 
-**Reconfigure WiFi**:
-```bash
-sudo raspi-config
-# System Options → Wireless LAN
-```
+**Troubleshooting tips:**
+- If a connection fails, try deleting and recreating it:
+  ```bash
+  sudo nmcli connection delete "YOUR_SSID"
+  sudo nmcli device wifi connect "YOUR_SSID" password "YOUR_PASSWORD"
+  ```
+- Use `sudo nmtui` for a user-friendly interface to select and connect to WiFi.
+- If you see multiple networks with the same name (e.g., guest networks), confirm with IT which one to use.
+- For advanced logs:
+  ```bash
+  journalctl -u NetworkManager -n 50 --no-pager
+  ```
 
-**Or edit manually**:
-```bash
-sudo nano /etc/wpa_supplicant/wpa_supplicant.conf
-```
-
-Add:
-```
-network={
-    ssid="YourNetworkName"
-    psk="YourPassword"
-}
-```
-
-**Restart networking**:
-```bash
-sudo systemctl restart networking
-```
+**Note:** If you are using a custom image or older OS, you may still see references to `wpa_supplicant` or `raspi-config`. For most modern setups, prefer NetworkManager tools as above.
 
 ### Dashboard Shows API Errors
 
@@ -795,6 +814,38 @@ sudo dd if=/dev/sdX of=~/github-dashboard-backup.img bs=4M status=progress
 
 ## Maintenance
 
+### Quick Reference: Common Tasks
+
+**Deploy updated dashboard:**
+```bash
+# From your computer
+scp index.html yourusername@github-dashboard.local:/home/yourusername/dashboard/
+ssh yourusername@github-dashboard.local "sudo systemctl restart kiosk.service"
+```
+
+**Check dashboard status:**
+```bash
+ssh yourusername@github-dashboard.local
+sudo systemctl status dashboard-server.service kiosk.service
+```
+
+**Restart services:**
+```bash
+ssh yourusername@github-dashboard.local
+sudo systemctl restart dashboard-server.service
+sudo systemctl restart kiosk.service
+```
+
+**Add WiFi network (e.g., office WiFi):**
+```bash
+ssh yourusername@github-dashboard.local
+sudo nano /etc/wpa_supplicant/wpa_supplicant.conf
+# Add network{} block (see Managing WiFi Networks section below)
+sudo systemctl restart dhcpcd
+```
+
+---
+
 ### Monthly Checks
 
 ```bash
@@ -828,12 +879,14 @@ sudo reboot
 2. **Consider SD card replacement** (preventative - SD cards degrade over time)
 3. **Clean Pi case** and verify ventilation is clear
 
-### Changing WiFi Password
+### Managing WiFi Networks
+
+#### Changing WiFi Password
 
 If your network password changes:
 
 ```bash
-# SSH into Pi (using ethernet if possible)
+# SSH into Pi (using ethernet if possible, or keyboard connected to Pi)
 sudo raspi-config
 # System Options → Wireless LAN → Enter new credentials
 
@@ -842,24 +895,111 @@ sudo nano /etc/wpa_supplicant/wpa_supplicant.conf
 # Update psk="NewPassword"
 
 # Restart networking
-sudo systemctl restart networking
+sudo systemctl restart dhcpcd
 ```
+
+#### Adding Multiple Networks (Home + Office)
+
+You can configure multiple WiFi networks so the Pi automatically connects to whichever is available. This is useful if you move the Pi between locations.
+
+**Method depends on your Pi's OS version:**
+
+**For Newer Raspberry Pi OS (using NetworkManager):**
+
+Check if you're using NetworkManager:
+```bash
+nmcli connection show
+```
+
+If the command works, use this method:
+
+**Add office network:**
+```bash
+sudo nmcli connection add type wifi con-name "Office-WiFi" ifname wlan0 \
+  ssid "OfficeNetworkName" \
+  wifi-sec.key-mgmt wpa-psk \
+  wifi-sec.psk "OfficePassword" \
+  connection.autoconnect-priority 10
+```
+
+**Set home network priority higher:**
+```bash
+# Find your home network connection name
+nmcli connection show
+
+# Set higher priority (replace with your actual connection name)
+sudo nmcli connection modify "YourHomeConnectionName" connection.autoconnect-priority 20
+```
+
+**Verify:**
+```bash
+nmcli -f name,type,autoconnect,autoconnect-priority connection show
+```
+
+**For Older Raspberry Pi OS (using wpa_supplicant):**
+
+**Edit the WiFi configuration:**
+```bash
+sudo nano /etc/wpa_supplicant/wpa_supplicant.conf
+```
+
+**Add multiple network blocks** (higher priority = preferred):
+```
+ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
+update_config=1
+country=US
+
+network={
+    ssid="HomeNetwork"
+    psk="HomePassword"
+    priority=2
+    id_str="home"
+}
+
+network={
+    ssid="OfficeNetwork"
+    psk="OfficePassword"
+    priority=1
+    id_str="office"
+}
+```
+
+**Save and restart:**
+```bash
+sudo systemctl restart dhcpcd
+```
+
+**How it works:**
+The Pi will automatically connect to whichever network is available. If both are in range, it connects to the one with higher priority.
 
 ### Updating Dashboard File
 
+**Note**: Replace `pi@` and `/home/pi/` with your actual username (e.g., `yourusername@` and `/home/yourusername/`).
+
+**Step 1: Upload the new file** from your computer (in the project directory):
 ```bash
-# From your computer
 scp index.html pi@github-dashboard.local:/home/pi/dashboard/
 ```
 
-**Clear browser cache** to see changes immediately:
+**Step 2: Restart kiosk to see changes immediately**:
+
+Chromium caches HTML files aggressively. To see your changes, you must restart the kiosk service:
+
 ```bash
-# SSH into Pi and restart kiosk to force cache clear
+# SSH into Pi
 ssh pi@github-dashboard.local
+
+# Restart kiosk to force browser to reload
 sudo systemctl restart kiosk.service
 ```
 
-Alternatively, wait for next auto-refresh cycle (5 minutes).
+**Alternative**: Wait for the next auto-refresh cycle (5 minutes), though this may still show cached content. Restarting the kiosk is the most reliable method.
+
+**Troubleshooting**: If changes still don't appear after restart:
+1. Verify the file was uploaded: `ls -lh /home/pi/dashboard/index.html`
+2. Check the HTTP server is serving the new file: `curl -s http://localhost:8000 | head -20`
+3. Clear Chromium cache manually: `rm -rf ~/.config/chromium/Default/Cache ~/.config/chromium/Default/Code\ Cache`
+4. Restart both services: `sudo systemctl restart dashboard-server.service kiosk.service`
 
 ### Viewing Logs
 
