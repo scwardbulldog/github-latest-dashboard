@@ -39,84 +39,26 @@
             box-shadow: 0 0 8px rgba(31, 111, 235, 0.6);
         }
 
-        /* Octocat Traveler */
+        /* Octocat Traveler - Sprite Animation */
         .octocat-traveler {
             position: fixed;
-            bottom: -15px;
+            bottom: 0;
             left: 0;
             transform: translateX(-50%);
             z-index: 1001;
-            width: 120px;
-            height: 120px;
             transition: left 1s linear;
             filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
         }
 
-        .octocat-traveler svg {
-            width: 100%;
-            height: 100%;
+        .octocat-traveler canvas {
+            display: block;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
         }
 
-        /* Walking Animation */
-        .octocat-traveler.walking .octocat-body {
-            animation: walk-bounce 0.6s ease-in-out infinite;
-        }
+        /* Sprite animation handled by SpriteAnimator class */
 
-        .octocat-traveler.walking .octocat-tentacle-left {
-            animation: tentacle-left 0.6s ease-in-out infinite;
-        }
-
-        .octocat-traveler.walking .octocat-tentacle-right {
-            animation: tentacle-right 0.6s ease-in-out infinite;
-        }
-
-        /* Skateboard Animation */
-        .octocat-traveler.skateboard .skateboard-group {
-            animation: skateboard-tilt 0.4s ease-in-out infinite;
-        }
-
-        .octocat-traveler.skateboard .skateboard-wheel {
-            animation: wheel-spin 0.3s linear infinite;
-        }
-
-        /* Racing Animation */
-        .octocat-traveler.racing .car-group {
-            animation: car-vibrate 0.15s ease-in-out infinite;
-        }
-
-        .octocat-traveler.racing .speed-line {
-            animation: speed-whoosh 0.4s linear infinite;
-        }
-
-        .octocat-traveler.racing .car-wheel {
-            animation: wheel-spin 0.2s linear infinite;
-        }
-
-        /* Victory Animation */
-        .octocat-traveler.victory .octocat-body {
-            animation: victory-jump 0.5s ease-in-out infinite;
-        }
-
-        .octocat-traveler.victory .victory-star {
-            animation: star-twinkle 0.8s ease-in-out infinite;
-        }
-
-        /* Keyframe Animations */
-        @keyframes walk-bounce {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-3px); }
-        }
-
-        @keyframes tentacle-left {
-            0%, 100% { transform: rotate(0deg); }
-            50% { transform: rotate(-15deg); }
-        }
-
-        @keyframes tentacle-right {
-            0%, 100% { transform: rotate(0deg); }
-            50% { transform: rotate(15deg); }
-        }
-
+        /* Maintain legacy keyframes for potential future use */
         @keyframes skateboard-tilt {
             0%, 100% { transform: rotate(-2deg) translateY(0); }
             50% { transform: rotate(2deg) translateY(-2px); }
@@ -663,173 +605,8 @@
 <body>
     <!-- Modern Dashboard: Refresh Progress Bar -->
     <div class="refresh-progress" id="refreshProgress"></div>
-    <div class="octocat-traveler walking" id="octocatTraveler">
-        <svg viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg">
-            <!-- Walking Mode - Standard Octocat -->
-            <g class="walking-mode">
-                <!-- Octocat body (black silhouette) -->
-                <g class="octocat-body">
-                    <path fill="#000" d="M 50 20 C 35 20 25 30 25 45 C 25 48 25.5 51 26.5 53.5 C 22 55 18 60 18 68 C 18 78 30 82 50 82 C 70 82 82 78 82 68 C 82 60 78 55 73.5 53.5 C 74.5 51 75 48 75 45 C 75 30 65 20 50 20 Z"/>
-                    <!-- Face overlay (peach) -->
-                    <ellipse cx="50" cy="48" rx="22" ry="20" fill="#F4CBB2"/>
-                    <!-- Eyes (white) -->
-                    <ellipse cx="42" cy="46" rx="6" ry="8" fill="#FFF"/>
-                    <ellipse cx="58" cy="46" rx="6" ry="8" fill="#FFF"/>
-                    <!-- Pupils (brown) -->
-                    <ellipse cx="42" cy="47" rx="3.5" ry="5" fill="#AD5C51"/>
-                    <ellipse cx="58" cy="47" rx="3.5" ry="5" fill="#AD5C51"/>
-                    <!-- Nose -->
-                    <circle cx="50" cy="52" r="2" fill="#AD5C51"/>
-                    <!-- Mouth -->
-                    <path d="M 44 56 Q 50 59 56 56" stroke="#AD5C51" stroke-width="1.5" fill="none" stroke-linecap="round"/>
-                </g>
-                <!-- Tentacles with suction cups -->
-                <g class="octocat-tentacle-left" transform-origin="35 80">
-                    <path d="M 35 80 Q 28 92 25 105" stroke="#000" stroke-width="6" fill="none" stroke-linecap="round"/>
-                    <circle cx="30" cy="88" r="2.5" fill="#C3E4D8"/>
-                    <circle cx="28" cy="95" r="2.5" fill="#C3E4D8"/>
-                    <circle cx="26" cy="102" r="2.5" fill="#C3E4D8"/>
-                </g>
-                <g class="octocat-tentacle-right" transform-origin="65 80">
-                    <path d="M 65 80 Q 72 92 75 105" stroke="#000" stroke-width="6" fill="none" stroke-linecap="round"/>
-                    <circle cx="70" cy="88" r="2.5" fill="#C3E4D8"/>
-                    <circle cx="72" cy="95" r="2.5" fill="#C3E4D8"/>
-                    <circle cx="74" cy="102" r="2.5" fill="#C3E4D8"/>
-                </g>
-                <!-- Center tentacles -->
-                <path d="M 42 78 Q 38 90 36 105" stroke="#000" stroke-width="5" fill="none" stroke-linecap="round"/>
-                <circle cx="40" cy="88" r="2" fill="#C3E4D8"/>
-                <circle cx="38" cy="96" r="2" fill="#C3E4D8"/>
-                <path d="M 50 80 Q 50 92 50 108" stroke="#000" stroke-width="5" fill="none" stroke-linecap="round"/>
-                <circle cx="50" cy="90" r="2" fill="#C3E4D8"/>
-                <circle cx="50" cy="98" r="2" fill="#C3E4D8"/>
-                <path d="M 58 78 Q 62 90 64 105" stroke="#000" stroke-width="5" fill="none" stroke-linecap="round"/>
-                <circle cx="60" cy="88" r="2" fill="#C3E4D8"/>
-                <circle cx="62" cy="96" r="2" fill="#C3E4D8"/>
-            </g>
-            
-            <!-- Skateboard Mode - Skatetocat style -->
-            <g class="skateboard-mode" style="display: none;">
-                <g class="skateboard-group" transform-origin="50 60">
-                    <!-- Octocat body (black) leaning forward -->
-                    <g transform="translate(0, -8) rotate(-10 50 50)">
-                        <path fill="#000" d="M 50 15 C 38 15 30 23 30 35 C 30 37 30.3 39 31 41 C 28 42 25 46 25 52 C 25 58 33 61 50 61 C 67 61 75 58 75 52 C 75 46 72 42 69 41 C 69.7 39 70 37 70 35 C 70 23 62 15 50 15 Z"/>
-                        <!-- Face -->
-                        <ellipse cx="50" cy="38" rx="18" ry="16" fill="#F4CBB2"/>
-                        <!-- Eyes -->
-                        <ellipse cx="44" cy="36" rx="5" ry="6" fill="#FFF"/>
-                        <ellipse cx="56" cy="36" rx="5" ry="6" fill="#FFF"/>
-                        <ellipse cx="44" cy="37" rx="3" ry="4" fill="#AD5C51"/>
-                        <ellipse cx="56" cy="37" rx="3" ry="4" fill="#AD5C51"/>
-                        <!-- Nose & mouth -->
-                        <circle cx="50" cy="42" r="1.5" fill="#AD5C51"/>
-                        <path d="M 45 45 Q 50 47 55 45" stroke="#AD5C51" stroke-width="1.2" fill="none"/>
-                        <!-- Tentacles bent for skating -->
-                        <path d="M 38 58 Q 32 68 30 78" stroke="#000" stroke-width="5" fill="none" stroke-linecap="round"/>
-                        <circle cx="34" cy="65" r="2" fill="#C3E4D8"/>
-                        <circle cx="31" cy="72" r="2" fill="#C3E4D8"/>
-                        <path d="M 62 58 Q 68 68 70 78" stroke="#000" stroke-width="5" fill="none" stroke-linecap="round"/>
-                        <circle cx="66" cy="65" r="2" fill="#C3E4D8"/>
-                        <circle cx="69" cy="72" r="2" fill="#C3E4D8"/>
-                    </g>
-                    <!-- Skateboard -->
-                    <rect x="32" y="82" width="36" height="5" rx="2.5" fill="#f85149"/>
-                    <rect x="32" y="82" width="36" height="5" rx="2.5" fill="none" stroke="#000" stroke-width="0.5"/>
-                    <!-- Wheels -->
-                    <g class="skateboard-wheel" transform-origin="38 92">
-                        <circle cx="38" cy="92" r="4" fill="#484f58"/>
-                        <circle cx="38" cy="92" r="4" fill="none" stroke="#000" stroke-width="0.8"/>
-                    </g>
-                    <g class="skateboard-wheel" transform-origin="62 92">
-                        <circle cx="62" cy="92" r="4" fill="#484f58"/>
-                        <circle cx="62" cy="92" r="4" fill="none" stroke="#000" stroke-width="0.8"/>
-                    </g>
-                </g>
-            </g>
-            
-            <!-- Racing Mode - Octocat in F1 Car -->
-            <g class="racing-mode" style="display: none;">
-                <g class="car-group" transform-origin="50 60">
-                    <!-- F1 Car body -->
-                    <path d="M 22 55 L 30 45 L 68 45 L 78 55 L 78 68 L 22 68 Z" fill="#f85149" stroke="#000" stroke-width="1.5"/>
-                    <!-- Spoiler at back -->
-                    <rect x="18" y="40" width="10" height="4" fill="#484f58" stroke="#000" stroke-width="0.8"/>
-                    <!-- Stripe -->
-                    <rect x="30" y="50" width="45" height="3" fill="#FFF" opacity="0.6"/>
-                    <!-- Octocat head peeking out (black body) -->
-                    <g transform="translate(5, -5)">
-                        <ellipse cx="52" cy="42" rx="12" ry="10" fill="#000"/>
-                        <!-- Face -->
-                        <ellipse cx="52" cy="43" rx="10" ry="8" fill="#F4CBB2"/>
-                        <!-- Eyes -->
-                        <ellipse cx="49" cy="42" rx="2.5" ry="3" fill="#FFF"/>
-                        <ellipse cx="55" cy="42" rx="2.5" ry="3" fill="#FFF"/>
-                        <ellipse cx="49" cy="42.5" rx="1.5" ry="2" fill="#AD5C51"/>
-                        <ellipse cx="55" cy="42.5" rx="1.5" ry="2" fill="#AD5C51"/>
-                        <!-- Nose -->
-                        <circle cx="52" cy="45" r="1" fill="#AD5C51"/>
-                    </g>
-                    <!-- Wheels -->
-                    <g class="car-wheel" transform-origin="32 72">
-                        <circle cx="32" cy="72" r="6" fill="#0d1117"/>
-                        <circle cx="32" cy="72" r="4" fill="#484f58"/>
-                    </g>
-                    <g class="car-wheel" transform-origin="70 72">
-                        <circle cx="70" cy="72" r="6" fill="#0d1117"/>
-                        <circle cx="70" cy="72" r="4" fill="#484f58"/>
-                    </g>
-                    <!-- Speed lines -->
-                    <line class="speed-line" x1="18" y1="50" x2="8" y2="50" stroke="#58a6ff" stroke-width="2" opacity="0.7"/>
-                    <line class="speed-line" x1="18" y1="58" x2="6" y2="58" stroke="#58a6ff" stroke-width="2" opacity="0.5" style="animation-delay: 0.1s;"/>
-                    <line class="speed-line" x1="18" y1="64" x2="10" y2="64" stroke="#58a6ff" stroke-width="2" opacity="0.3" style="animation-delay: 0.2s;"/>
-                </g>
-            </g>
-            
-            <!-- Victory Mode - Celebrating Octocat -->
-            <g class="victory-mode" style="display: none;">
-                <g class="octocat-body" transform-origin="50 50">
-                    <!-- Body (black) -->
-                    <path fill="#000" d="M 50 15 C 35 15 25 25 25 40 C 25 43 25.5 46 26.5 48.5 C 22 50 18 55 18 63 C 18 73 30 77 50 77 C 70 77 82 73 82 63 C 82 55 78 50 73.5 48.5 C 74.5 46 75 43 75 40 C 75 25 65 15 50 15 Z"/>
-                    <!-- Face -->
-                    <ellipse cx="50" cy="43" rx="22" ry="20" fill="#F4CBB2"/>
-                    <!-- Eyes (excited wide eyes) -->
-                    <ellipse cx="42" cy="41" rx="6" ry="9" fill="#FFF"/>
-                    <ellipse cx="58" cy="41" rx="6" ry="9" fill="#FFF"/>
-                    <ellipse cx="42" cy="42" rx="3.5" ry="6" fill="#AD5C51"/>
-                    <ellipse cx="58" cy="42" rx="3.5" ry="6" fill="#AD5C51"/>
-                    <!-- Nose -->
-                    <circle cx="50" cy="47" r="2" fill="#AD5C51"/>
-                    <!-- Big happy smile -->
-                    <path d="M 40 51 Q 50 58 60 51" stroke="#AD5C51" stroke-width="2" fill="none" stroke-linecap="round"/>
-                    <!-- Victory tentacles raised up! -->
-                    <path d="M 28 70 Q 20 55 15 35" stroke="#000" stroke-width="6" fill="none" stroke-linecap="round"/>
-                    <circle cx="23" cy="60" r="2.5" fill="#C3E4D8"/>
-                    <circle cx="19" cy="48" r="2.5" fill="#C3E4D8"/>
-                    <circle cx="16" cy="38" r="2.5" fill="#C3E4D8"/>
-                    <path d="M 72 70 Q 80 55 85 35" stroke="#000" stroke-width="6" fill="none" stroke-linecap="round"/>
-                    <circle cx="77" cy="60" r="2.5" fill="#C3E4D8"/>
-                    <circle cx="81" cy="48" r="2.5" fill="#C3E4D8"/>
-                    <circle cx="84" cy="38" r="2.5" fill="#C3E4D8"/>
-                    <!-- More tentacles celebrating -->
-                    <path d="M 36 74 Q 30 62 25 48" stroke="#000" stroke-width="5" fill="none" stroke-linecap="round"/>
-                    <circle cx="32" cy="66" r="2" fill="#C3E4D8"/>
-                    <circle cx="28" cy="55" r="2" fill="#C3E4D8"/>
-                    <path d="M 64 74 Q 70 62 75 48" stroke="#000" stroke-width="5" fill="none" stroke-linecap="round"/>
-                    <circle cx="68" cy="66" r="2" fill="#C3E4D8"/>
-                    <circle cx="72" cy="55" r="2" fill="#C3E4D8"/>
-                </g>
-                <!-- Victory stars -->
-                <g class="victory-star" transform-origin="20 20">
-                    <path d="M 20 15 L 22 21 L 28 21 L 23 25 L 25 31 L 20 27 L 15 31 L 17 25 L 12 21 L 18 21 Z" fill="#ffd700"/>
-                </g>
-                <g class="victory-star" transform-origin="80 25" style="animation-delay: 0.2s;">
-                    <path d="M 80 20 L 82 26 L 88 26 L 83 30 L 85 36 L 80 32 L 75 36 L 77 30 L 72 26 L 78 26 Z" fill="#ffd700"/>
-                </g>
-                <g class="victory-star" transform-origin="50 10" style="animation-delay: 0.4s;">
-                    <path d="M 50 5 L 52 11 L 58 11 L 53 15 L 55 21 L 50 17 L 45 21 L 47 15 L 42 11 L 48 11 Z" fill="#ffd700"/>
-                </g>
-            </g>
-        </svg>
+    <div class="octocat-traveler" id="octocatTraveler">
+        <canvas id="spriteCanvas"></canvas>
     </div>
     
     <div class="header">
@@ -1235,9 +1012,169 @@
             }
         }
 
-        // Pause/Resume state
+        // ============================================================================
+        // SpriteAnimator Class - Production Version
+        // ============================================================================
+        
+        class SpriteAnimator {
+            constructor(config) {
+                this.canvas = config.canvas;
+                this.ctx = this.canvas.getContext('2d');
+                this.spriteSheetPath = config.spriteSheetPath;
+                
+                this.gridColumns = config.gridColumns || 5;
+                this.gridRows = config.gridRows || 3;
+                this.paletteRows = config.paletteRows || 1;
+                this.framePadding = config.framePadding || 0;
+                this.verticalOffsets = config.verticalOffsets || [44, 90];
+                this.verticalOffset = config.verticalOffset || 0;
+                
+                this.fps = config.fps || 6;
+                this.scale = config.scale || 1;
+                
+                this.chromaKeyEnabled = config.chromaKey !== false;
+                this.chromaKeyColor = config.chromaKeyColor || '#161B22';
+                this.chromaKeyTolerance = config.chromaKeyTolerance || 10;
+                this.backgroundColor = config.backgroundColor || 'transparent';
+                
+                this.spriteSheet = null;
+                this.frameWidth = 0;
+                this.frameHeight = 0;
+                this.totalFrames = this.gridColumns * (this.gridRows - this.paletteRows);
+                this.currentFrame = 0;
+                this.isPlaying = false;
+                this.lastFrameTime = 0;
+                this.animationId = null;
+                
+                this.onLoad = config.onLoad || null;
+                
+                this.loadSpriteSheet();
+            }
+            
+            loadSpriteSheet() {
+                this.spriteSheet = new Image();
+                this.spriteSheet.onload = () => {
+                    this.calculateFrameDimensions();
+                    this.resizeCanvas();
+                    this.draw();
+                    if (this.onLoad) this.onLoad(this);
+                };
+                this.spriteSheet.src = this.spriteSheetPath;
+            }
+            
+            calculateFrameDimensions() {
+                this.frameWidth = Math.floor(this.spriteSheet.width / this.gridColumns);
+                this.frameHeight = Math.floor(this.spriteSheet.height / this.gridRows);
+            }
+            
+            resizeCanvas() {
+                const displayWidth = (this.frameWidth - (this.framePadding * 2));
+                const displayHeight = (this.frameHeight - (this.framePadding * 2));
+                this.canvas.width = displayWidth * this.scale;
+                this.canvas.height = displayHeight * this.scale;
+                this.ctx.imageSmoothingEnabled = false;
+            }
+            
+            draw() {
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                if (this.backgroundColor !== 'transparent') {
+                    this.ctx.fillStyle = this.backgroundColor;
+                    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                }
+                
+                if (!this.spriteSheet) return;
+                
+                const frameRow = Math.floor(this.currentFrame / this.gridColumns);
+                const frameCol = this.currentFrame % this.gridColumns;
+                const rowOffset = this.verticalOffsets[frameRow] || this.verticalOffset;
+                
+                const sourceX = (frameCol * this.frameWidth) + this.framePadding;
+                const sourceY = (frameRow * this.frameHeight) + this.framePadding + rowOffset;
+                const sourceWidth = this.frameWidth - (this.framePadding * 2);
+                const sourceHeight = this.frameHeight - (this.framePadding * 2);
+                
+                this.ctx.drawImage(
+                    this.spriteSheet,
+                    sourceX, sourceY, sourceWidth, sourceHeight,
+                    0, 0, this.canvas.width, this.canvas.height
+                );
+                
+                if (this.chromaKeyEnabled) this.applyChromaKey();
+            }
+            
+            applyChromaKey() {
+                try {
+                    const imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+                    const data = imageData.data;
+                    const chromaRGB = this.hexToRgb(this.chromaKeyColor);
+                    const tolerance = this.chromaKeyTolerance;
+                    
+                    for (let i = 0; i < data.length; i += 4) {
+                        const r = data[i];
+                        const g = data[i + 1];
+                        const b = data[i + 2];
+                        const distance = Math.sqrt(
+                            Math.pow(r - chromaRGB.r, 2) +
+                            Math.pow(g - chromaRGB.g, 2) +
+                            Math.pow(b - chromaRGB.b, 2)
+                        );
+                        if (distance < tolerance) data[i + 3] = 0;
+                    }
+                    
+                    this.ctx.putImageData(imageData, 0, 0);
+                } catch (error) {
+                    console.error('Chroma key error:', error);
+                }
+            }
+            
+            hexToRgb(hex) {
+                hex = hex.replace('#', '');
+                return {
+                    r: parseInt(hex.substring(0, 2), 16),
+                    g: parseInt(hex.substring(2, 4), 16),
+                    b: parseInt(hex.substring(4, 6), 16)
+                };
+            }
+            
+            animate(timestamp) {
+                if (!this.isPlaying) return;
+                
+                const frameInterval = 1000 / this.fps;
+                const elapsed = timestamp - this.lastFrameTime;
+                
+                if (elapsed >= frameInterval) {
+                    this.currentFrame = (this.currentFrame + 1) % this.totalFrames;
+                    this.draw();
+                    this.lastFrameTime = timestamp - (elapsed % frameInterval);
+                }
+                
+                this.animationId = requestAnimationFrame((ts) => this.animate(ts));
+            }
+            
+            play() {
+                if (this.isPlaying) return;
+                this.isPlaying = true;
+                this.lastFrameTime = performance.now();
+                this.animationId = requestAnimationFrame((ts) => this.animate(ts));
+            }
+            
+            pause() {
+                this.isPlaying = false;
+                if (this.animationId) {
+                    cancelAnimationFrame(this.animationId);
+                    this.animationId = null;
+                }
+            }
+        }
+        
+        // ============================================================================
+        // Dashboard State
+        // ============================================================================
+        
         let isPaused = false;
         let refreshIntervalId = null;
+        let skaterAnimator = null;
 
         // Update timestamp
         function updateTimestamp() {
@@ -1294,53 +1231,20 @@
             const progressBar = document.getElementById('refreshProgress');
             progressStartTime = Date.now();
             
-            // Reset progress bar
             progressBar.style.width = '0%';
             progressBar.classList.remove('refreshing');
             
-            // Clear any existing interval
-            if (progressInterval) {
-                clearInterval(progressInterval);
-            }
+            if (progressInterval) clearInterval(progressInterval);
             
-            // Update progress every second
             progressInterval = setInterval(() => {
                 const elapsed = Date.now() - progressStartTime;
                 const progress = Math.min((elapsed / REFRESH_INTERVAL) * 100, 100);
                 
                 progressBar.style.width = progress + '%';
                 
-                // Update octocat position and state
+                // Update octocat sprite position
                 const octocat = document.getElementById('octocatTraveler');
                 octocat.style.left = progress + '%';
-                
-                // Change octocat state based on progress
-                const walkingMode = octocat.querySelector('.walking-mode');
-                const skateboardMode = octocat.querySelector('.skateboard-mode');
-                const racingMode = octocat.querySelector('.racing-mode');
-                const victoryMode = octocat.querySelector('.victory-mode');
-                
-                // Hide all modes first
-                walkingMode.style.display = 'none';
-                skateboardMode.style.display = 'none';
-                racingMode.style.display = 'none';
-                victoryMode.style.display = 'none';
-                
-                // Show appropriate mode and set class
-                octocat.className = 'octocat-traveler';
-                if (progress < 33) {
-                    octocat.classList.add('walking');
-                    walkingMode.style.display = 'block';
-                } else if (progress < 67) {
-                    octocat.classList.add('skateboard');
-                    skateboardMode.style.display = 'block';
-                } else if (progress < 100) {
-                    octocat.classList.add('racing');
-                    racingMode.style.display = 'block';
-                } else {
-                    octocat.classList.add('victory');
-                    victoryMode.style.display = 'block';
-                }
                 
                 // Add glow effect in last 10 seconds
                 if (progress > 96.67) {
@@ -1353,7 +1257,6 @@
                         progressBar.style.width = '0%';
                         progressBar.classList.remove('refreshing');
                         octocat.style.left = '0%';
-                        octocat.className = 'octocat-traveler walking';
                     }, 500);
                 }
             }, 1000);
@@ -1371,6 +1274,26 @@
             ]);
         }
 
+        // Initialize sprite animator
+        const canvas = document.getElementById('spriteCanvas');
+        skaterAnimator = new SpriteAnimator({
+            canvas: canvas,
+            spriteSheetPath: 'octocat-skater-v2.png',
+            gridColumns: 5,
+            gridRows: 3,
+            paletteRows: 1,
+            framePadding: 0,
+            verticalOffsets: [44, 90],
+            fps: 6,
+            scale: 0.15,
+            chromaKey: true,
+            chromaKeyColor: '#161B22',
+            chromaKeyTolerance: 10,
+            onLoad: (animator) => {
+                animator.play();
+            }
+        });
+        
         // Initialize dashboard
         updateTimestamp();
         fetchAllData();
