@@ -2,6 +2,20 @@
 
 Complete step-by-step guide to deploying the GitHub Dashboard as a 24/7 kiosk on Raspberry Pi 3B.
 
+## Overview
+
+This guide sets up the dashboard with **Git-based automatic deployment**:
+- 📦 Clone the repository directly to the Pi
+- 🔄 Automatically pull latest changes from GitHub on every restart
+- 🚀 Deploy updates by simply pushing to GitHub and restarting the kiosk
+- ✅ No manual file transfers (SCP) needed
+
+**Deployment workflow:**
+1. Make changes on your development machine
+2. Push to GitHub: `git push origin main`
+3. Restart kiosk on Pi: `sudo systemctl restart kiosk.service`
+4. Dashboard automatically pulls and displays latest code
+
 ## Table of Contents
 
 - [Prerequisites](#prerequisites)
@@ -39,6 +53,8 @@ Complete step-by-step guide to deploying the GitHub Dashboard as a 24/7 kiosk on
 
 - **Raspberry Pi Imager** - Download from https://www.raspberrypi.com/software/
 - **Terminal/SSH client** - Terminal (Mac/Linux) or PuTTY (Windows)
+- **Git** - Will be installed on the Pi during setup (used for automatic deployments)
+- **GitHub account** - For hosting the repository (free tier is sufficient)
 
 ---
 
@@ -207,37 +223,53 @@ Save and exit. This prevents "Only console users are allowed to run the X server
 
 ## Phase 3: Dashboard Setup
 
-### Step 7: Create Dashboard Directory
+### Step 7: Install Git and Clone Repository
 
 **Note**: Replace `/home/pi/` with your actual home directory if using a different username.
 
 ```bash
-# Create directory for dashboard files
-mkdir -p /home/pi/dashboard
+# Install Git
+sudo apt install -y git
+
+# Clone the dashboard repository
+git clone https://github.com/scwardbulldog/github-latest-dashboard.git /home/pi/dashboard
 ```
 
-### Step 8: Transfer Dashboard File
-
-**From your computer** (in the github-latest-dashboard project directory):
-
-**Note**: Replace `pi@` and `/home/pi/` with your actual username if different (e.g., `yourusername@` and `/home/yourusername/`).
-
-```bash
-# Copy index.html to Pi
-scp index.html pi@github-dashboard.local:/home/pi/dashboard/
-
-# Or using IP address
-scp index.html pi@192.168.x.x:/home/pi/dashboard/
-```
-
-**Expected output**: File transferred successfully.
+**Expected output**: Repository cloned successfully with all files.
 
 **Verify on Pi** (adjust path for your username):
 ```bash
 ls -lh /home/pi/dashboard/
 ```
 
-You should see `index.html`.
+You should see `index.html`, `README.md`, and other repository files.
+
+### Step 8: Create Auto-Update Script
+
+**Note**: Replace `/home/pi/` with your actual home directory if using a different username.
+
+```bash
+nano /home/pi/update-dashboard.sh
+```
+
+**Paste this content**:
+
+```bash
+#!/bin/bash
+cd /home/pi/dashboard
+git fetch origin
+git reset --hard origin/main
+```
+
+**Save and exit**: Press `Ctrl+X`, then `Y`, then `Enter`.
+
+**Make script executable**:
+
+```bash
+chmod +x /home/pi/update-dashboard.sh
+```
+
+This script will pull the latest changes from GitHub every time the kiosk starts.
 
 ### Step 9: Create HTTP Server Service
 
@@ -315,6 +347,9 @@ nano /home/pi/start-kiosk.sh
 
 ```bash
 #!/bin/bash
+
+# Pull latest changes from GitHub
+/home/pi/update-dashboard.sh
 
 # Disable screen blanking and power management
 xset s off
@@ -818,8 +853,12 @@ sudo dd if=/dev/sdX of=~/github-dashboard-backup.img bs=4M status=progress
 
 **Deploy updated dashboard:**
 ```bash
-# From your computer
-scp index.html yourusername@github-dashboard.local:/home/yourusername/dashboard/
+# Push changes to GitHub from your computer
+git add .
+git commit -m "Update dashboard"
+git push origin main
+
+# Then restart kiosk on Pi to pull and display changes
 ssh yourusername@github-dashboard.local "sudo systemctl restart kiosk.service"
 ```
 
@@ -974,32 +1013,47 @@ The Pi will automatically connect to whichever network is available. If both are
 
 ### Updating Dashboard File
 
-**Note**: Replace `pi@` and `/home/pi/` with your actual username (e.g., `yourusername@` and `/home/yourusername/`).
+**Note**: The dashboard now automatically pulls from GitHub on every kiosk restart. No manual file transfers needed!
 
-**Step 1: Upload the new file** from your computer (in the project directory):
+**Step 1: Push changes to GitHub** from your computer (in the project directory):
 ```bash
-scp index.html pi@github-dashboard.local:/home/pi/dashboard/
+# Make your changes to index.html or other files
+# Then commit and push to GitHub
+git add .
+git commit -m "Update dashboard content"
+git push origin main
 ```
 
-**Step 2: Restart kiosk to see changes immediately**:
+**Step 2: Restart kiosk to pull and display changes**:
 
-Chromium caches HTML files aggressively. To see your changes, you must restart the kiosk service:
+The kiosk service automatically runs the update script on startup, which pulls the latest code from GitHub.
 
 ```bash
 # SSH into Pi
 ssh pi@github-dashboard.local
 
-# Restart kiosk to force browser to reload
+# Restart kiosk to pull latest changes from GitHub and reload
 sudo systemctl restart kiosk.service
 ```
 
-**Alternative**: Wait for the next auto-refresh cycle (5 minutes), though this may still show cached content. Restarting the kiosk is the most reliable method.
+**Alternative**: Simply reboot the Pi - it will automatically pull the latest changes on boot.
 
-**Troubleshooting**: If changes still don't appear after restart:
-1. Verify the file was uploaded: `ls -lh /home/pi/dashboard/index.html`
-2. Check the HTTP server is serving the new file: `curl -s http://localhost:8000 | head -20`
-3. Clear Chromium cache manually: `rm -rf ~/.config/chromium/Default/Cache ~/.config/chromium/Default/Code\ Cache`
-4. Restart both services: `sudo systemctl restart dashboard-server.service kiosk.service`
+```bash
+sudo reboot
+```
+
+**What happens during kiosk restart:**
+1. The kiosk service starts
+2. Openbox runs `/home/pi/start-kiosk.sh`
+3. The script runs `/home/pi/update-dashboard.sh` which pulls latest code from GitHub
+4. Chromium launches and displays the updated dashboard
+
+**Troubleshooting**: If changes don't appear after restart:
+1. SSH into the Pi and manually run the update script: `/home/pi/update-dashboard.sh`
+2. Check for Git errors: `cd /home/pi/dashboard && git status`
+3. Verify you pushed to GitHub: Check your repository on github.com
+4. Manually pull changes: `cd /home/pi/dashboard && git pull origin main`
+5. Restart both services: `sudo systemctl restart dashboard-server.service kiosk.service`
 
 ### Viewing Logs
 

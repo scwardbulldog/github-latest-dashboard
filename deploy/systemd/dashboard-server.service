@@ -1,0 +1,15 @@
+[Unit]
+Description=GitHub Dashboard HTTP Server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=sward
+WorkingDirectory=/home/sward/dashboard
+ExecStart=/usr/bin/python3 -m http.server 8000
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target
