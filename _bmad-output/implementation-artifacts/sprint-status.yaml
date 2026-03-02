@@ -44,7 +44,7 @@ development_status:
   1-1-initialize-vite-build-system: done
   1-2-migrate-current-mvp-to-source-structure: done
   1-3-create-component-skeleton-files: done
-  1-4-define-github-primer-design-tokens: ready-for-dev
+  1-4-define-github-primer-design-tokens: done
   1-5-validate-build-pipeline-deployment: backlog
   epic-1-retrospective: optional
 
