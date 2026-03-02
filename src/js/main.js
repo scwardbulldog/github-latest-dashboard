@@ -1,6 +1,22 @@
 // Import utility functions
 import { formatDate, stripHtml, truncate } from './utils.js';
 
+// Component skeletons imported for Epic 2+ implementation
+// Current MVP functionality remains using existing code below
+// TODO Epic 2: Wire carousel components and migrate logic
+import { CarouselController } from './carousel-controller.js';
+import { ItemHighlighter } from './item-highlighter.js';
+import { DetailPanel } from './detail-panel.js';
+// NOTE: Alias api-client exports to avoid colliding with existing
+// fetchBlog/fetchChangelog/fetchStatus implementations in this file.
+// These aliases will be wired in a later epic when the data layer
+// is migrated out of main.js.
+import {
+    fetchBlog as fetchBlogFromApiClient,
+    fetchChangelog as fetchChangelogFromApiClient,
+    fetchStatus as fetchStatusFromApiClient
+} from './api-client.js';
+
 // Configuration
 const RSS2JSON_API = 'https://api.rss2json.com/v1/api.json';
 const GITHUB_BLOG_RSS = 'https://github.blog/feed/';
