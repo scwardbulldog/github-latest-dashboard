@@ -43,6 +43,8 @@ For a dedicated 24/7 kiosk setup, deploy the dashboard on a **Raspberry Pi 3B** 
 
 **Features:**
 - Auto-boot to fullscreen dashboard on power-on
+- **Git-based deployment** - Automatically pulls latest code from GitHub on restart
+- **Zero-touch updates** - Push to GitHub, restart Pi, changes appear automatically
 - Screen sleep and screensaver disabled
 - Mouse cursor hidden
 - Auto-recovery from power outages
@@ -54,6 +56,18 @@ For a dedicated 24/7 kiosk setup, deploy the dashboard on a **Raspberry Pi 3B** 
 2. Follow the complete step-by-step guide: **[docs/raspberry-pi-setup.md](docs/raspberry-pi-setup.md)**
 3. Connect Pi to your office TV via HDMI
 4. Power on and enjoy hands-free operation
+
+**Deployment Workflow:**
+```bash
+# 1. Make changes to dashboard
+# 2. Push to GitHub
+git push origin main
+
+# 3. Restart kiosk on Pi (via SSH)
+ssh pi@github-dashboard.local "sudo systemctl restart kiosk.service"
+
+# Dashboard automatically pulls and displays latest code!
+```
 
 **Hardware Requirements:**
 - Raspberry Pi 3B (1GB RAM minimum)
