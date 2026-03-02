@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "vite build && cp src/index.html index.html",
+    "build": "vite build",
     "preview": "vite preview"
   },
   "repository": {

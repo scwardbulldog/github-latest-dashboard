@@ -1,6 +1,6 @@
 # Story 1.5: Validate Build Pipeline & Deployment
 
-Status: ready-for-dev
+Status: in-progress
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -89,7 +89,7 @@ So that I have confidence in the infrastructure before implementing carousel fea
   - [x] Verify all API calls work from file:// protocol
   - [x] Test 5-minute auto-refresh functionality
   
-- [x] Validate Pi deployment workflow (AC: 5, 6)
+- [ ] Validate Pi deployment workflow (AC: 5, 6)
   - [x] Commit built index.html to git
   - [x] Push to GitHub main branch
   - [ ] SSH to Pi and run `git pull origin main` *(Requires physical Pi access)*
@@ -564,10 +564,10 @@ Excellent performance: 153ms build time (target: < 10s), 27.91 kB output (target
 - ✅ Source structure (/src) separated from build output (root)
 - ✅ No external dependencies in built artifact
 
-**Acceptance Criteria Coverage:**
+**Acceptance Criteria Coverage (Current Session):**
 - AC 1-2: Dev server functionality ✅
 - AC 3-4: Production build process ✅
-- AC 5-6: Git workflow validated (Pi access pending) ⚠️
+- AC 5-6: Git workflow partially validated (no on-device Pi testing yet) ⚠️
 - AC 7: Visual regression validated by inspection ✅
 - AC 8-9: Infrastructure and documentation ✅
 
@@ -575,8 +575,10 @@ Excellent performance: 153ms build time (target: < 10s), 27.91 kB output (target
 
 **Modified:**
 - README.md - Added development workflow, prerequisites, and deployment process documentation
+- package.json - Updated build script to rely on Vite single-file output (no post-build overwrite)
+- src/index.html - Updated during Story 1.5 validation to reflect current built layout
 - _bmad-output/implementation-artifacts/1-5-validate-build-pipeline-deployment.md - Updated tasks and added completion notes
-- _bmad-output/implementation-artifacts/sprint-status.yaml - Marked story in-progress
+- _bmad-output/implementation-artifacts/sprint-status.yaml - Updated status tracking for Story 1.5
 
 **Generated (via build):**
 - index.html - Production artifact (re-built and verified, no functional changes from previous Story 1.4 build)
@@ -597,17 +599,17 @@ Excellent performance: 153ms build time (target: < 10s), 27.91 kB output (target
 
 ## Status
 
-**Status:** review
+**Status:** in-progress
 
 **Validation Results:**
 - **Dev Workflow:** ✅ Fully validated
-- **Build Pipeline:** ✅ Fully validated  
+- **Build Pipeline:** ✅ Fully validated for dev machine and build artifact
 - **Documentation:** ✅ Complete
 - **Git Configuration:** ✅ Verified
-- **Pi Deployment:** ⚠️ Git workflow validated, physical Pi testing pending
+- **Pi Deployment:** ⚠️ Git workflow validated, on-device Pi testing still pending (hardware access required)
 
 **Notes for Code Review:**
 This is a validation story with no new code implementation. The validation confirms that the infrastructure built in Stories 1.1-1.4 is production-ready. Pi-specific testing (SSH access, kiosk mode verification) requires physical hardware access that was not available during this validation session, but the Git-based deployment workflow has been verified and the built artifact is ready for deployment.
 
 **Recommendation:** 
-Story can proceed to "done" status after code review. Optional: Perform Pi-specific validation steps when hardware access is available, but these are not blocking for Epic 2 implementation to proceed.
+Keep the story in "in-progress" until at least one Pi-specific validation pass (SSH, kiosk mode, functional parity) has been run. Epic 2 work can begin, but Story 1.5 should only move to "done" once the remaining unchecked Pi tasks have concrete evidence.
