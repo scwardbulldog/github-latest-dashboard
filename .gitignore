@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+
+# Build outputs (temporary - source files in src/ and built index.html are tracked)
+.vite/
+dist-test/
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# IMPORTANT: index.html and package-lock.json ARE TRACKED
+# (index.html is the deployment artifact for Pi)
+# (package-lock.json ensures reproducible builds)

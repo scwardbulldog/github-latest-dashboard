@@ -1,0 +1,31 @@
+{
+  "name": "github-latest-dashboard",
+  "version": "1.0.0",
+  "description": "A single-page web dashboard designed to run full-screen on a large office TV, displaying the latest updates from GitHub across three sources.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/scwardbulldog/github-latest-dashboard.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/scwardbulldog/github-latest-dashboard/issues"
+  },
+  "homepage": "https://github.com/scwardbulldog/github-latest-dashboard#readme",
+  "devDependencies": {
+    "terser": "^5.46.0",
+    "vite": "^7.3.1",
+    "vite-plugin-singlefile": "^2.3.0"
+  }
+}
