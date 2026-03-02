@@ -18,17 +18,87 @@ A single-page web dashboard designed to run full-screen on a large office TV, di
 
 ## Usage
 
-### Local Development
+### Prerequisites
 
-Simply open `index.html` in your web browser:
+- **Node.js** v16 or higher (required for development only)
+- **npm** v7 or higher (comes with Node.js)
+- **Git** for version control
+
+Install Node.js from [nodejs.org](https://nodejs.org/) if you haven't already.
+
+### Development Workflow
+
+**First-time setup:**
+```bash
+# Install dependencies
+npm install
+```
+
+**Local development with hot reload:**
+```bash
+# Start Vite dev server at http://localhost:5173
+npm run dev
+```
+
+The dev server provides:
+- **Hot Module Replacement (HMR)** - CSS and JS changes appear instantly without page reload
+- **Fast refresh** - Immediate feedback during development
+- **Error overlay** - Build errors displayed in browser
+
+Make changes to files in the `/src` directory:
+- `/src/index.html` - HTML structure
+- `/src/css/main.css` - Styles and GitHub Primer design tokens
+- `/src/js/*.js` - JavaScript modules and components
+
+Changes will appear automatically in your browser.
+
+**Production build:**
+```bash
+# Build single index.html file in project root
+npm run build
+```
+
+Build output:
+- Creates `/index.html` with all CSS/JS inlined
+- Single-file artifact ready for Pi deployment
+- Minified and optimized (typically ~26KB)
+- Build completes in under 10 seconds
+
+### Deployment Workflow
+
+The dashboard uses a **Git-based deployment** model - no manual file copying required:
 
 ```bash
-# Open directly in browser
-open index.html
+# 1. Build the production artifact
+npm run build
 
-# Or use a simple HTTP server
-python -m http.server 8000
-# Then visit http://localhost:8000
+# 2. Commit both source and built artifact
+git add src/ index.html
+git commit -m "feat: your changes here"
+
+# 3. Push to GitHub
+git push origin main
+
+# 4. Raspberry Pi auto-pulls on restart (or manually trigger)
+ssh pi@github-dashboard.local "cd ~/dashboard && git pull origin main && sudo systemctl restart kiosk.service"
+```
+
+**Important:** The Pi expects the built `index.html` file in the repository root. Always commit both your source changes in `/src` and the built artifact.
+
+### Local Testing (without dev server)
+
+To test the built artifact locally before deploying:
+
+```bash
+# Build first
+npm run build
+
+# Serve built file with Python
+python3 -m http.server 8000
+# Visit http://localhost:8000
+
+# Or open directly in browser
+open index.html
 ```
 
 ### TV Display
