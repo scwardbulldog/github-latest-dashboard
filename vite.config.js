@@ -11,9 +11,8 @@ export default defineConfig({
     outDir: '.',
     emptyOutDir: false,       // DON'T delete other files (docs/, deploy/, _bmad/, etc.)
     rollupOptions: {
-      // Use the existing root index.html as the Vite entry until /src is
-      // introduced and Story 1.2 migrates the MVP into a source structure.
-      input: 'index.html',
+      // Use src/index.html as the Vite entry point (migrated in Story 1.2)
+      input: 'src/index.html',
       output: {
         inlineDynamicImports: true,  // Single bundle
       }
