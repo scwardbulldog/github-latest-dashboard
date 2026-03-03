@@ -55,9 +55,9 @@ development_status:
   2-4-implement-rotation-progress-indicator: done
   epic-2-retrospective: optional
 
-  epic-3: backlog
-  3-1-implement-split-view-layout: backlog
-  3-2-implement-itemhighlighter-with-timer: backlog
+  epic-3: in-progress
+  3-1-implement-split-view-layout: review
+  3-2-implement-itemhighlighter-with-timer: review
   3-3-implement-detail-panel-rendering: backlog
   3-4-implement-dual-timer-coordination: backlog
   3-5-integrate-data-flow-from-api: backlog

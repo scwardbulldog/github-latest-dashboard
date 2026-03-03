@@ -46,7 +46,31 @@
         <div class="carousel-page active" id="page-blog">
             <div class="page-header">BLOG</div>
             <div class="page-content">
-                <div id="blog-content" class="loading">Loading blog posts...</div>
+                <div class="split-view-container">
+                    <!-- Left: List View (35%) -->
+                    <div class="list-view">
+                        <div id="blog-list">
+                            <!-- Placeholder items for visual structure -->
+                            <div class="list-item">
+                                <div class="list-item-title">Example Blog Post Title</div>
+                                <div class="list-item-timestamp">5 hours ago</div>
+                                <div class="list-item-description">Brief description of the blog post content goes here, truncated to 2 lines maximum for comfortable scanning.</div>
+                            </div>
+                            <div class="list-item">
+                                <div class="list-item-title">Another Blog Post Example</div>
+                                <div class="list-item-timestamp">1 day ago</div>
+                                <div class="list-item-description">More content describing this blog post with enough text to demonstrate line clamping behavior.</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Right: Detail Panel (65%) -->
+                    <div class="detail-panel">
+                        <div id="blog-detail" class="detail-panel-empty">
+                            <p>Select an item to view details</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -54,7 +78,31 @@
         <div class="carousel-page" id="page-changelog">
             <div class="page-header">CHANGELOG</div>
             <div class="page-content">
-                <div id="changelog-content" class="loading">Loading changelog...</div>
+                <div class="split-view-container">
+                    <!-- Left: List View (35%) -->
+                    <div class="list-view">
+                        <div id="changelog-list">
+                            <!-- Placeholder items for visual structure -->
+                            <div class="list-item">
+                                <div class="list-item-title">GitHub Actions: New Feature Release</div>
+                                <div class="list-item-timestamp">3 hours ago</div>
+                                <div class="list-item-description">Description of the changelog entry with details about the new feature and its impact.</div>
+                            </div>
+                            <div class="list-item">
+                                <div class="list-item-title">Security Update for Dependencies</div>
+                                <div class="list-item-timestamp">2 days ago</div>
+                                <div class="list-item-description">Important security patch details for production systems.</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Right: Detail Panel (65%) -->
+                    <div class="detail-panel">
+                        <div id="changelog-detail" class="detail-panel-empty">
+                            <p>Select an item to view details</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -62,7 +110,31 @@
         <div class="carousel-page" id="page-status">
             <div class="page-header">STATUS</div>
             <div class="page-content">
-                <div id="status-content" class="loading">Loading status...</div>
+                <div class="split-view-container">
+                    <!-- Left: List View (35%) -->
+                    <div class="list-view">
+                        <div id="status-list">
+                            <!-- Placeholder items for visual structure -->
+                            <div class="list-item">
+                                <div class="list-item-title">GitHub API - Operational</div>
+                                <div class="list-item-timestamp">All systems operational</div>
+                                <div class="list-item-description">No incidents reported. All services running normally.</div>
+                            </div>
+                            <div class="list-item">
+                                <div class="list-item-title">GitHub Actions - Operational</div>
+                                <div class="list-item-timestamp">All systems operational</div>
+                                <div class="list-item-description">Workflow execution running smoothly across all regions.</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Right: Detail Panel (65%) -->
+                    <div class="detail-panel">
+                        <div id="status-detail" class="detail-panel-empty">
+                            <p>Select an item to view details</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

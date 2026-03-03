@@ -50,3 +50,112 @@
   overflow: auto;
   padding: 0; /* No padding - tight spacing */
 }
+
+/* Split-view container using CSS Grid */
+.split-view-container {
+  display: grid;
+  grid-template-columns: 35% 65%;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  gap: 0; /* No gap, divider is border */
+}
+
+/* List view (left, 35%) */
+.list-view {
+  border-right: 1px solid var(--color-border-default);
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: var(--space-4);
+  background: var(--color-canvas-default);
+}
+
+/* Detail panel (right, 65%) */
+.detail-panel {
+  background: var(--color-canvas-subtle);
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: var(--space-5);
+}
+
+/* List item styling */
+.list-item {
+  padding: var(--space-3);
+  margin-bottom: var(--space-2);
+  border-radius: 6px;
+  background: var(--color-canvas-default);
+  border: 1px solid var(--color-border-default);
+}
+
+.list-item-title {
+  font-size: var(--fontsize-h3);
+  font-weight: var(--fontweight-semibold);
+  color: var(--color-fg-default);
+  line-height: var(--lineheight-condensed);
+  margin-bottom: var(--space-1);
+  /* Clamp to 2 lines */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.list-item-timestamp {
+  font-size: var(--fontsize-small);
+  color: var(--color-fg-muted);
+  margin-bottom: var(--space-2);
+}
+
+.list-item-description {
+  font-size: var(--fontsize-base);
+  color: var(--color-fg-default);
+  line-height: var(--lineheight-default);
+  /* Clamp to 2 lines */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Detail panel content */
+.detail-panel-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--color-fg-muted);
+  font-size: var(--fontsize-base);
+  text-align: center;
+}
+
+/* Detail panel content structure (placeholder for Story 3.3) */
+.detail-panel-title {
+  font-size: var(--fontsize-h2);
+  font-weight: var(--fontweight-semibold);
+  color: var(--color-fg-default);
+  line-height: var(--lineheight-condensed);
+  margin-bottom: var(--space-3);
+}
+
+.detail-panel-timestamp {
+  font-size: var(--fontsize-small);
+  color: var(--color-fg-muted);
+  margin-bottom: var(--space-4);
+}
+
+.detail-panel-content {
+  font-size: var(--fontsize-base);
+  color: var(--color-fg-default);
+  line-height: var(--lineheight-default);
+  margin-bottom: var(--space-4);
+}
+
+.detail-panel-link {
+  color: var(--color-accent-fg);
+  text-decoration: none;
+  font-size: var(--fontsize-base);
+}
+
+.detail-panel-link:hover {
+  text-decoration: underline;
+}

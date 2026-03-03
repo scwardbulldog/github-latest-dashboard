@@ -27,3 +27,47 @@
   background: var(--color-accent-fg); /* GitHub blue */
   transition: width 100ms linear; /* Smooth width updates */
 }
+
+/* ============================================
+   Item Highlighting Styles
+   Added in Story 3.2 - ItemHighlighter
+   ============================================ */
+
+.list-item {
+  /* Base styles established in Story 3.1, now adding transitions */
+  transition: background 200ms ease, 
+              font-weight 200ms ease,
+              border-color 200ms ease;
+}
+
+.list-item--highlighted {
+  /* Elevated background (brighter than default #0d1117 → #161b22) */
+  background: var(--color-canvas-subtle) !important;
+  
+  /* Bold weight for emphasis */
+  font-weight: var(--fontweight-semibold);
+  
+  /* Left border accent for extra visibility from 10+ feet */
+  border-left: 3px solid var(--color-accent-fg) !important;
+  
+  /* Adjust padding to account for border (prevent layout shift) */
+  padding-left: calc(var(--space-3) - 3px);
+  
+  /* Prevent transform on highlighted items (no hover lift effect) */
+  transform: none !important;
+  
+  /* Slightly stronger box shadow for prominence */
+  box-shadow: 0 0 0 2px rgba(88, 166, 255, 0.3) !important;
+}
+
+/* Ensure title inherits bold weight when highlighted */
+.list-item--highlighted .list-item-title {
+  font-weight: var(--fontweight-semibold);
+}
+
+/* Prevent hover styles from overriding highlighted state */
+.list-item--highlighted:hover {
+  background: var(--color-canvas-subtle) !important;
+  border-left-color: var(--color-accent-fg) !important;
+  transform: none !important;
+}

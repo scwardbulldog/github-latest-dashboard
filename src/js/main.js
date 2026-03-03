@@ -7,24 +7,26 @@ import { formatDate, stripHtml, truncate } from './utils.js';
 import { CarouselController } from './carousel-controller.js';
 import { ItemHighlighter } from './item-highlighter.js';
 import { DetailPanel } from './detail-panel.js';
-// NOTE: Alias api-client exports to avoid colliding with existing
-// fetchBlog/fetchChangelog/fetchStatus implementations in this file.
-// These aliases will be wired in a later epic when the data layer
-// is migrated out of main.js.
+// TODO Story 3.5: Import and wire API client when implementing data integration
+/*
 import {
     fetchBlog as fetchBlogFromApiClient,
     fetchChangelog as fetchChangelogFromApiClient,
     fetchStatus as fetchStatusFromApiClient
 } from './api-client.js';
+*/
 
 // Configuration
-const RSS2JSON_API = 'https://api.rss2json.com/v1/api.json';
-const GITHUB_BLOG_RSS = 'https://github.blog/feed/';
-const GITHUB_CHANGELOG_RSS = 'https://github.blog/changelog/feed/';
-const GITHUB_STATUS_API = 'https://www.githubstatus.com/api/v2/incidents.json';
+// TODO Story 3.5: These will be used for API data integration
+// const RSS2JSON_API = 'https://api.rss2json.com/v1/api.json';
+// const GITHUB_BLOG_RSS = 'https://github.blog/feed/';
+// const GITHUB_CHANGELOG_RSS = 'https://github.blog/changelog/feed/';
+// const GITHUB_STATUS_API = 'https://www.githubstatus.com/api/v2/incidents.json';
 const REFRESH_INTERVAL = 5 * 60 * 1000; // 5 minutes
 
 // Detect changelog badge type based on keywords
+// TODO Story 3.5: Used for API data rendering
+/*
 function detectBadgeType(title, description) {
     const text = (title + ' ' + description).toLowerCase();
     
@@ -46,8 +48,11 @@ function detectBadgeType(title, description) {
     
     return { type: 'UPDATE', class: '' };
 }
+*/
 
 // Detect blog post badge from title and content
+// TODO Story 3.5: Used for API data rendering
+/*
 function detectBlogBadgeType(title, content) {
     const combined = `${title} ${content}`.toLowerCase();
     
@@ -73,8 +78,11 @@ function detectBlogBadgeType(title, content) {
     
     return { type: 'POST', class: '' };
 }
+*/
 
 // Format categories to fit within a character limit
+// TODO Story 3.5: Used for API data rendering
+/*
 function formatCategories(categories, maxLength = 35) {
     if (!categories || categories.length === 0) {
         return '';
@@ -101,233 +109,30 @@ function formatCategories(categories, maxLength = 35) {
     
     return result.join('');
 }
+*/
 
 // Fetch GitHub Blog
+// TODO Story 3.5: Implement API data integration
 async function fetchBlog() {
-    try {
-        const response = await fetch(`${RSS2JSON_API}?rss_url=${encodeURIComponent(GITHUB_BLOG_RSS)}`);
-        const data = await response.json();
-        
-        if (data.status !== 'ok') {
-            throw new Error('Failed to fetch blog RSS');
-        }
-
-        const container = document.getElementById('blog-content');
-        if (!data.items || data.items.length === 0) {
-            container.innerHTML = '<div class="error">No blog posts available</div>';
-            return;
-        }
-
-        // Render all items - container overflow will handle display
-        container.innerHTML = data.items.map(item => {
-            const badge = detectBlogBadgeType(item.title, item.description || item.content || '');
-            const categories = item.categories && item.categories.length > 0 
-                ? formatCategories(item.categories) 
-                : '';
-            
-            return `
-                <div class="item blog-item">
-                    <div class="item-title">
-                        <a href="${item.link}" target="_blank">${item.title}</a>
-                    </div>
-                    <div class="item-preview">
-                        ${truncate(stripHtml(item.description || item.content || ''), 150)}
-                    </div>
-                    <div class="item-date">
-                        <span>
-                            ${badge.type !== 'POST' ? `<span class="blog-badge ${badge.class}">[${badge.type}]</span>` : ''}
-                            ${categories ? `<span class="blog-category">${categories}</span>` : ''}
-                        </span>
-                        <span>${formatDate(item.pubDate)}</span>
-                    </div>
-                </div>
-            `;
-        }).join('');
-    } catch (error) {
-        console.error('Error fetching blog:', error);
-        document.getElementById('blog-content').innerHTML = 
-            `<div class="error">Error loading blog posts: ${error.message}</div>`;
-    }
+    // Story 3.5 scope - API integration
+    // Currently using static placeholder content in index.html
+    console.log('fetchBlog(): Using static placeholder content (Story 3.5 will implement API)');
 }
 
 // Fetch GitHub Changelog
+// TODO Story 3.5: Implement API data integration
 async function fetchChangelog() {
-    try {
-        const response = await fetch(`${RSS2JSON_API}?rss_url=${encodeURIComponent(GITHUB_CHANGELOG_RSS)}`);
-        const data = await response.json();
-        
-        if (data.status !== 'ok') {
-            throw new Error('Failed to fetch changelog RSS');
-        }
-
-        const container = document.getElementById('changelog-content');
-        if (!data.items || data.items.length === 0) {
-            container.innerHTML = '<div class="error">No changelog entries available</div>';
-            return;
-        }
-
-        // Render all items - container overflow will handle display
-        container.innerHTML = data.items.map(item => {
-            const badge = detectBadgeType(item.title, item.description || item.content || '');
-            const categories = item.categories && item.categories.length > 0 
-                ? formatCategories(item.categories) 
-                : '';
-            
-            return `
-                <div class="item changelog-item">
-                    <div class="item-title">
-                        <a href="${item.link}" target="_blank">${item.title}</a>
-                    </div>
-                    <div class="item-date">
-                        <span>
-                            <span class="changelog-badge ${badge.class}">[${badge.type}]</span>
-                            ${categories ? `<span class="changelog-category">${categories}</span>` : ''}
-                        </span>
-                        <span>${formatDate(item.pubDate)}</span>
-                    </div>
-                </div>
-            `;
-        }).join('');
-    } catch (error) {
-        console.error('Error fetching changelog:', error);
-        document.getElementById('changelog-content').innerHTML = 
-            `<div class="error">Error loading changelog: ${error.message}</div>`;
-    }
+    // Story 3.5 scope - API integration
+    // Currently using static placeholder content in index.html
+    console.log('fetchChangelog(): Using static placeholder content (Story 3.5 will implement API)');
 }
 
 // Fetch GitHub Status
+// TODO Story 3.5: Implement API data integration
 async function fetchStatus() {
-    try {
-        const response = await fetch(GITHUB_STATUS_API);
-        const data = await response.json();
-
-        const container = document.getElementById('status-content');
-        
-        if (!data.incidents || data.incidents.length === 0) {
-            container.innerHTML = `
-                <div class="item status-card status-card-operational">
-                    <div class="item-title">
-                        <span class="status-symbol">●</span>
-                        All Systems Operational
-                    </div>
-                </div>
-            `;
-            return;
-        }
-
-        // Separate active and resolved incidents
-        const activeIncidents = data.incidents.filter(inc => inc.status !== 'resolved');
-        const resolvedIncidents = data.incidents.filter(inc => inc.status === 'resolved');
-        
-        // Function to render an incident card
-        const renderIncident = (incident, isResolved) => {
-            const impact = incident.impact;
-            
-            // If resolved, always show green. Otherwise use severity color.
-            const severityClass = isResolved 
-                ? 'status-card-operational'
-                : impact === 'critical' || impact === 'major' 
-                    ? 'status-card-major' 
-                    : impact === 'minor' 
-                        ? 'status-card-minor' 
-                        : 'status-card-operational';
-            
-            const symbol = impact === 'critical' || impact === 'major' 
-                ? '■' 
-                : impact === 'minor' 
-                    ? '▲' 
-                    : '●';
-            
-            const symbolClass = impact === 'critical' || impact === 'major'
-                ? 'status-symbol-major'
-                : impact === 'minor'
-                    ? 'status-symbol-minor'
-                    : 'status-symbol-operational';
-            
-            const statusText = incident.status.replace(/_/g, ' ');
-            const resolvedClass = isResolved ? ' resolved' : '';
-            
-            if (isResolved) {
-                return `
-                    <div class="item status-card ${severityClass}${resolvedClass}">
-                        <div class="item-title">
-                            <span class="status-symbol ${symbolClass}">${symbol}</span>
-                            ${incident.name}
-                        </div>
-                        <div class="item-date">
-                            <span class="status-text">${statusText}</span>
-                            <span>${formatDate(incident.created_at)}</span>
-                        </div>
-                    </div>
-                `;
-            } else {
-                const updateText = incident.incident_updates && incident.incident_updates.length > 0 
-                    ? truncate(stripHtml(incident.incident_updates[0].body), 100)
-                    : `Status: ${incident.status.replace(/_/g, ' ').toUpperCase()}`;
-                
-                return `
-                    <div class="item status-card ${severityClass}${resolvedClass}">
-                        <div class="item-title">
-                            <span class="status-symbol ${symbolClass}">${symbol}</span>
-                            ${incident.name}
-                        </div>
-                        <div class="item-preview">
-                            ${updateText}
-                        </div>
-                        <div class="item-date">
-                            <span class="status-text">${statusText}</span>
-                            <span>${formatDate(incident.created_at)}</span>
-                        </div>
-                    </div>
-                `;
-            }
-        };
-        
-        // If no active incidents, show operational status
-        if (activeIncidents.length === 0) {
-            let html = `
-                <div class="item status-card status-card-operational">
-                    <div class="item-title">
-                        <span class="status-symbol">●</span>
-                        All Systems Operational
-                    </div>
-                </div>
-            `;
-            
-            // Add resolved section if there are any
-            if (resolvedIncidents.length > 0) {
-                html += '<div class="status-divider">Resolved</div>';
-                html += resolvedIncidents.map(inc => renderIncident(inc, true)).join('');
-            }
-            
-            container.innerHTML = html;
-            return;
-        }
-        
-        // Build HTML with active first, then divider, then resolved
-        let html = '';
-        
-        // Active incidents section
-        if (activeIncidents.length > 0) {
-            html += activeIncidents.map(inc => renderIncident(inc, false)).join('');
-        }
-        
-        // Divider if both sections exist
-        if (activeIncidents.length > 0 && resolvedIncidents.length > 0) {
-            html += '<div class="status-divider">Resolved</div>';
-        }
-        
-        // Resolved incidents section
-        if (resolvedIncidents.length > 0) {
-            html += resolvedIncidents.map(inc => renderIncident(inc, true)).join('');
-        }
-        
-        container.innerHTML = html;
-    } catch (error) {
-        console.error('Error fetching status:', error);
-        document.getElementById('status-content').innerHTML = 
-            `<div class="error">Error loading status: ${error.message}</div>`;
-    }
+    // Story 3.5 scope - API integration
+    // Currently using static placeholder content in index.html
+    console.log('fetchStatus(): Using static placeholder content (Story 3.5 will implement API)');
 }
 
 // ============================================================================
@@ -581,15 +386,15 @@ function startProgressBar() {
 }
 
 // Fetch all data
+// TODO Story 3.5: Wire API data fetching
 async function fetchAllData() {
     if (isPaused) return;
     updateTimestamp();
     startProgressBar();
-    await Promise.all([
-        fetchBlog(),
-        fetchChangelog(),
-        fetchStatus()
-    ]);
+    
+    // Story 3.5: Will implement API calls here
+    // For now, working with static HTML placeholder content
+    console.log('fetchAllData(): Using static content (Story 3.5 will add API integration)');
 }
 
 // Initialize sprite animator
@@ -612,6 +417,22 @@ skaterAnimator = new SpriteAnimator({
     }
 });
 
+/**
+ * Helper function to get item count for a specific page
+ * @param {string} pageName - Page identifier ('blog', 'changelog', 'status')
+ * @returns {number} Number of list items on the page
+ */
+function getItemCountForPage(pageName) {
+    const pageElement = document.getElementById(`page-${pageName}`);
+    if (!pageElement) {
+        console.warn(`ItemHighlighter: Page ${pageName} not found`);
+        return 0;
+    }
+    
+    const listItems = pageElement.querySelectorAll('.list-item');
+    return listItems.length;
+}
+
 // Initialize dashboard
 updateTimestamp();
 fetchAllData();
@@ -624,13 +445,41 @@ if (window.carouselInstance) {
 
 window.carouselInstance = new CarouselController({ interval: 30000 }); // 30 seconds per page
 
-// Set callback BEFORE starting
+// Initialize item highlighter
+if (window.itemHighlighterInstance) {
+  window.itemHighlighterInstance.stop();
+}
+
+window.itemHighlighterInstance = new ItemHighlighter({ interval: 8000 }); // 8 seconds per item
+
+// Set carousel callback BEFORE starting
 window.carouselInstance.onPageChange = (pageName) => {
     console.log(`Page changed to: ${pageName}`);
-    // Future: itemHighlighter.reset() will be called here in Epic 3
+    
+    // Reset item highlighting when page changes
+    window.itemHighlighterInstance.reset();
+    
+    // Get item count for new page
+    const itemCount = getItemCountForPage(pageName);
+    
+    // Start highlighting on new page if items exist
+    if (itemCount > 0) {
+        window.itemHighlighterInstance.start(itemCount);
+        console.log(`ItemHighlighter started with ${itemCount} items on ${pageName}`);
+    }
 };
 
+// Start carousel
 window.carouselInstance.start();
+
+// Story 3.2: Initialize ItemHighlighter with static content from HTML
+// Start highlighting immediately on first page (blog)
+const initialPage = window.carouselInstance.pages[window.carouselInstance.currentPage];
+const initialItemCount = getItemCountForPage(initialPage);
+if (initialItemCount > 0) {
+    window.itemHighlighterInstance.start(initialItemCount);
+    console.log(`ItemHighlighter initialized with ${initialItemCount} items on ${initialPage} page`);
+}
 
 // Auto-refresh every 5 minutes
 refreshIntervalId = setInterval(fetchAllData, REFRESH_INTERVAL);
