@@ -616,6 +616,20 @@ skaterAnimator = new SpriteAnimator({
 updateTimestamp();
 fetchAllData();
 
+// Initialize and start carousel rotation
+// Store globally to prevent memory leaks during hot reload
+if (window.carouselInstance) {
+  window.carouselInstance.stop();
+}
+window.carouselInstance = new CarouselController({ interval: 5000 }); // 5 seconds for testing
+window.carouselInstance.start();
+
+// Optional: Set callback for future coordination (Epic 3)
+window.carouselInstance.onPageChange = (pageName) => {
+    console.log(`Page changed to: ${pageName}`);
+    // Future: itemHighlighter.reset() will be called here in Epic 3
+};
+
 // Auto-refresh every 5 minutes
 refreshIntervalId = setInterval(fetchAllData, REFRESH_INTERVAL);
 

@@ -3,6 +3,7 @@ node_modules/
 
 # Build outputs (temporary - source files in src/ and built index.html are tracked)
 .vite/
+dist/
 dist-test/
 
 # Editor directories and files

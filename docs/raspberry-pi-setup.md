@@ -9,12 +9,17 @@ This guide sets up the dashboard with **Git-based automatic deployment**:
 - 🔄 Automatically pull latest changes from GitHub on every restart
 - 🚀 Deploy updates by simply pushing to GitHub and restarting the kiosk
 - ✅ No manual file transfers (SCP) needed
+- ⚡ No build step on Pi (pre-built index.html is committed to repository)
 
 **Deployment workflow:**
-1. Make changes on your development machine
-2. Push to GitHub: `git push origin main`
-3. Restart kiosk on Pi: `sudo systemctl restart kiosk.service`
-4. Dashboard automatically pulls and displays latest code
+1. Make changes on your development machine (in `/src/` directory)
+2. Build locally: `npm run build` (creates `index.html` at root)
+3. Commit and push to GitHub: `git push origin main`
+4. Restart kiosk on Pi: `sudo systemctl restart kiosk.service`
+5. Dashboard automatically pulls and displays latest code
+
+**Why no build on Pi?**
+The Pi serves the pre-built `index.html` file from the repository root using Python's `http.server`. No Node.js, npm, or build tools are needed on the Pi, keeping it lean and reliable for 24/7 operation.
 
 ## Table of Contents
 

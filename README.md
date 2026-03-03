@@ -54,36 +54,56 @@ Changes will appear automatically in your browser.
 
 **Production build:**
 ```bash
-# Build single index.html file in project root
+# Build to dist/ folder and copy to root for Pi deployment
 npm run build
 ```
 
 Build output:
-- Creates `/index.html` with all CSS/JS inlined
-- Single-file artifact ready for Pi deployment
-- Minified and optimized (typically ~26KB)
-- Build completes in under 10 seconds
+- Creates `/dist/` folder with build artifacts (gitignored)
+- Copies final `/index.html` to project root for Pi deployment
+- Single-file artifact with all CSS/JS inlined
+- Minified and optimized (typically ~65KB with carousel code)
+- Build completes in under 1 second
+
+**Build Architecture (Option B):**
+- **Source files:** `/src/` (where you edit)
+- **Build artifacts:** `/dist/` (temporary, gitignored)
+- **Deployment file:** `/index.html` (committed to root for Pi)
+
+This architecture separates source from build while maintaining simple Pi deployment (no build step on Pi).
 
 ### Deployment Workflow
 
-The dashboard uses a **Git-based deployment** model - no manual file copying required:
+The dashboard uses a **Git-based deployment** model - no manual file copying or build step on Pi:
 
 ```bash
-# 1. Build the production artifact
-npm run build
+# 1. Make changes in src/ directory
+# Edit src/index.html, src/js/*.js, src/css/*.css
 
-# 2. Commit both source and built artifact
+# 2. Build the production artifact
+npm run build
+# This builds to dist/ and copies index.html to root
+
+# 3. Commit both source and built artifact
 git add src/ index.html
 git commit -m "feat: your changes here"
 
-# 3. Push to GitHub
+# 4. Push to GitHub
 git push origin main
 
-# 4. Raspberry Pi auto-pulls on restart (or manually trigger)
+# 5. Raspberry Pi auto-pulls on restart (or manually trigger)
 ssh pi@github-dashboard.local "cd ~/dashboard && git pull origin main && sudo systemctl restart kiosk.service"
 ```
 
-**Important:** The Pi expects the built `index.html` file in the repository root. Always commit both your source changes in `/src` and the built artifact.
+**Architecture Notes:**
+- **Development:** All changes made in `/src/` directory
+- **Build process:** Vite builds to `/dist/` (temporary), copies `index.html` to root
+- **Pi deployment:** Only needs `index.html` at root (no Node.js or build tools required)
+- **Git tracking:** Both `/src/` (source) and `/index.html` (built artifact) are committed
+- **Ignored:** `/dist/` folder is gitignored (build output only)
+
+**Why this architecture?**
+This "Option B" approach balances Vite best practices (clean dist/ builds) with Pi deployment simplicity (no build step needed). The Pi stays lean and reliable with just Python's http.server.
 
 ### Local Testing (without dev server)
 
