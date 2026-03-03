@@ -71,3 +71,77 @@
   border-left-color: var(--color-accent-fg) !important;
   transform: none !important;
 }
+
+/* ============================================
+   Detail Panel Content Styles
+   Added in Story 3.3 - Detail Panel Rendering
+   ============================================ */
+
+/* Detail Panel Content Container */
+.detail-panel-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4); /* 24px between sections */
+}
+
+/* Detail Panel Title */
+.detail-panel__title {
+  font-size: var(--fontsize-h2);              /* 24px */
+  font-weight: var(--fontweight-semibold);    /* 600 */
+  color: var(--color-fg-default);             /* #c9d1d9 */
+  line-height: var(--lineheight-condensed);   /* 1.25 */
+  margin: 0;
+}
+
+/* Detail Panel Timestamp */
+.detail-panel__timestamp {
+  font-size: var(--fontsize-small);           /* 14px */
+  color: var(--color-fg-muted);               /* #7d8590 */
+  display: block;
+}
+
+/* Detail Panel Description Content */
+.detail-panel__content {
+  font-size: var(--fontsize-base);            /* 16px */
+  line-height: 1.6;                           /* Comfortable reading */
+  color: var(--color-fg-default);             /* #c9d1d9 */
+}
+
+.detail-panel__content p {
+  margin: 0 0 var(--space-3) 0;               /* 16px bottom margin */
+}
+
+.detail-panel__content p:last-child {
+  margin-bottom: 0;
+}
+
+/* Detail Panel Link */
+.detail-panel__link {
+  display: inline-block;
+  color: var(--color-accent-fg);              /* #58a6ff */
+  text-decoration: none;
+  font-size: var(--fontsize-base);            /* 16px */
+  font-weight: var(--fontweight-semibold);    /* 600 - Use semibold for prominent link */
+  margin-top: var(--space-2);                 /* 8px */
+}
+
+.detail-panel__link:hover {
+  text-decoration: underline;
+}
+
+/* Detail Panel Empty State */
+.detail-panel-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--color-fg-muted);               /* #7d8590 */
+  font-size: var(--fontsize-base);            /* 16px */
+  text-align: center;
+}
+
+/* Transition Support for Detail Panel */
+.detail-panel {
+  transition: opacity 100ms ease;
+}
+

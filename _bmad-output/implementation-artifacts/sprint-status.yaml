@@ -58,8 +58,8 @@ development_status:
   epic-3: in-progress
   3-1-implement-split-view-layout: review
   3-2-implement-itemhighlighter-with-timer: review
-  3-3-implement-detail-panel-rendering: backlog
-  3-4-implement-dual-timer-coordination: backlog
+  3-3-implement-detail-panel-rendering: review
+  3-4-implement-dual-timer-coordination: done
   3-5-integrate-data-flow-from-api: backlog
   epic-3-retrospective: optional
 

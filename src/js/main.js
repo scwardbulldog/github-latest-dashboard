@@ -452,17 +452,96 @@ if (window.itemHighlighterInstance) {
 
 window.itemHighlighterInstance = new ItemHighlighter({ interval: 8000 }); // 8 seconds per item
 
-// Set carousel callback BEFORE starting
+// Initialize detail panel (Story 3.3)
+if (window.detailPanelInstance) {
+  // Clean up if exists (hot reload support)
+  window.detailPanelInstance = null;
+}
+
+window.detailPanelInstance = new DetailPanel();
+
+/**
+ * Extract item data from a list item DOM element
+ * @param {HTMLElement} itemElement - The list item element
+ * @returns {Object} Item data object
+ */
+function extractItemData(itemElement) {
+  if (!itemElement) {
+    return {
+      title: 'Untitled',
+      timestamp: 'Unknown date',
+      description: 'No content available',
+      link: ''
+    };
+  }
+  
+  return {
+    title: itemElement.querySelector('.list-item-title')?.textContent?.trim() || 'Untitled',
+    timestamp: itemElement.querySelector('.list-item-timestamp')?.textContent?.trim() || 'Unknown date',
+    description: itemElement.querySelector('.list-item-description')?.textContent?.trim() || 'No description available',
+    link: itemElement.dataset?.link || '' // Will be populated in Story 3.5 with real API data
+  };
+}
+
+// Set item highlighter callback to render detail panel (Story 3.3)
+// This callback is triggered every 8 seconds when the highlighted item changes
+// ItemHighlighter passes (itemElement, itemIndex) - both parameters available
+window.itemHighlighterInstance.onItemHighlight = (itemElement, itemIndex) => {
+  // Get active page for validation
+  const activePage = document.querySelector('.carousel-page.active');
+  if (!activePage) {
+    console.warn('DetailPanel callback: No active page found');
+    return;
+  }
+  
+  // Validate itemElement was provided
+  if (!itemElement) {
+    console.warn(`DetailPanel callback: No item element provided for index ${itemIndex}`);
+    return;
+  }
+  
+  // Extract data from DOM element
+  const itemData = extractItemData(itemElement);
+  
+  // Render in detail panel
+  window.detailPanelInstance.render(itemData);
+  console.log(`DetailPanel rendering item ${itemIndex}:`, itemData.title);
+};
+
+// ============================================================================
+// DUAL TIMER COORDINATION (Story 3.4)
+// ============================================================================
+// Two independent timers work together:
+// 1. Page Timer (30s) - Managed by CarouselController
+// 2. Item Timer (8s) - Managed by ItemHighlighter
+//
+// Coordination Pattern:
+// - Page changes trigger onPageChange → resets item timer
+// - Item changes trigger onItemHighlight → updates detail panel
+// - Timers run independently without blocking each other
+//
+// Timer Lifecycle:
+// 1. Callbacks wired BEFORE start() calls (prevents missed events)
+// 2. Both timers started (carousel.start(), highlighter.start())
+// 3. Page timer runs continuously every 30 seconds
+// 4. Item timer runs every 8 seconds, resets when page changes
+// 5. Both timers persist through 5-minute API refresh cycles
+// ============================================================================
+
+// Set carousel callback BEFORE starting (Story 3.2/3.4)
+// This callback is triggered every 30 seconds when the page changes
 window.carouselInstance.onPageChange = (pageName) => {
     console.log(`Page changed to: ${pageName}`);
     
-    // Reset item highlighting when page changes
+    // CRITICAL: Reset item highlighting when page changes
+    // This clears the 8-second timer and removes all highlights
     window.itemHighlighterInstance.reset();
     
     // Get item count for new page
     const itemCount = getItemCountForPage(pageName);
     
     // Start highlighting on new page if items exist
+    // Item timer begins fresh 8-second countdown from 0
     if (itemCount > 0) {
         window.itemHighlighterInstance.start(itemCount);
         console.log(`ItemHighlighter started with ${itemCount} items on ${pageName}`);
