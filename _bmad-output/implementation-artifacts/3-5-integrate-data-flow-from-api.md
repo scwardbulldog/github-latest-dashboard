@@ -1,6 +1,6 @@
 # Story 3.5: Integrate Data Flow from API
 
-Status: review
+Status: done
 
 ## Story
 
