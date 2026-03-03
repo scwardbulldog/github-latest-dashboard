@@ -621,14 +621,19 @@ fetchAllData();
 if (window.carouselInstance) {
   window.carouselInstance.stop();
 }
-window.carouselInstance = new CarouselController({ interval: 5000 }); // 5 seconds for testing
-window.carouselInstance.start();
 
-// Optional: Set callback for future coordination (Epic 3)
+console.log('Initializing carousel...');
+window.carouselInstance = new CarouselController({ interval: 5000 }); // 5 seconds for testing
+
+// Set callback BEFORE starting
 window.carouselInstance.onPageChange = (pageName) => {
     console.log(`Page changed to: ${pageName}`);
     // Future: itemHighlighter.reset() will be called here in Epic 3
 };
+
+console.log('Starting carousel...');
+window.carouselInstance.start();
+console.log('Carousel started. Timer ID:', window.carouselInstance.timer);
 
 // Auto-refresh every 5 minutes
 refreshIntervalId = setInterval(fetchAllData, REFRESH_INTERVAL);

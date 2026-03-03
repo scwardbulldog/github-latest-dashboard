@@ -73,7 +73,7 @@ See [../docs/raspberry-pi-setup.md](../docs/raspberry-pi-setup.md) for complete 
 
 **Build Process (Development Machine):**
 - Vite builds to `/dist/` folder (gitignored, temporary)
-- Post-build script copies `dist/src/index.html` to project root
+- Post-build script copies `dist/index.html` to project root
 - Root `/index.html` is committed to repository for Pi deployment
 
 **Pi Deployment (No Build Tools):**
