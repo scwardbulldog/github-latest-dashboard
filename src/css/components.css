@@ -1,0 +1,29 @@
+/**
+ * Reusable Component Styles
+ * Components that can be used across different pages/features
+ * 
+ * Current Components:
+ * - Progress Bar (rotation progress indicator)
+ */
+
+/* ============================================
+   Rotation Progress Indicator
+   ============================================ */
+
+.progress-container {
+  /* Fixed at top of viewport for consistent visibility */
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: var(--color-border-default);
+  z-index: 1000; /* Above all content */
+}
+
+.progress-bar {
+  height: 100%;
+  width: 0%; /* Start at 0%, animated by JavaScript */
+  background: var(--color-accent-fg); /* GitHub blue */
+  transition: width 100ms linear; /* Smooth width updates */
+}

@@ -1,0 +1,22 @@
+/**
+ * Carousel Page Transitions
+ * Smooth fade-in/fade-out for page rotation
+ * 
+ * Technical Notes:
+ * - 300ms duration matches GitHub UI patterns
+ * - Opacity transitions use GPU acceleration (performant on Pi 3B)
+ * - Works with display toggling in carousel-controller.js
+ */
+
+.carousel-page {
+  /* Start invisible for smooth fade-in */
+  opacity: 0;
+  
+  /* Smooth transition for fade in/out */
+  transition: opacity 300ms ease;
+}
+
+.carousel-page.active {
+  /* Fully visible when active */
+  opacity: 1;
+}
