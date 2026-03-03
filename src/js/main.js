@@ -622,8 +622,7 @@ if (window.carouselInstance) {
   window.carouselInstance.stop();
 }
 
-console.log('Initializing carousel...');
-window.carouselInstance = new CarouselController({ interval: 5000 }); // 5 seconds for testing
+window.carouselInstance = new CarouselController({ interval: 30000 }); // 30 seconds per page
 
 // Set callback BEFORE starting
 window.carouselInstance.onPageChange = (pageName) => {
@@ -631,9 +630,7 @@ window.carouselInstance.onPageChange = (pageName) => {
     // Future: itemHighlighter.reset() will be called here in Epic 3
 };
 
-console.log('Starting carousel...');
 window.carouselInstance.start();
-console.log('Carousel started. Timer ID:', window.carouselInstance.timer);
 
 // Auto-refresh every 5 minutes
 refreshIntervalId = setInterval(fetchAllData, REFRESH_INTERVAL);

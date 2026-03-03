@@ -53,18 +53,12 @@ export class CarouselController {
    * @private
    */
   rotatePage() {
-    console.log('rotatePage called, currentPage:', this.currentPage);
-    
     // Calculate next page index
     const nextIndex = (this.currentPage + 1) % this.pages.length;
-    console.log('nextIndex:', nextIndex, 'pages:', this.pages);
     
     // Get DOM elements
     const currentPageElement = document.getElementById(`page-${this.pages[this.currentPage]}`);
     const nextPageElement = document.getElementById(`page-${this.pages[nextIndex]}`);
-    
-    console.log('currentPageElement:', currentPageElement);
-    console.log('nextPageElement:', nextPageElement);
     
     // Null-check (defensive programming)
     if (!currentPageElement || !nextPageElement) {
@@ -76,8 +70,6 @@ export class CarouselController {
     // Update visibility
     currentPageElement.classList.remove('active');
     nextPageElement.classList.add('active');
-    
-    console.log('Classes updated. Current page now hidden, next page now visible');
     
     // Update state
     this.currentPage = nextIndex;
