@@ -115,6 +115,105 @@
   margin-bottom: 0;
 }
 
+/* Rich HTML content styling */
+.detail-panel__content h1,
+.detail-panel__content h2,
+.detail-panel__content h3,
+.detail-panel__content h4 {
+  color: var(--color-fg-default);
+  font-weight: var(--fontweight-semibold);
+  margin-top: var(--space-4);
+  margin-bottom: var(--space-3);
+  line-height: var(--lineheight-condensed);
+}
+
+.detail-panel__content h1 { font-size: 1.75rem; }
+.detail-panel__content h2 { font-size: 1.5rem; }
+.detail-panel__content h3 { font-size: 1.25rem; }
+.detail-panel__content h4 { font-size: 1.125rem; }
+
+.detail-panel__content h1:first-child,
+.detail-panel__content h2:first-child,
+.detail-panel__content h3:first-child,
+.detail-panel__content h4:first-child {
+  margin-top: 0;
+}
+
+.detail-panel__content ul,
+.detail-panel__content ol {
+  margin: 0 0 var(--space-3) 0;
+  padding-left: var(--space-5);
+  color: var(--color-fg-default);
+}
+
+.detail-panel__content li {
+  margin-bottom: var(--space-2);
+}
+
+.detail-panel__content a {
+  color: var(--color-accent-fg);
+  text-decoration: none;
+}
+
+.detail-panel__content a:hover {
+  text-decoration: underline;
+}
+
+.detail-panel__content code {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+  font-size: 0.875em;
+  color: var(--color-accent-fg);
+}
+
+.detail-panel__content pre {
+  background: rgba(255, 255, 255, 0.05);
+  padding: var(--space-3);
+  border-radius: 6px;
+  overflow-x: auto;
+  margin: 0 0 var(--space-3) 0;
+}
+
+.detail-panel__content pre code {
+  background: none;
+  padding: 0;
+}
+
+.detail-panel__content blockquote {
+  border-left: 3px solid var(--color-border-strong);
+  padding-left: var(--space-3);
+  margin: 0 0 var(--space-3) 0;
+  color: var(--color-fg-subtle);
+  font-style: italic;
+}
+
+.detail-panel__content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 var(--space-3) 0;
+}
+
+.detail-panel__content table th,
+.detail-panel__content table td {
+  border: 1px solid var(--color-border-default);
+  padding: var(--space-2);
+  text-align: left;
+}
+
+.detail-panel__content table th {
+  background: rgba(255, 255, 255, 0.05);
+  font-weight: var(--fontweight-semibold);
+}
+
+.detail-panel__content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 6px;
+  margin: var(--space-3) 0;
+}
+
 /* Detail Panel Link */
 .detail-panel__link {
   display: inline-block;
@@ -145,3 +244,45 @@
   transition: opacity 100ms ease;
 }
 
+/* ============================================
+   Status Indicators
+   Added in Story 3.5 - Status Page Integration
+   ============================================ */
+
+/* Status indicator dot */
+.status-indicator {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: var(--space-2); /* 8px */
+  vertical-align: middle;
+}
+
+/* Operational status - green */
+.status-operational {
+  background: var(--color-success-fg); /* #1a7f37 */
+}
+
+/* Degraded performance status - yellow */
+.status-degraded {
+  background: var(--color-attention-fg); /* #9a6700 */
+}
+
+/* Major outage status - red */
+.status-outage {
+  background: var(--color-danger-fg); /* #cf222e */
+}
+
+/* Unknown status - muted gray */
+.status-unknown {
+  background: var(--color-fg-muted); /* #7d8590 */
+}
+
+/* Error state styling */
+.error-state {
+  border: 1px solid var(--color-border-danger); /* Red border */
+  background: var(--color-danger-subtle);       /* Light red background */
+  padding: var(--space-3);                      /* 16px padding */
+  border-radius: 6px;
+}

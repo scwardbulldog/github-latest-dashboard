@@ -86,9 +86,8 @@ export class DetailPanel {
   }
   
   /**
-   * Sanitize HTML content (remove dangerous tags/attributes)
-   * For Story 3.3: Simple text-only sanitization for placeholder data
-   * Story 3.5 will enhance this for real RSS feed HTML content
+   * Sanitize HTML content (allow safe HTML rendering)
+   * Allows common HTML tags for rich content display
    * @private
    * @param {string} html - HTML content to sanitize
    * @returns {string} Sanitized HTML
@@ -98,14 +97,27 @@ export class DetailPanel {
     
     // Create temporary element for parsing
     const temp = document.createElement('div');
+    temp.innerHTML = html;
     
-    // First pass: escape all HTML by setting as text content
-    // This prevents any script execution and escapes < > & " ' characters
-    temp.textContent = html;
+    // Remove dangerous tags (script, iframe, object, embed, etc.)
+    const dangerousTags = ['script', 'iframe', 'object', 'embed', 'link', 'style'];
+    dangerousTags.forEach(tag => {
+      const elements = temp.querySelectorAll(tag);
+      elements.forEach(el => el.remove());
+    });
     
-    // Return the escaped HTML
-    // For now, this is plain text only (safe for placeholder data)
-    // Story 3.5 will add selective HTML tag allowance for RSS feeds
+    // Remove event handler attributes (onclick, onerror, etc.)
+    const allElements = temp.querySelectorAll('*');
+    allElements.forEach(el => {
+      const attributes = Array.from(el.attributes);
+      attributes.forEach(attr => {
+        if (attr.name.startsWith('on')) {
+          el.removeAttribute(attr.name);
+        }
+      });
+    });
+    
+    // Return sanitized HTML
     return temp.innerHTML;
   }
   

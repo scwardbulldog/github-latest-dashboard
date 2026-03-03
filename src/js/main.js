@@ -3,137 +3,271 @@ import { formatDate, stripHtml, truncate } from './utils.js';
 
 // Component skeletons imported for Epic 2+ implementation
 // Current MVP functionality remains using existing code below
-// TODO Epic 2: Wire carousel components and migrate logic
 import { CarouselController } from './carousel-controller.js';
 import { ItemHighlighter } from './item-highlighter.js';
 import { DetailPanel } from './detail-panel.js';
-// TODO Story 3.5: Import and wire API client when implementing data integration
-/*
+
+// Import API client for data fetching (Story 3.5)
 import {
     fetchBlog as fetchBlogFromApiClient,
     fetchChangelog as fetchChangelogFromApiClient,
     fetchStatus as fetchStatusFromApiClient
 } from './api-client.js';
-*/
 
 // Configuration
-// TODO Story 3.5: These will be used for API data integration
-// const RSS2JSON_API = 'https://api.rss2json.com/v1/api.json';
-// const GITHUB_BLOG_RSS = 'https://github.blog/feed/';
-// const GITHUB_CHANGELOG_RSS = 'https://github.blog/changelog/feed/';
-// const GITHUB_STATUS_API = 'https://www.githubstatus.com/api/v2/incidents.json';
 const REFRESH_INTERVAL = 5 * 60 * 1000; // 5 minutes
 
-// Detect changelog badge type based on keywords
-// TODO Story 3.5: Used for API data rendering
-/*
-function detectBadgeType(title, description) {
-    const text = (title + ' ' + description).toLowerCase();
-    
-    if (text.match(/\b(introducing|new|announcing|available|launched|release)\b/)) {
-        return { type: 'NEW FEATURE', class: 'changelog-badge-new-feature' };
-    }
-    if (text.match(/\b(improved|faster|enhanced|better|performance|optimiz)\b/)) {
-        return { type: 'IMPROVEMENT', class: 'changelog-badge-improvement' };
-    }
-    if (text.match(/\b(fix|resolved|corrected|bug|issue)\b/)) {
-        return { type: 'BUG FIX', class: 'changelog-badge-bug-fix' };
-    }
-    if (text.match(/\b(UI|design|interface|visual|redesign)\b/)) {
-        return { type: 'UI CHANGE', class: 'changelog-badge-ui-change' };
-    }
-    if (text.match(/\b(deprecat|removing|sunset|legacy|discontinu)\b/)) {
-        return { type: 'DEPRECATION', class: 'changelog-badge-deprecation' };
+/**
+ * Render error state for a page
+ * @param {string} containerId - Container element ID
+ * @param {string} errorMessage - Error message to display
+ */
+function renderErrorState(containerId, errorMessage) {
+    const container = document.getElementById(containerId);
+    if (!container) {
+        console.error(`renderErrorState: Container ${containerId} not found`);
+        return;
     }
     
-    return { type: 'UPDATE', class: '' };
+    container.innerHTML = `
+        <div class="list-item error-state">
+            <div class="list-item-title" style="color: var(--color-danger-fg);">
+                ⚠️ ${errorMessage}
+            </div>
+            <div class="list-item-description">
+                Please check your network connection. The dashboard will retry automatically.
+            </div>
+        </div>
+    `;
 }
-*/
 
-// Detect blog post badge from title and content
-// TODO Story 3.5: Used for API data rendering
-/*
-function detectBlogBadgeType(title, content) {
-    const combined = `${title} ${content}`.toLowerCase();
-    
-    // Check for release announcements
-    if (combined.includes('release') || combined.includes('available') || combined.includes('announcing')) {
-        return { type: 'RELEASE', class: 'blog-badge-release' };
+/**
+ * Render Blog page data
+ * @param {Object} blogData - Blog RSS data from API
+ * @returns {number} Number of items rendered
+ */
+function renderBlogList(blogData) {
+    const blogListEl = document.getElementById('blog-list');
+    if (!blogListEl) {
+        console.error('renderBlogList: blog-list element not found');
+        return 0;
     }
     
-    // Check for security content
-    if (combined.includes('security') || combined.includes('vulnerability') || combined.includes('cve-')) {
-        return { type: 'SECURITY', class: 'blog-badge-security' };
-    }
+    // Clear placeholder content
+    blogListEl.innerHTML = '';
     
-    // Check for community content
-    if (combined.includes('community') || combined.includes('open source') || combined.includes('maintainer')) {
-        return { type: 'COMMUNITY', class: 'blog-badge-community' };
-    }
+    // Render at least 10 items (AC requirement)
+    const items = blogData.items.slice(0, 10);
     
-    // Check for engineering content
-    if (combined.includes('engineering') || combined.includes('technical') || combined.includes('architecture')) {
-        return { type: 'ENGINEERING', class: 'blog-badge-engineering' };
-    }
-    
-    return { type: 'POST', class: '' };
-}
-*/
-
-// Format categories to fit within a character limit
-// TODO Story 3.5: Used for API data rendering
-/*
-function formatCategories(categories, maxLength = 35) {
-    if (!categories || categories.length === 0) {
-        return '';
-    }
-    
-    let result = [];
-    let currentLength = 0;
-    
-    for (let i = 0; i < categories.length; i++) {
-        const category = categories[i];
-        const addition = i === 0 ? category : `, ${category}`;
-        const newLength = currentLength + addition.length;
+    items.forEach((item, index) => {
+        const itemEl = document.createElement('div');
+        itemEl.className = 'list-item';
+        itemEl.dataset.index = index;
+        itemEl.dataset.link = item.link || '';
         
-        if (newLength > maxLength && result.length > 0) {
-            // Would exceed limit, add "+N more" indicator
-            const remaining = categories.length - i;
-            result.push(` +${remaining}`);
-            break;
-        }
+        // Store full content HTML for detail panel rendering (use 'content' field, fallback to 'description')
+        itemEl.dataset.fullDescription = item.content || item.description || '';
         
-        result.push(i === 0 ? category : `, ${category}`);
-        currentLength = newLength;
+        const title = item.title || 'Untitled';
+        const timestamp = formatDate(item.pubDate);
+        const description = truncate(stripHtml(item.description || ''), 120);
+        
+        itemEl.innerHTML = `
+            <div class="list-item-title">${title}</div>
+            <div class="list-item-timestamp">${timestamp}</div>
+            <div class="list-item-description">${description}</div>
+        `;
+        
+        blogListEl.appendChild(itemEl);
+    });
+    
+    console.log(`renderBlogList: Rendered ${items.length} blog items`);
+    return items.length;
+}
+
+/**
+ * Render Changelog page data
+ * @param {Object} changelogData - Changelog RSS data from API
+ * @returns {number} Number of items rendered
+ */
+function renderChangelogList(changelogData) {
+    const changelogListEl = document.getElementById('changelog-list');
+    if (!changelogListEl) {
+        console.error('renderChangelogList: changelog-list element not found');
+        return 0;
     }
     
-    return result.join('');
+    // Clear placeholder content
+    changelogListEl.innerHTML = '';
+    
+    // Render at least 10 items (AC requirement)
+    const items = changelogData.items.slice(0, 10);
+    
+    items.forEach((item, index) => {
+        const itemEl = document.createElement('div');
+        itemEl.className = 'list-item';
+        itemEl.dataset.index = index;
+        itemEl.dataset.link = item.link || '';
+        
+        // Store full content HTML for detail panel rendering (use 'content' field, fallback to 'description')
+        itemEl.dataset.fullDescription = item.content || item.description || '';
+        
+        const title = item.title || 'Untitled';
+        const timestamp = formatDate(item.pubDate);
+        // Strip HTML for list view, preserve for detail panel
+        const description = truncate(stripHtml(item.description || ''), 120);
+        
+        itemEl.innerHTML = `
+            <div class="list-item-title">${title}</div>
+            <div class="list-item-timestamp">${timestamp}</div>
+            <div class="list-item-description">${description}</div>
+        `;
+        
+        changelogListEl.appendChild(itemEl);
+    });
+    
+    console.log(`renderChangelogList: Rendered ${items.length} changelog items`);
+    return items.length;
 }
-*/
 
-// Fetch GitHub Blog
-// TODO Story 3.5: Implement API data integration
-async function fetchBlog() {
-    // Story 3.5 scope - API integration
-    // Currently using static placeholder content in index.html
-    console.log('fetchBlog(): Using static placeholder content (Story 3.5 will implement API)');
+/**
+ * Render Status page data (split-view with active incidents + resolved grid)
+ * @param {Object} statusData - GitHub Status API incidents data
+ * @returns {number} Number of items rendered
+ */
+function renderStatusList(statusData) {
+    const statusListEl = document.getElementById('status-list');
+    const resolvedGridEl = document.getElementById('status-resolved-grid');
+    
+    if (!statusListEl || !resolvedGridEl) {
+        console.error('renderStatusList: Required elements not found');
+        return 0;
+    }
+    
+    // Clear existing content
+    statusListEl.innerHTML = '';
+    resolvedGridEl.innerHTML = '';
+    
+    const incidents = statusData.incidents || [];
+    
+    // Separate active and resolved incidents
+    const activeIncidents = incidents.filter(inc => inc.status !== 'resolved');
+    const resolvedIncidents = incidents.filter(inc => inc.status === 'resolved');
+    
+    // If no active incidents, show all systems operational
+    if (activeIncidents.length === 0) {
+        const allGoodEl = document.createElement('div');
+        allGoodEl.className = 'list-item';
+        allGoodEl.dataset.index = 'operational';
+        allGoodEl.dataset.fullDescription = 'All GitHub services are operating normally. No active incidents or service disruptions reported.';
+        
+        allGoodEl.innerHTML = `
+            <div class="list-item-title">
+                <span class="status-indicator status-operational"></span>
+                All Systems Operational
+            </div>
+            <div class="list-item-timestamp">${formatDate(new Date().toISOString())}</div>
+            <div class="list-item-description">No active incidents reported</div>
+        `;
+        statusListEl.appendChild(allGoodEl);
+    } else {
+        // Render active incidents as list items
+        activeIncidents.forEach((incident, index) => {
+            const impact = incident.impact || 'none';
+            
+            // Map impact to status class
+            const statusClass = {
+                'none': 'status-operational',
+                'minor': 'status-degraded',
+                'major': 'status-outage',
+                'critical': 'status-outage'
+            }[impact] || 'status-degraded';
+            
+            const itemEl = document.createElement('div');
+            itemEl.className = 'list-item';
+            itemEl.dataset.index = `incident-${index}`;
+            itemEl.dataset.link = incident.shortlink || '';
+            
+            // Build full description for detail panel
+            let detailText = `Impact: ${impact}\n\nStatus: ${incident.status || 'Unknown'}\n\n`;
+            if (incident.incident_updates && incident.incident_updates.length > 0) {
+                detailText += 'Latest Update:\n' + stripHtml(incident.incident_updates[0].body);
+            } else {
+                detailText += 'No updates available.';
+            }
+            itemEl.dataset.fullDescription = detailText;
+            
+            const timestamp = formatDate(incident.created_at || incident.updated_at);
+            const statusText = (incident.status || 'unknown').replace(/_/g, ' ');
+            
+            itemEl.innerHTML = `
+                <div class="list-item-title">
+                    <span class="status-indicator ${statusClass}"></span>
+                    ${incident.name || 'Incident'}
+                </div>
+                <div class="list-item-timestamp">${timestamp}</div>
+                <div class="list-item-description">${truncate(statusText, 100)}</div>
+            `;
+            
+            statusListEl.appendChild(itemEl);
+        });
+    }
+    
+    // Render resolved incidents in multi-column grid (show more history, up to 12)
+    if (resolvedIncidents.length > 0) {
+        // Add header
+        const headerEl = document.createElement('div');
+        headerEl.className = 'status-resolved-grid-header';
+        headerEl.textContent = 'Recently Resolved Incidents';
+        resolvedGridEl.appendChild(headerEl);
+        
+        // Create grid container
+        const gridContainer = document.createElement('div');
+        gridContainer.className = 'status-resolved-items';
+        
+        // Render up to 6 resolved incidents in grid (3 cols x 2 rows)
+        resolvedIncidents.slice(0, 6).forEach(incident => {
+            const impact = incident.impact || 'none';
+            
+            const symbol = (impact === 'critical' || impact === 'major')
+                ? '■' 
+                : impact === 'minor' 
+                    ? '▲' 
+                    : '●';
+            
+            const symbolClass = (impact === 'critical' || impact === 'major')
+                ? 'status-symbol-major'
+                : impact === 'minor'
+                    ? 'status-symbol-minor'
+                    : 'status-symbol-operational';
+            
+            const cardEl = document.createElement('div');
+            cardEl.className = 'status-resolved-card';
+            
+            cardEl.innerHTML = `
+                <div class="status-resolved-title">
+                    <span class="status-symbol ${symbolClass}">${symbol}</span>
+                    ${truncate(incident.name || 'Incident', 60)}
+                </div>
+                <div class="status-resolved-meta">
+                    <span class="status-resolved-status">Resolved</span>
+                    <span>${formatDate(incident.resolved_at || incident.updated_at)}</span>
+                </div>
+            `;
+            
+            gridContainer.appendChild(cardEl);
+        });
+        
+        resolvedGridEl.appendChild(gridContainer);
+    }
+    
+    const totalItems = Math.max(activeIncidents.length, 1); // Count active incidents for highlighting
+    console.log(`renderStatusList: Rendered ${activeIncidents.length} active incidents and ${Math.min(resolvedIncidents.length, 6)} resolved in grid`);
+    return totalItems;
 }
 
-// Fetch GitHub Changelog
-// TODO Story 3.5: Implement API data integration
-async function fetchChangelog() {
-    // Story 3.5 scope - API integration
-    // Currently using static placeholder content in index.html
-    console.log('fetchChangelog(): Using static placeholder content (Story 3.5 will implement API)');
-}
-
-// Fetch GitHub Status
-// TODO Story 3.5: Implement API data integration
-async function fetchStatus() {
-    // Story 3.5 scope - API integration
-    // Currently using static placeholder content in index.html
-    console.log('fetchStatus(): Using static placeholder content (Story 3.5 will implement API)');
-}
+// Remove old placeholder functions - replaced by API integration above
+// (Removed: fetchBlog, fetchChangelog, fetchStatus stubs)
 
 // ============================================================================
 // SpriteAnimator Class - Production Version
@@ -386,15 +520,83 @@ function startProgressBar() {
 }
 
 // Fetch all data
-// TODO Story 3.5: Wire API data fetching
 async function fetchAllData() {
     if (isPaused) return;
     updateTimestamp();
     startProgressBar();
     
-    // Story 3.5: Will implement API calls here
-    // For now, working with static HTML placeholder content
-    console.log('fetchAllData(): Using static content (Story 3.5 will add API integration)');
+    console.log('fetchAllData: Starting parallel API fetches...');
+    
+    try {
+        // Parallel fetch with Promise.all (AC requirement)
+        // Per-column error isolation: each fetch has its own catch block
+        const [blogData, changelogData, statusData] = await Promise.all([
+            fetchBlogFromApiClient().catch(err => {
+                console.error('fetchAllData: Blog fetch failed:', err);
+                return null; // Per-column isolation
+            }),
+            fetchChangelogFromApiClient().catch(err => {
+                console.error('fetchAllData: Changelog fetch failed:', err);
+                return null;
+            }),
+            fetchStatusFromApiClient().catch(err => {
+                console.error('fetchAllData: Status fetch failed:', err);
+                return null;
+            })
+        ]);
+        
+        // Store item counts for highlighter restart
+        let blogItemCount = 0;
+        let changelogItemCount = 0;
+        let statusItemCount = 0;
+        
+        // Render each page (with error handling for null data)
+        if (blogData) {
+            blogItemCount = renderBlogList(blogData);
+        } else {
+            renderErrorState('blog-list', 'Unable to load blog posts');
+        }
+        
+        if (changelogData) {
+            changelogItemCount = renderChangelogList(changelogData);
+        } else {
+            renderErrorState('changelog-list', 'Unable to load changelog');
+        }
+        
+        if (statusData) {
+            statusItemCount = renderStatusList(statusData);
+        } else {
+            renderErrorState('status-list', 'Unable to load status');
+        }
+        
+        // CRITICAL: Restart highlighter on current page with updated item count
+        // Timer states must be preserved (do NOT call reset() - that would break timer)
+        // Only update if we're on the first load or need to update counts
+        if (!window.dataInitialized) {
+            // First load - start highlighting AFTER data is rendered
+            window.dataInitialized = true;
+            console.log('fetchAllData: First data load complete');
+            
+            // Initialize ItemHighlighter with real data
+            const initialPage = window.carouselInstance.pages[window.carouselInstance.currentPage];
+            const initialItemCount = getItemCountForPage(initialPage);
+            if (initialItemCount > 0) {
+                window.itemHighlighterInstance.start(initialItemCount);
+                console.log(`ItemHighlighter initialized with ${initialItemCount} items on ${initialPage} page`);
+            }
+        } else {
+            // Subsequent refresh - DO NOT reset timers, just update data
+            // The existing ItemHighlighter continues highlighting the updated DOM
+            console.log('fetchAllData: Data refresh complete (timers preserved)');
+        }
+        
+    } catch (error) {
+        console.error('fetchAllData: Critical error during data initialization:', error);
+        // Fallback: show error state for all pages
+        renderErrorState('blog-list', 'Dashboard initialization failed');
+        renderErrorState('changelog-list', 'Dashboard initialization failed');
+        renderErrorState('status-list', 'Dashboard initialization failed');
+    }
 }
 
 // Initialize sprite animator
@@ -475,11 +677,16 @@ function extractItemData(itemElement) {
     };
   }
   
+  // Extract from dataset if available (set by rendering functions)
+  const fullDescription = itemElement.dataset?.fullDescription || 
+                          itemElement.querySelector('.list-item-description')?.textContent?.trim() || 
+                          'No description available';
+  
   return {
     title: itemElement.querySelector('.list-item-title')?.textContent?.trim() || 'Untitled',
     timestamp: itemElement.querySelector('.list-item-timestamp')?.textContent?.trim() || 'Unknown date',
-    description: itemElement.querySelector('.list-item-description')?.textContent?.trim() || 'No description available',
-    link: itemElement.dataset?.link || '' // Will be populated in Story 3.5 with real API data
+    description: fullDescription,
+    link: itemElement.dataset?.link || '' // Populated with real API data
   };
 }
 
@@ -551,14 +758,8 @@ window.carouselInstance.onPageChange = (pageName) => {
 // Start carousel
 window.carouselInstance.start();
 
-// Story 3.2: Initialize ItemHighlighter with static content from HTML
-// Start highlighting immediately on first page (blog)
-const initialPage = window.carouselInstance.pages[window.carouselInstance.currentPage];
-const initialItemCount = getItemCountForPage(initialPage);
-if (initialItemCount > 0) {
-    window.itemHighlighterInstance.start(initialItemCount);
-    console.log(`ItemHighlighter initialized with ${initialItemCount} items on ${initialPage} page`);
-}
+// ItemHighlighter will be initialized in fetchAllData() after data is loaded
+// This ensures the first item is highlighted immediately when data is ready
 
 // Auto-refresh every 5 minutes
 refreshIntervalId = setInterval(fetchAllData, REFRESH_INTERVAL);

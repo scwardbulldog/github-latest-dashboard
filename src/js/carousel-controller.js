@@ -111,16 +111,17 @@ export class CarouselController {
       requestAnimationFrame(() => {
         nextPageElement.classList.add('active');
         // CSS transition triggers: opacity: 0 → 1 over 300ms
+        
+        // Trigger callback AFTER new page is active (for ItemHighlighter coordination)
+        // This ensures ItemHighlighter can query .carousel-page.active and get correct page
+        if (this.onPageChange) {
+          this.onPageChange(this.pages[this.currentPage]);
+        }
       });
     }, 300); // Match CSS transition duration
     
     // Update state
     this.currentPage = nextIndex;
-    
-    // Trigger callback for future coordination
-    if (this.onPageChange) {
-      this.onPageChange(this.pages[this.currentPage]);
-    }
   }
   
   /**

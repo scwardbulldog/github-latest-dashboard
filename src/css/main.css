@@ -560,6 +560,115 @@ body {
     opacity: 0.85;
 }
 
+/* Status content container (full-width display) */
+#status-content {
+    padding: var(--space-4);
+    overflow-y: auto;
+    height: 100%;
+}
+
+/* Status Page Layout: 60% active incidents (split-view) + 40% resolved grid */
+.status-page-layout {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+}
+
+.status-active-section {
+    flex: 0 0 60%;
+    min-height: 0; /* Allow flex item to shrink below content size */
+}
+
+.status-resolved-section {
+    flex: 0 0 40%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    background: var(--color-canvas-default);
+    border-top: 2px solid var(--color-border-strong);
+    padding: var(--space-4);
+}
+
+/* Hide resolved section if grid is empty */
+.status-resolved-section:has(.status-resolved-grid:empty) {
+    display: none;
+}
+
+/* When resolved section is hidden, active section takes full height */
+.status-page-layout:has(.status-resolved-grid:empty) .status-active-section {
+    flex: 1 1 100%;
+}
+
+/* Resolved Incidents Grid - Multi-column compact layout */
+.status-resolved-grid {
+    height: 100%;
+}
+
+.status-resolved-grid:empty {
+    display: none;
+}
+
+.status-resolved-grid-header {
+    font-size: var(--fontsize-small);
+    font-weight: var(--fontweight-semibold);
+    color: var(--color-fg-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: var(--space-4);
+}
+
+.status-resolved-items {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(2, auto);
+    gap: var(--space-4);
+}
+
+.status-resolved-card {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--color-border-default);
+    border-left: 3px solid var(--color-success-fg);
+    border-radius: 6px;
+    padding: var(--space-3);
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+
+.status-resolved-card:hover {
+    opacity: 0.9;
+}
+
+.status-resolved-title {
+    font-size: var(--fontsize-small);
+    font-weight: var(--fontweight-semibold);
+    color: var(--color-fg-default);
+    margin-bottom: var(--space-2);
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    /* Truncate to single line */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.status-resolved-title .status-symbol {
+    font-size: 0.875rem;
+    flex-shrink: 0; /* Prevent symbol from shrinking */
+}
+
+.status-resolved-meta {
+    font-size: var(--fontsize-small);
+    color: var(--color-fg-muted);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.status-resolved-status {
+    text-transform: capitalize;
+}
+
 /* Item preview - visible 1-line truncated descriptions */
 .item-preview {
     display: -webkit-box;
