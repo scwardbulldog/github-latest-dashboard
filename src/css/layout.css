@@ -1,0 +1,52 @@
+/* Page-based carousel layout */
+.dashboard-container {
+  /* Override existing grid layout for single-page display */
+  display: block;
+  padding: var(--space-4);
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+.carousel-page {
+  /* Hidden by default */
+  display: none;
+  height: 100%;
+  width: 100%;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.carousel-page.active {
+  /* Active page visible */
+  display: flex;
+}
+
+.page-header {
+  font-size: var(--fontsize-h1);
+  font-weight: var(--fontweight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: var(--space-3);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--color-border-default);
+}
+
+/* Page-specific header colors */
+#page-blog .page-header {
+  color: var(--color-accent-fg);
+}
+
+#page-changelog .page-header {
+  color: var(--color-sponsor-fg);
+}
+
+#page-status .page-header {
+  color: var(--color-success-fg);
+}
+
+.page-content {
+  flex: 1;
+  overflow: auto;
+  padding: var(--space-4);
+}

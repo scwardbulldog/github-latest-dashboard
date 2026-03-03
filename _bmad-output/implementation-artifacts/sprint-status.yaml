@@ -48,8 +48,8 @@ development_status:
   1-5-validate-build-pipeline-deployment: done
   epic-1-retrospective: optional
 
-  epic-2: backlog
-  2-1-implement-page-layout-structure: backlog
+  epic-2: in-progress
+  2-1-implement-page-layout-structure: done
   2-2-implement-carouselcontroller-with-timer: backlog
   2-3-implement-page-transitions: backlog
   2-4-implement-rotation-progress-indicator: backlog
