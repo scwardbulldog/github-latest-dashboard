@@ -67,7 +67,7 @@ development_status:
   4-1-implement-error-handling-retry-logic: ready-for-dev
   4-2-implement-performance-optimization: review
   4-3-implement-cross-page-persistent-outage-indicator: review
-  4-4-implement-distance-optimized-typography-contrast: backlog
+  4-4-implement-distance-optimized-typography-contrast: review
   4-5-implement-burn-in-testing-validation: backlog
   4-6-implement-documentation-deployment-guide: backlog
   epic-4-retrospective: optional

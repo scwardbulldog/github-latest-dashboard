@@ -194,10 +194,10 @@
   line-height: var(--lineheight-condensed);
 }
 
-.detail-panel__content h1 { font-size: 1.75rem; }
-.detail-panel__content h2 { font-size: 1.5rem; }
-.detail-panel__content h3 { font-size: 1.25rem; }
-.detail-panel__content h4 { font-size: 1.125rem; }
+.detail-panel__content h1 { font-size: var(--fontsize-h1); } /* 32px - Maximum hierarchy */
+.detail-panel__content h2 { font-size: var(--fontsize-h2); } /* 24px - Section headings */
+.detail-panel__content h3 { font-size: var(--fontsize-h3); } /* 20px - Subsection headings */
+.detail-panel__content h4 { font-size: var(--fontsize-base); } /* 16px - Minor headings */
 
 .detail-panel__content h1:first-child,
 .detail-panel__content h2:first-child,

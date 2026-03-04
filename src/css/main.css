@@ -159,7 +159,7 @@ body {
 }
 
 .header h1 {
-    font-size: 1.25em;
+    font-size: var(--fontsize-h3); /* 20px - Dashboard title */
     font-weight: var(--fontweight-semibold);
     color: var(--color-fg-default);
     margin: 0;
@@ -351,7 +351,7 @@ body {
 } */
 
 .item-title {
-    font-size: 1.5rem;
+    font-size: var(--fontsize-h2); /* 24px - Item titles for distance viewing */
     font-weight: var(--fontweight-normal);
     color: var(--color-fg-default);
     margin-bottom: var(--space-2);
@@ -386,7 +386,7 @@ body {
 } */
 
 .blog-item .item-preview {
-    font-size: 1rem;
+    font-size: var(--fontsize-base); /* 16px - Standard body text */
     -webkit-line-clamp: 3;
 }
 
@@ -669,7 +669,7 @@ body {
     -webkit-line-clamp: 1;
     -webkit-box-orient: vertical;
     overflow: hidden;
-    font-size: 1.25rem;
+    font-size: var(--fontsize-h3); /* 20px - Preview text for distance viewing */
     color: var(--color-fg-subtle);
     line-height: var(--lineheight-default);
     margin-bottom: var(--space-2);
