@@ -737,7 +737,7 @@ git reset --hard origin/main  # Force to match remote (discards any local change
 **Development Environment:**
 
 **Required on Dev Machine:**
-- Node.js (v16+ recommended for Vite compatibility)
+- Node.js (v18+ recommended for Vite compatibility)
 - npm (comes with Node.js, v7+ recommended)
 - Git (version control)
 - Code editor (VS Code recommended with ESLint extension)

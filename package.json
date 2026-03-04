@@ -23,6 +23,10 @@
   "author": "",
   "license": "ISC",
   "type": "module",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=7.0.0"
+  },
   "bugs": {
     "url": "https://github.com/scwardbulldog/github-latest-dashboard/issues"
   },
