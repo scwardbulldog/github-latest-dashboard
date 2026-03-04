@@ -210,3 +210,56 @@ export async function fetchStatus() {
 export function getCacheEntry(source) {
   return cache[source] || null;
 }
+
+/**
+ * Detect active outages from GitHub Status API data
+ * @param {Object} statusData - GitHub Status API response
+ * @returns {Object|null} Outage data or null if all operational
+ */
+export function detectActiveOutages(statusData) {
+  // GitHub Status API uses incidents.json which has incidents array
+  // But for component-level status, we need status.json or components.json
+  // Since we're using incidents.json, check for active incidents
+  
+  if (!statusData || !statusData.incidents || !Array.isArray(statusData.incidents)) {
+    console.warn('detectActiveOutages: Invalid status data structure');
+    return null;
+  }
+  
+  // Filter for active/ongoing incidents (not resolved)
+  const activeIncidents = statusData.incidents.filter(incident => 
+    incident.status !== 'resolved' && incident.status !== 'postmortem'
+  );
+  
+  if (activeIncidents.length === 0) {
+    return null; // All operational
+  }
+  
+  // Determine most severe impact level
+  // Impact levels: none, minor, major, critical
+  let severity = 'degraded_performance'; // Default
+  let hasMajor = false;
+  
+  activeIncidents.forEach(incident => {
+    if (incident.impact === 'critical' || incident.impact === 'major') {
+      hasMajor = true;
+    }
+  });
+  
+  if (hasMajor) {
+    severity = 'major_outage';
+  }
+  
+  // Extract affected services/components
+  const services = activeIncidents.map(incident => ({
+    name: incident.name || 'GitHub Services',
+    status: severity
+  }));
+  
+  return {
+    severity,
+    count: activeIncidents.length,
+    services
+  };
+}
+

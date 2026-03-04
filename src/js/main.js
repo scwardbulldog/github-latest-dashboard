@@ -7,12 +7,16 @@ import { CarouselController } from './carousel-controller.js';
 import { ItemHighlighter } from './item-highlighter.js';
 import { DetailPanel } from './detail-panel.js';
 
+// Import persistent alert component (Story 4.3)
+import { PersistentAlert } from './persistent-alert.js';
+
 // Import API client for data fetching (Story 3.5)
 import {
     fetchBlog as fetchBlogFromApiClient,
     fetchChangelog as fetchChangelogFromApiClient,
     fetchStatus as fetchStatusFromApiClient,
-    getCacheEntry
+    getCacheEntry,
+    detectActiveOutages
 } from './api-client.js';
 
 // Configuration
@@ -667,8 +671,28 @@ async function fetchAllData() {
         
         if (statusData) {
             statusItemCount = renderStatusList(statusData);
+            
+            // Story 4.3: Check for active outages and update persistent indicator
+            try {
+                const outageData = detectActiveOutages(statusData);
+                if (outageData && window.persistentAlertInstance) {
+                    window.persistentAlertInstance.show(outageData);
+                } else if (window.persistentAlertInstance) {
+                    window.persistentAlertInstance.hide();
+                }
+            } catch (error) {
+                console.error('fetchAllData: Error detecting outages:', error);
+                // Don't show indicator on detection error - only show for actual outages
+                if (window.persistentAlertInstance) {
+                    window.persistentAlertInstance.hide();
+                }
+            }
         } else {
             renderErrorState('status-list', 'Unable to load status');
+            // Hide indicator if status fetch failed (no outage data available)
+            if (window.persistentAlertInstance) {
+                window.persistentAlertInstance.hide();
+            }
         }
         
         // CRITICAL: Restart highlighter on current page with updated item count
@@ -765,6 +789,14 @@ if (window.detailPanelInstance) {
 }
 
 window.detailPanelInstance = new DetailPanel();
+
+// Initialize persistent alert (Story 4.3)
+if (window.persistentAlertInstance) {
+  // Clean up if exists (hot reload support)
+  window.persistentAlertInstance = null;
+}
+
+window.persistentAlertInstance = new PersistentAlert();
 
 /**
  * Extract item data from a list item DOM element

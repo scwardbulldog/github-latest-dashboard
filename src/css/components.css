@@ -29,6 +29,73 @@
 }
 
 /* ============================================
+   Persistent Outage Alert - News Ticker
+   Added in Story 4.3 - Cross-Page Persistent Indicator
+   Updated: News ticker style in header center
+   ============================================ */
+
+.persistent-alert {
+  /* Positioned in header center (flex child of .header) */
+  flex: 1;                             /* Take available space between left and right */
+  margin: 0 var(--space-4);            /* 24px spacing from header left/right sections */
+  
+  /* Container for scrolling ticker */
+  overflow: hidden;                    /* Hide overflow for ticker animation */
+  position: relative;
+  height: 32px;                        /* Fixed height for ticker */
+  
+  /* Typography - distance optimized */
+  font-size: var(--fontsize-base);     /* 16px minimum for 10-15 foot viewing */
+  font-weight: var(--fontweight-semibold); /* 600 - prominent */
+  
+  /* Spacing and shape */
+  padding: var(--space-1) var(--space-3);  /* 4px 16px - compact for header */
+  border-radius: 6px;                      /* GitHub Primer standard */
+  
+  /* Background color set dynamically via JavaScript based on severity */
+}
+
+.persistent-alert__track {
+  /* Scrolling track container */
+  display: inline-block;
+  white-space: nowrap;
+  color: #ffffff;                      /* White text for contrast */
+  line-height: 24px;                   /* Vertically center in 32px container */
+  
+  /* Animation applied when scrolling needed */
+  animation: none;                     /* Default: no animation */
+}
+
+/* Scrolling animation for ticker (applied via JS when needed) */
+@keyframes ticker-scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);       /* Scroll to halfway point (duplicated content) */
+  }
+}
+
+.persistent-alert__track--scrolling {
+  animation: ticker-scroll 20s linear infinite; /* Smooth continuous scroll */
+}
+
+/* Major Outage Styling (Red) */
+.persistent-alert--major {
+  background: var(--color-danger-fg);  /* #cf222e - red */
+}
+
+/* Degraded Performance Styling (Yellow) */
+.persistent-alert--degraded {
+  background: var(--color-attention-fg);  /* #bf8700 - yellow */
+}
+
+/* Operational state (should never be visible) */
+.persistent-alert--operational {
+  display: none;
+}
+
+/* ============================================
    Item Highlighting Styles
    Added in Story 3.2 - ItemHighlighter
    ============================================ */
