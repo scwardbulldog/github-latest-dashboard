@@ -71,6 +71,18 @@ export class ItemHighlighter {
   }
   
   /**
+   * Update highlight interval with validation
+   * @param {number} interval - Interval in milliseconds
+   */
+  setInterval(interval) {
+    if (typeof interval !== 'number' || interval <= 0) {
+      console.warn(`ItemHighlighter: interval must be positive, got ${interval}`);
+      return;
+    }
+    this.interval = interval;
+  }
+  
+  /**
    * Move to next item in rotation
    * @private
    */

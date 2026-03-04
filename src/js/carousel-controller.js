@@ -59,14 +59,7 @@ export class CarouselController {
     }
     
     // Start rotation loop with page-aware timing
-    this.timer = setTimeout(() => {
-      try {
-        this.rotatePage();
-      } catch (error) {
-        console.error('CarouselController: rotatePage failed', error);
-        this.stop(); // Stop timer to prevent repeated failures
-      }
-    }, this.interval);
+    this.scheduleNextRotation();
   }
   
   /**
@@ -161,14 +154,7 @@ export class CarouselController {
     
     // Apply interval for the newly active page and schedule next rotation
     this.applyIntervalForCurrentPage();
-    this.timer = setTimeout(() => {
-      try {
-        this.rotatePage();
-      } catch (error) {
-        console.error('CarouselController: rotatePage failed', error);
-        this.stop(); // Stop timer to prevent repeated failures
-      }
-    }, this.interval);
+    this.scheduleNextRotation();
   }
   
   /**
@@ -227,10 +213,25 @@ export class CarouselController {
    * @private
    */
   getIntervalForPage(pageName) {
-    const pageSpecific = this.pageIntervals?.[pageName];
+    const pageSpecific = this.pageIntervals[pageName];
     if (typeof pageSpecific === 'number' && pageSpecific > 0) {
       return pageSpecific;
     }
     return this.defaultInterval;
+  }
+  
+  /**
+   * Schedule the next rotation with consistent error handling
+   * @private
+   */
+  scheduleNextRotation() {
+    this.timer = setTimeout(() => {
+      try {
+        this.rotatePage();
+      } catch (error) {
+        console.error('CarouselController: rotatePage failed', error);
+        this.stop(); // Stop timer to prevent repeated failures
+      }
+    }, this.interval);
   }
 }

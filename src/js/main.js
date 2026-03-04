@@ -795,7 +795,8 @@ const ITEM_INTERVAL_OVERRIDES = {
 
 function applyItemIntervalForPage(pageName) {
     const pageSpecificInterval = ITEM_INTERVAL_OVERRIDES[pageName];
-    window.itemHighlighterInstance.interval = pageSpecificInterval || DEFAULT_ITEM_INTERVAL;
+    const nextInterval = pageSpecificInterval || DEFAULT_ITEM_INTERVAL;
+    window.itemHighlighterInstance.setInterval(nextInterval);
 }
 
 window.itemHighlighterInstance = new ItemHighlighter({ interval: DEFAULT_ITEM_INTERVAL }); // 8 seconds per item default, overridden per page
