@@ -850,10 +850,11 @@ setInterval(updateTimestamp, 1000);
 // Story 4.1: Detect network changes instantly without waiting for API fetch
 window.addEventListener('online', () => {
     console.log('Browser detected: Network connection restored');
-    // Will be confirmed on next fetch, but give immediate feedback
+    // Immediately fetch to verify connectivity and update data
+    // This provides fast recovery (within ~7 seconds including retries)
     if (isOffline && !isPaused) {
-        // Network back - will verify with next fetch cycle
-        console.log('Network appears to be back online, will verify on next refresh');
+        console.log('Attempting immediate data refresh to verify connection');
+        fetchAllData();
     }
 });
 
