@@ -69,5 +69,5 @@ development_status:
   4-3-implement-cross-page-persistent-outage-indicator: review
   4-4-implement-distance-optimized-typography-contrast: review
   4-5-implement-burn-in-testing-validation: done
-  4-6-implement-documentation-deployment-guide: backlog
+  4-6-implement-documentation-deployment-guide: ready-for-dev
   epic-4-retrospective: optional
