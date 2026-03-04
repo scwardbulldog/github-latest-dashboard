@@ -14,6 +14,11 @@ export class ItemHighlighter {
     this.itemCount = 0;         // Total items on current page
     this.timer = null;          // setInterval handle
     this.onItemHighlight = null; // Callback: (itemIndex: number) => void
+    
+    // Timer accuracy tracking (for burn-in testing)
+    this.lastHighlight = null;  // Timestamp of last highlight
+    this.highlightCount = 0;    // Total highlights since start
+    this.enableAccuracyLogging = false; // Enable via window.enableTimerLogging
   }
   
   /**
@@ -27,6 +32,16 @@ export class ItemHighlighter {
     // Store item count for this page
     this.itemCount = itemCount;
     this.currentItem = 0;
+    
+    // Initialize timer accuracy tracking
+    this.lastHighlight = Date.now();
+    this.highlightCount = 0;
+    
+    // Check if accuracy logging is enabled globally
+    if (window.enableTimerLogging) {
+      this.enableAccuracyLogging = true;
+      console.log('📊 Item highlighter timer accuracy logging enabled');
+    }
     
     // Immediately highlight first item (don't wait 8 seconds)
     this.highlightItem(0);
@@ -60,6 +75,26 @@ export class ItemHighlighter {
    * @private
    */
   highlightNext() {
+    // Timer accuracy measurement (for burn-in testing)
+    const actualTime = Date.now();
+    this.highlightCount++;
+    
+    if (this.lastHighlight && this.enableAccuracyLogging) {
+      const expectedTime = this.lastHighlight + this.interval;
+      const drift = actualTime - expectedTime;
+      const driftSeconds = (drift / 1000).toFixed(3);
+      
+      // Log timing data for analysis
+      console.log(`⏱️  Item Highlight #${this.highlightCount}: drift=${driftSeconds}s (expected=${new Date(expectedTime).toISOString()}, actual=${new Date(actualTime).toISOString()})`);
+      
+      // Warning if drift exceeds ±0.5 second threshold
+      if (Math.abs(drift) > 500) {
+        console.warn(`⚠️  Item highlight drift exceeds threshold: ${driftSeconds}s (tolerance: ±0.5s)`);
+      }
+    }
+    
+    this.lastHighlight = actualTime;
+    
     // Calculate next index (wraps around to 0 after last item)
     const nextIndex = (this.currentItem + 1) % this.itemCount;
     

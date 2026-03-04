@@ -24,6 +24,11 @@ export class CarouselController {
     this.progressBar = null;    // DOM element reference
     this.startTime = null;      // Timestamp when current page started
     this.animationFrame = null; // requestAnimationFrame handle
+    
+    // Timer accuracy tracking (for burn-in testing)
+    this.lastRotation = null;   // Timestamp of last rotation
+    this.rotationCount = 0;     // Total rotations since start
+    this.enableAccuracyLogging = false; // Enable via window.enableTimerLogging
   }
   
   /**
@@ -39,6 +44,16 @@ export class CarouselController {
     // Reset progress and start animation
     this.resetProgress();
     this.updateProgress();
+    
+    // Initialize timer accuracy tracking
+    this.lastRotation = Date.now();
+    this.rotationCount = 0;
+    
+    // Check if accuracy logging is enabled globally
+    if (window.enableTimerLogging) {
+      this.enableAccuracyLogging = true;
+      console.log('📊 Carousel timer accuracy logging enabled');
+    }
     
     this.timer = setInterval(() => {
       try {
@@ -78,6 +93,26 @@ export class CarouselController {
    * @private
    */
   rotatePage() {
+    // Timer accuracy measurement (for burn-in testing)
+    const actualTime = Date.now();
+    this.rotationCount++;
+    
+    if (this.lastRotation && this.enableAccuracyLogging) {
+      const expectedTime = this.lastRotation + this.interval;
+      const drift = actualTime - expectedTime;
+      const driftSeconds = (drift / 1000).toFixed(3);
+      
+      // Log timing data for analysis
+      console.log(`⏱️  Carousel Rotation #${this.rotationCount}: drift=${driftSeconds}s (expected=${new Date(expectedTime).toISOString()}, actual=${new Date(actualTime).toISOString()})`);
+      
+      // Warning if drift exceeds ±1 second threshold
+      if (Math.abs(drift) > 1000) {
+        console.warn(`⚠️  Carousel drift exceeds threshold: ${driftSeconds}s (tolerance: ±1.0s)`);
+      }
+    }
+    
+    this.lastRotation = actualTime;
+    
     // Reset progress for new page
     this.resetProgress();
     

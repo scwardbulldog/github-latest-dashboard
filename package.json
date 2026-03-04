@@ -9,7 +9,11 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build && cp dist/index.html .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:memory": "node test/memory-monitor.js",
+    "test:burn-in": "bash test/burn-in-test.sh",
+    "test:validate": "node test/validate-primer-colors.js",
+    "test:health": "node test/health-check.js"
   },
   "repository": {
     "type": "git",
@@ -24,6 +28,7 @@
   },
   "homepage": "https://github.com/scwardbulldog/github-latest-dashboard#readme",
   "devDependencies": {
+    "puppeteer": "^24.15.0",
     "terser": "^5.46.0",
     "vite": "^7.3.1",
     "vite-plugin-singlefile": "^2.3.0"
