@@ -34,10 +34,10 @@
    ============================================ */
 
 .list-item {
-  /* Base styles established in Story 3.1, now adding transitions */
-  transition: background 200ms ease, 
-              font-weight 200ms ease,
-              border-color 200ms ease;
+  /* Base styles established in Story 3.1, now adding GPU-accelerated transitions */
+  /* Performance: Only transition background-color (GPU-accelerated) */
+  /* font-weight and border-color change instantly (no animation overhead) */
+  transition: background-color 200ms ease;
 }
 
 .list-item--highlighted {
@@ -56,8 +56,8 @@
   /* Prevent transform on highlighted items (no hover lift effect) */
   transform: none !important;
   
-  /* Slightly stronger box shadow for prominence */
-  box-shadow: 0 0 0 2px rgba(88, 166, 255, 0.3) !important;
+  /* Removed expensive box-shadow for Pi 3B performance */
+  /* Prominence maintained by: elevated background, bold weight, left border */
 }
 
 /* Ensure title inherits bold weight when highlighted */

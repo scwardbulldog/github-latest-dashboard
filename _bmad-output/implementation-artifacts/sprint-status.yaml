@@ -65,7 +65,7 @@ development_status:
 
   epic-4: in-progress
   4-1-implement-error-handling-retry-logic: ready-for-dev
-  4-2-implement-performance-optimization: backlog
+  4-2-implement-performance-optimization: review
   4-3-implement-cross-page-persistent-outage-indicator: backlog
   4-4-implement-distance-optimized-typography-contrast: backlog
   4-5-implement-burn-in-testing-validation: backlog

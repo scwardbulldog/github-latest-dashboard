@@ -91,7 +91,8 @@ body {
 }
 
 .refresh-progress.refreshing {
-    box-shadow: 0 0 var(--space-2) rgba(31, 111, 235, 0.6);
+    /* Removed expensive box-shadow for Pi 3B performance */
+    /* Visual indicator maintained by gradient background */
 }
 
 /* Octocat Traveler - Sprite Animation */
@@ -99,10 +100,10 @@ body {
     position: fixed;
     bottom: 0;
     left: 0;
-    transform: translateX(-50%);
+    transform: translateX(-50%); /* Static position transform OK (not animated) */
     z-index: 1001;
     transition: left 1s linear;
-    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+    /* Removed expensive filter: drop-shadow for Pi 3B performance */
 }
 
 .octocat-traveler canvas {
@@ -113,38 +114,24 @@ body {
 
 /* Sprite animation handled by SpriteAnimator class */
 
-/* Maintain legacy keyframes for potential future use */
-@keyframes skateboard-tilt {
-    0%, 100% { transform: rotate(-2deg) translateY(0); }
-    50% { transform: rotate(2deg) translateY(-2px); }
-}
-
-@keyframes wheel-spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-}
-
-@keyframes car-vibrate {
-    0%, 100% { transform: translateX(0) translateY(0); }
-    25% { transform: translateX(-0.5px) translateY(-0.5px); }
-    75% { transform: translateX(0.5px) translateY(0.5px); }
-}
-
-@keyframes speed-whoosh {
-    0% { opacity: 0.8; transform: translateX(0); }
-    100% { opacity: 0; transform: translateX(-15px); }
-}
-
-@keyframes victory-jump {
-    0%, 100% { transform: translateY(0) rotate(0deg); }
-    25% { transform: translateY(-8px) rotate(-10deg); }
-    75% { transform: translateY(-8px) rotate(10deg); }
-}
-
-@keyframes star-twinkle {
-    0%, 100% { opacity: 1; transform: scale(1) rotate(0deg); }
-    50% { opacity: 0.5; transform: scale(1.5) rotate(180deg); }
-}
+/* Performance Optimization: Removed expensive transform-based animations
+ * Expensive properties (transform, rotate, scale) cause CPU-intensive
+ * layout recalculations and poor performance on Raspberry Pi 3B hardware.
+ * 
+ * GPU-accelerated alternatives (opacity, background-color) provide smooth
+ * 30+ FPS animations on resource-constrained hardware.
+ * 
+ * Removed animations:
+ * - @keyframes skateboard-tilt (transform: rotate, translateY)
+ * - @keyframes wheel-spin (transform: rotate) 
+ * - @keyframes car-vibrate (transform: translateX, translateY)
+ * - @keyframes speed-whoosh (transform: translateX with opacity)
+ * - @keyframes victory-jump (transform: translateY, rotate)
+ * - @keyframes star-twinkle (transform: scale, rotate with opacity)
+ * 
+ * If sprite animations are needed in future, use canvas-based sprite sheets
+ * (already implemented via SpriteAnimator class) which are GPU-optimized.
+ */
 
 .header {
     display: flex;
@@ -504,7 +491,8 @@ body {
 }
 
 .status-card:hover {
-    box-shadow: 0 4px 12px rgba(45, 164, 78, 0.15);
+    /* Removed expensive box-shadow for Pi 3B performance */
+    /* Hover state maintained by existing border-left color */
 }
 
 .status-card-operational {
@@ -516,7 +504,7 @@ body {
 }
 
 .status-card-minor:hover {
-    box-shadow: 0 4px 12px rgba(191, 135, 0, 0.15);
+    /* Removed expensive box-shadow for Pi 3B performance */
 }
 
 .status-card-major {
@@ -524,7 +512,7 @@ body {
 }
 
 .status-card-major:hover {
-    box-shadow: 0 4px 12px rgba(207, 34, 46, 0.15);
+    /* Removed expensive box-shadow for Pi 3B performance */
 }
 
 .status-symbol {

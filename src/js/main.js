@@ -113,6 +113,10 @@ function renderBlogList(blogData) {
     // Render at least 10 items (AC requirement)
     const items = blogData.items.slice(0, 10);
     
+    // Performance optimization: Use DocumentFragment for batched DOM insertion
+    // This eliminates layout thrashing (only one reflow instead of N reflows)
+    const fragment = document.createDocumentFragment();
+    
     items.forEach((item, index) => {
         const itemEl = document.createElement('div');
         itemEl.className = 'list-item';
@@ -132,8 +136,12 @@ function renderBlogList(blogData) {
             <div class="list-item-description">${description}</div>
         `;
         
-        blogListEl.appendChild(itemEl);
+        // Append to fragment (no DOM reflow)
+        fragment.appendChild(itemEl);
     });
+    
+    // Single DOM write (one reflow)
+    blogListEl.appendChild(fragment);
     
     console.log(`renderBlogList: Rendered ${items.length} blog items`);
     return items.length;
@@ -157,6 +165,9 @@ function renderChangelogList(changelogData) {
     // Render at least 10 items (AC requirement)
     const items = changelogData.items.slice(0, 10);
     
+    // Performance optimization: Use DocumentFragment for batched DOM insertion
+    const fragment = document.createDocumentFragment();
+    
     items.forEach((item, index) => {
         const itemEl = document.createElement('div');
         itemEl.className = 'list-item';
@@ -177,8 +188,12 @@ function renderChangelogList(changelogData) {
             <div class="list-item-description">${description}</div>
         `;
         
-        changelogListEl.appendChild(itemEl);
+        // Append to fragment (no DOM reflow)
+        fragment.appendChild(itemEl);
     });
+    
+    // Single DOM write (one reflow)
+    changelogListEl.appendChild(fragment);
     
     console.log(`renderChangelogList: Rendered ${items.length} changelog items`);
     return items.length;
@@ -225,6 +240,9 @@ function renderStatusList(statusData) {
         `;
         statusListEl.appendChild(allGoodEl);
     } else {
+        // Performance optimization: Use DocumentFragment for batched DOM insertion
+        const fragment = document.createDocumentFragment();
+        
         // Render active incidents as list items
         activeIncidents.forEach((incident, index) => {
             const impact = incident.impact || 'none';
@@ -263,17 +281,24 @@ function renderStatusList(statusData) {
                 <div class="list-item-description">${truncate(statusText, 100)}</div>
             `;
             
-            statusListEl.appendChild(itemEl);
+            // Append to fragment (no DOM reflow)
+            fragment.appendChild(itemEl);
         });
+        
+        // Single DOM write (one reflow)
+        statusListEl.appendChild(fragment);
     }
     
     // Render resolved incidents in multi-column grid (show more history, up to 12)
     if (resolvedIncidents.length > 0) {
+        // Performance optimization: Build resolved grid using DocumentFragment
+        const fragment = document.createDocumentFragment();
+        
         // Add header
         const headerEl = document.createElement('div');
         headerEl.className = 'status-resolved-grid-header';
         headerEl.textContent = 'Recently Resolved Incidents';
-        resolvedGridEl.appendChild(headerEl);
+        fragment.appendChild(headerEl);
         
         // Create grid container
         const gridContainer = document.createElement('div');
@@ -312,7 +337,10 @@ function renderStatusList(statusData) {
             gridContainer.appendChild(cardEl);
         });
         
-        resolvedGridEl.appendChild(gridContainer);
+        fragment.appendChild(gridContainer);
+        
+        // Single DOM write for entire resolved section
+        resolvedGridEl.appendChild(fragment);
     }
     
     const totalItems = Math.max(activeIncidents.length, 1); // Count active incidents for highlighting
