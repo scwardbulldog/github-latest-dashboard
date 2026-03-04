@@ -7,17 +7,20 @@ export class CarouselController {
   /**
    * Create a CarouselController instance
    * @param {Object} config - Configuration options
-   * @param {number} config.interval - Page rotation interval in milliseconds (default: 30000)
+   * @param {number} config.interval - Default page rotation interval in milliseconds (default: 30000)
    * @param {string[]} config.pages - Array of page identifiers (default: ['blog', 'changelog', 'status'])
+   * @param {Object<string, number>} config.pageIntervals - Optional per-page interval overrides
    */
-  constructor({ interval = 30000, pages = ['blog', 'changelog', 'status'] } = {}) {
+  constructor({ interval = 30000, pages = ['blog', 'changelog', 'status'], pageIntervals = {} } = {}) {
     if (typeof interval !== 'number' || interval <= 0) {
       throw new TypeError(`CarouselController: interval must be a positive number, got ${interval}`);
     }
+    this.defaultInterval = interval;
+    this.pageIntervals = pageIntervals;
     this.interval = interval;
     this.pages = pages;
     this.currentPage = 0;      // Index of current page
-    this.timer = null;          // setInterval handle
+    this.timer = null;          // Timer handle (setTimeout)
     this.onPageChange = null;   // Callback: (page: string) => void
     
     // Progress tracking properties
@@ -41,8 +44,8 @@ export class CarouselController {
     // Initialize progress bar reference
     this.initProgressBar();
     
-    // Reset progress and start animation
-    this.resetProgress();
+    // Reset progress and start animation for current page interval
+    this.applyIntervalForCurrentPage();
     this.updateProgress();
     
     // Initialize timer accuracy tracking
@@ -55,14 +58,8 @@ export class CarouselController {
       console.log('📊 Carousel timer accuracy logging enabled');
     }
     
-    this.timer = setInterval(() => {
-      try {
-        this.rotatePage();
-      } catch (error) {
-        console.error('CarouselController: rotatePage failed', error);
-        this.stop(); // Stop timer to prevent repeated failures
-      }
-    }, this.interval);
+    // Start rotation loop with page-aware timing
+    this.scheduleNextRotation();
   }
   
   /**
@@ -70,7 +67,7 @@ export class CarouselController {
    */
   stop() {
     if (this.timer) {
-      clearInterval(this.timer);
+      clearTimeout(this.timer);
       this.timer = null;
     }
     
@@ -113,9 +110,6 @@ export class CarouselController {
     
     this.lastRotation = actualTime;
     
-    // Reset progress for new page
-    this.resetProgress();
-    
     // Calculate next page index
     const nextIndex = (this.currentPage + 1) % this.pages.length;
     
@@ -157,6 +151,10 @@ export class CarouselController {
     
     // Update state
     this.currentPage = nextIndex;
+    
+    // Apply interval for the newly active page and schedule next rotation
+    this.applyIntervalForCurrentPage();
+    this.scheduleNextRotation();
   }
   
   /**
@@ -196,5 +194,44 @@ export class CarouselController {
     if (this.progressBar) {
       this.progressBar.style.width = '0%';
     }
+  }
+  
+  /**
+   * Apply page-specific interval settings and reset progress tracking
+   * @private
+   */
+  applyIntervalForCurrentPage() {
+    const currentPageName = this.pages[this.currentPage];
+    this.interval = this.getIntervalForPage(currentPageName);
+    this.resetProgress();
+  }
+  
+  /**
+   * Get interval for a specific page, falling back to default
+   * @param {string} pageName
+   * @returns {number}
+   * @private
+   */
+  getIntervalForPage(pageName) {
+    const pageSpecific = this.pageIntervals[pageName];
+    if (typeof pageSpecific === 'number' && pageSpecific > 0) {
+      return pageSpecific;
+    }
+    return this.defaultInterval;
+  }
+  
+  /**
+   * Schedule the next rotation with consistent error handling
+   * @private
+   */
+  scheduleNextRotation() {
+    this.timer = setTimeout(() => {
+      try {
+        this.rotatePage();
+      } catch (error) {
+        console.error('CarouselController: rotatePage failed', error);
+        this.stop(); // Stop timer to prevent repeated failures
+      }
+    }, this.interval);
   }
 }

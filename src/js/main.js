@@ -707,6 +707,7 @@ async function fetchAllData() {
             const initialPage = window.carouselInstance.pages[window.carouselInstance.currentPage];
             const initialItemCount = getItemCountForPage(initialPage);
             if (initialItemCount > 0) {
+                applyItemIntervalForPage(initialPage);
                 window.itemHighlighterInstance.start(initialItemCount);
                 console.log(`ItemHighlighter initialized with ${initialItemCount} items on ${initialPage} page`);
             }
@@ -773,14 +774,32 @@ if (window.carouselInstance) {
   window.carouselInstance.stop();
 }
 
-window.carouselInstance = new CarouselController({ interval: 30000 }); // 30 seconds per page
+const DEFAULT_PAGE_INTERVAL = 30000; // 30 seconds per page
+const PAGE_INTERVAL_OVERRIDES = {
+  blog: 90000,
+  changelog: 90000
+};
+
+window.carouselInstance = new CarouselController({ interval: DEFAULT_PAGE_INTERVAL, pageIntervals: PAGE_INTERVAL_OVERRIDES }); // 30 seconds per page default, overridden per page
 
 // Initialize item highlighter
 if (window.itemHighlighterInstance) {
   window.itemHighlighterInstance.stop();
 }
 
-window.itemHighlighterInstance = new ItemHighlighter({ interval: 8000 }); // 8 seconds per item
+const DEFAULT_ITEM_INTERVAL = 8000; // 8 seconds per item
+const ITEM_INTERVAL_OVERRIDES = {
+  blog: 24000,
+  changelog: 24000
+};
+
+function applyItemIntervalForPage(pageName) {
+    const pageSpecificInterval = ITEM_INTERVAL_OVERRIDES[pageName];
+    const nextInterval = pageSpecificInterval || DEFAULT_ITEM_INTERVAL;
+    window.itemHighlighterInstance.setInterval(nextInterval);
+}
+
+window.itemHighlighterInstance = new ItemHighlighter({ interval: DEFAULT_ITEM_INTERVAL }); // 8 seconds per item default, overridden per page
 
 // Initialize detail panel (Story 3.3)
 if (window.detailPanelInstance) {
@@ -855,8 +874,8 @@ window.itemHighlighterInstance.onItemHighlight = (itemElement, itemIndex) => {
 // DUAL TIMER COORDINATION (Story 3.4)
 // ============================================================================
 // Two independent timers work together:
-// 1. Page Timer (30s) - Managed by CarouselController
-// 2. Item Timer (8s) - Managed by ItemHighlighter
+// 1. Page Timer (30s default, 90s on Blog/Changelog) - Managed by CarouselController
+// 2. Item Timer (8s default, 24s on Blog/Changelog) - Managed by ItemHighlighter
 //
 // Coordination Pattern:
 // - Page changes trigger onPageChange → resets item timer
@@ -872,7 +891,7 @@ window.itemHighlighterInstance.onItemHighlight = (itemElement, itemIndex) => {
 // ============================================================================
 
 // Set carousel callback BEFORE starting (Story 3.2/3.4)
-// This callback is triggered every 30 seconds when the page changes
+// This callback is triggered when the page changes (default 30s, extended on Blog/Changelog)
 window.carouselInstance.onPageChange = (pageName) => {
     console.log(`Page changed to: ${pageName}`);
     
@@ -880,11 +899,14 @@ window.carouselInstance.onPageChange = (pageName) => {
     // This clears the 8-second timer and removes all highlights
     window.itemHighlighterInstance.reset();
     
+    // Apply page-specific item timing (triple on blog/changelog)
+    applyItemIntervalForPage(pageName);
+    
     // Get item count for new page
     const itemCount = getItemCountForPage(pageName);
     
     // Start highlighting on new page if items exist
-    // Item timer begins fresh 8-second countdown from 0
+    // Item timer begins fresh countdown using page-specific interval
     if (itemCount > 0) {
         window.itemHighlighterInstance.start(itemCount);
         console.log(`ItemHighlighter started with ${itemCount} items on ${pageName}`);
