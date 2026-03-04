@@ -873,8 +873,8 @@ window.itemHighlighterInstance.onItemHighlight = (itemElement, itemIndex) => {
 // DUAL TIMER COORDINATION (Story 3.4)
 // ============================================================================
 // Two independent timers work together:
-// 1. Page Timer (30s) - Managed by CarouselController
-// 2. Item Timer (8s) - Managed by ItemHighlighter
+// 1. Page Timer (30s default, 90s on Blog/Changelog) - Managed by CarouselController
+// 2. Item Timer (8s default, 24s on Blog/Changelog) - Managed by ItemHighlighter
 //
 // Coordination Pattern:
 // - Page changes trigger onPageChange → resets item timer
@@ -890,7 +890,7 @@ window.itemHighlighterInstance.onItemHighlight = (itemElement, itemIndex) => {
 // ============================================================================
 
 // Set carousel callback BEFORE starting (Story 3.2/3.4)
-// This callback is triggered every 30 seconds when the page changes
+// This callback is triggered when the page changes (default 30s, extended on Blog/Changelog)
 window.carouselInstance.onPageChange = (pageName) => {
     console.log(`Page changed to: ${pageName}`);
     
@@ -905,7 +905,7 @@ window.carouselInstance.onPageChange = (pageName) => {
     const itemCount = getItemCountForPage(pageName);
     
     // Start highlighting on new page if items exist
-    // Item timer begins fresh 8-second countdown from 0
+    // Item timer begins fresh countdown using page-specific interval
     if (itemCount > 0) {
         window.itemHighlighterInstance.start(itemCount);
         console.log(`ItemHighlighter started with ${itemCount} items on ${pageName}`);
