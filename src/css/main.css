@@ -204,6 +204,11 @@ body {
     animation: none;
 }
 
+.live-dot.offline {
+    background: var(--color-attention-fg); /* Yellow for network issues */
+    animation: pulse 1s infinite; /* Faster pulse for attention */
+}
+
 .pause-button {
     display: flex;
     align-items: center;

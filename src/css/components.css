@@ -286,3 +286,38 @@
   padding: var(--space-3);                      /* 16px padding */
   border-radius: 6px;
 }
+
+/* ============================================
+   Network Status Indication
+   Added in Story 4.1 - Error Handling & Retry Logic
+   Integrated with existing Live indicator
+   ============================================ */
+
+/* Error message container styling */
+.error-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-5);              /* 32px */
+  text-align: center;
+  min-height: 200px;
+}
+
+.error-icon {
+  font-size: 48px;
+  margin-bottom: var(--space-3);        /* 16px */
+  color: var(--color-danger-fg);        /* Red for errors */
+}
+
+.error-text {
+  font-size: var(--fontsize-h3);        /* 20px - readable from distance */
+  font-weight: var(--fontweight-semibold);
+  color: var(--color-fg-default);
+  margin-bottom: var(--space-2);        /* 8px */
+}
+
+.error-timestamp {
+  font-size: var(--fontsize-base);      /* 16px */
+  color: var(--color-fg-muted);
+}

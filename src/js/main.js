@@ -11,14 +11,42 @@ import { DetailPanel } from './detail-panel.js';
 import {
     fetchBlog as fetchBlogFromApiClient,
     fetchChangelog as fetchChangelogFromApiClient,
-    fetchStatus as fetchStatusFromApiClient
+    fetchStatus as fetchStatusFromApiClient,
+    getCacheEntry
 } from './api-client.js';
 
 // Configuration
 const REFRESH_INTERVAL = 5 * 60 * 1000; // 5 minutes
 
+// Network status state (Story 4.1)
+let isOffline = false;
+
 /**
- * Render error state for a page
+ * Get last update time for a source
+ * @param {string} containerId - Container ID (e.g., 'blog-list')
+ * @returns {string} Formatted timestamp
+ */
+function getLastUpdateTime(containerId) {
+    // Extract source name from container ID (blog-list → blog)
+    const sourceName = containerId.replace('-list', '');
+    const cacheEntry = getCacheEntry(sourceName);
+    
+    if (!cacheEntry || !cacheEntry.timestamp) {
+        return 'Never';
+    }
+    
+    const minutesAgo = Math.floor((Date.now() - cacheEntry.timestamp) / 60000);
+    if (minutesAgo < 1) return 'Just now';
+    if (minutesAgo === 1) return '1 minute ago';
+    if (minutesAgo < 60) return `${minutesAgo} minutes ago`;
+    
+    const hoursAgo = Math.floor(minutesAgo / 60);
+    if (hoursAgo === 1) return '1 hour ago';
+    return `${hoursAgo} hours ago`;
+}
+
+/**
+ * Render error state for a page with last update timestamp
  * @param {string} containerId - Container element ID
  * @param {string} errorMessage - Error message to display
  */
@@ -29,16 +57,42 @@ function renderErrorState(containerId, errorMessage) {
         return;
     }
     
+    const lastUpdate = getLastUpdateTime(containerId);
+    
     container.innerHTML = `
-        <div class="list-item error-state">
-            <div class="list-item-title" style="color: var(--color-danger-fg);">
-                ⚠️ ${errorMessage}
-            </div>
-            <div class="list-item-description">
-                Please check your network connection. The dashboard will retry automatically.
-            </div>
+        <div class="error-message">
+            <div class="error-icon">⚠️</div>
+            <div class="error-text">${errorMessage}</div>
+            <div class="error-timestamp">Last updated: ${lastUpdate}</div>
         </div>
     `;
+}
+
+/**
+ * Update live indicator to show network status
+ * Story 4.1: Integrate with existing Live indicator for immediate feedback
+ */
+function updateLiveIndicator() {
+    const liveText = document.getElementById('liveText');
+    const liveDot = document.getElementById('liveDot');
+    
+    if (!liveText || !liveDot) return;
+    
+    if (isPaused) {
+        // Paused state takes precedence
+        liveText.textContent = 'Paused';
+        liveDot.classList.remove('offline');
+        liveDot.classList.add('paused');
+    } else if (isOffline) {
+        // Offline state
+        liveText.textContent = 'Offline';
+        liveDot.classList.remove('paused');
+        liveDot.classList.add('offline');
+    } else {
+        // Live state
+        liveText.textContent = 'Live';
+        liveDot.classList.remove('paused', 'offline');
+    }
 }
 
 /**
@@ -449,15 +503,12 @@ function togglePause() {
     const pauseButton = document.getElementById('pauseButton');
     const pauseIcon = document.getElementById('pauseIcon');
     const pauseText = document.getElementById('pauseText');
-    const liveText = document.getElementById('liveText');
-    const liveDot = document.getElementById('liveDot');
     
     if (isPaused) {
         // Pause mode
         pauseIcon.textContent = '▶';
         pauseText.textContent = 'Resume';
-        liveText.textContent = 'Paused';
-        liveDot.classList.add('paused');
+        updateLiveIndicator();
         
         // Clear refresh interval
         if (refreshIntervalId) {
@@ -471,10 +522,13 @@ function togglePause() {
         // Resume mode
         pauseIcon.textContent = '⏸';
         pauseText.textContent = 'Pause';
-        liveText.textContent = 'Live';
-        liveDot.classList.remove('paused');
         
-        // Restart refresh interval
+        // Preserve network state across pause/resume - don't change isOffline
+        // Show current state immediately (Offline if it was offline, Live if it was online)
+        updateLiveIndicator();
+        
+        // Restart refresh interval and fetch immediately
+        // fetchAllData() will update isOffline state based on actual network status
         fetchAllData();
         refreshIntervalId = setInterval(fetchAllData, REFRESH_INTERVAL);
     }
@@ -528,22 +582,42 @@ async function fetchAllData() {
     console.log('fetchAllData: Starting parallel API fetches...');
     
     try {
+        // Track fetch failures for network status indicator
+        let anyFetchFailed = false;
+        
         // Parallel fetch with Promise.all (AC requirement)
         // Per-column error isolation: each fetch has its own catch block
         const [blogData, changelogData, statusData] = await Promise.all([
             fetchBlogFromApiClient().catch(err => {
                 console.error('fetchAllData: Blog fetch failed:', err);
+                anyFetchFailed = true;
                 return null; // Per-column isolation
             }),
             fetchChangelogFromApiClient().catch(err => {
                 console.error('fetchAllData: Changelog fetch failed:', err);
+                anyFetchFailed = true;
                 return null;
             }),
             fetchStatusFromApiClient().catch(err => {
                 console.error('fetchAllData: Status fetch failed:', err);
+                anyFetchFailed = true;
                 return null;
             })
         ]);
+        
+        // Update offline state based on fetch results
+        const wasOffline = isOffline;
+        isOffline = anyFetchFailed;
+        
+        // Update live indicator if offline state changed
+        if (wasOffline !== isOffline) {
+            updateLiveIndicator();
+            if (isOffline) {
+                console.log('Network issues detected - showing cached content');
+            } else {
+                console.log('Network recovered - fetching fresh data');
+            }
+        }
         
         // Store item counts for highlighter restart
         let blogItemCount = 0;
@@ -593,6 +667,8 @@ async function fetchAllData() {
     } catch (error) {
         console.error('fetchAllData: Critical error during data initialization:', error);
         // Fallback: show error state for all pages
+        isOffline = true;
+        updateLiveIndicator();
         renderErrorState('blog-list', 'Dashboard initialization failed');
         renderErrorState('changelog-list', 'Dashboard initialization failed');
         renderErrorState('status-list', 'Dashboard initialization failed');
@@ -769,3 +845,20 @@ document.getElementById('pauseButton').addEventListener('click', togglePause);
 
 // Update timestamp every second
 setInterval(updateTimestamp, 1000);
+
+// Browser online/offline event listeners for immediate network detection
+// Story 4.1: Detect network changes instantly without waiting for API fetch
+window.addEventListener('online', () => {
+    console.log('Browser detected: Network connection restored');
+    // Will be confirmed on next fetch, but give immediate feedback
+    if (isOffline && !isPaused) {
+        // Network back - will verify with next fetch cycle
+        console.log('Network appears to be back online, will verify on next refresh');
+    }
+});
+
+window.addEventListener('offline', () => {
+    console.log('Browser detected: Network connection lost');
+    isOffline = true;
+    updateLiveIndicator();
+});
