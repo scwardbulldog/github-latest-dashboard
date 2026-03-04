@@ -707,6 +707,7 @@ async function fetchAllData() {
             const initialPage = window.carouselInstance.pages[window.carouselInstance.currentPage];
             const initialItemCount = getItemCountForPage(initialPage);
             if (initialItemCount > 0) {
+                applyItemIntervalForPage(initialPage);
                 window.itemHighlighterInstance.start(initialItemCount);
                 console.log(`ItemHighlighter initialized with ${initialItemCount} items on ${initialPage} page`);
             }
@@ -773,14 +774,31 @@ if (window.carouselInstance) {
   window.carouselInstance.stop();
 }
 
-window.carouselInstance = new CarouselController({ interval: 30000 }); // 30 seconds per page
+const DEFAULT_PAGE_INTERVAL = 30000; // 30 seconds per page
+const PAGE_INTERVAL_OVERRIDES = {
+  blog: 90000,
+  changelog: 90000
+};
+
+window.carouselInstance = new CarouselController({ interval: DEFAULT_PAGE_INTERVAL, pageIntervals: PAGE_INTERVAL_OVERRIDES }); // 30 seconds per page default, overridden per page
 
 // Initialize item highlighter
 if (window.itemHighlighterInstance) {
   window.itemHighlighterInstance.stop();
 }
 
-window.itemHighlighterInstance = new ItemHighlighter({ interval: 8000 }); // 8 seconds per item
+const DEFAULT_ITEM_INTERVAL = 8000; // 8 seconds per item
+const ITEM_INTERVAL_OVERRIDES = {
+  blog: 24000,
+  changelog: 24000
+};
+
+function applyItemIntervalForPage(pageName) {
+    const pageSpecificInterval = ITEM_INTERVAL_OVERRIDES[pageName];
+    window.itemHighlighterInstance.interval = pageSpecificInterval || DEFAULT_ITEM_INTERVAL;
+}
+
+window.itemHighlighterInstance = new ItemHighlighter({ interval: DEFAULT_ITEM_INTERVAL }); // 8 seconds per item default, overridden per page
 
 // Initialize detail panel (Story 3.3)
 if (window.detailPanelInstance) {
@@ -879,6 +897,9 @@ window.carouselInstance.onPageChange = (pageName) => {
     // CRITICAL: Reset item highlighting when page changes
     // This clears the 8-second timer and removes all highlights
     window.itemHighlighterInstance.reset();
+    
+    // Apply page-specific item timing (triple on blog/changelog)
+    applyItemIntervalForPage(pageName);
     
     // Get item count for new page
     const itemCount = getItemCountForPage(pageName);
