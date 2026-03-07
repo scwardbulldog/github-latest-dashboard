@@ -15,6 +15,7 @@ import {
     fetchBlog as fetchBlogFromApiClient,
     fetchChangelog as fetchChangelogFromApiClient,
     fetchStatus as fetchStatusFromApiClient,
+    fetchVSCode as fetchVSCodeFromApiClient,
     getCacheEntry,
     detectActiveOutages
 } from './api-client.js';
@@ -200,6 +201,55 @@ function renderChangelogList(changelogData) {
     changelogListEl.appendChild(fragment);
     
     console.log(`renderChangelogList: Rendered ${items.length} changelog items`);
+    return items.length;
+}
+
+/**
+ * Render VS Code Updates page data
+ * @param {Object} vscodeData - VS Code Updates RSS data from API
+ * @returns {number} Number of items rendered
+ */
+function renderVSCodeList(vscodeData) {
+    const vscodeListEl = document.getElementById('vscode-list');
+    if (!vscodeListEl) {
+        console.error('renderVSCodeList: vscode-list element not found');
+        return 0;
+    }
+
+    // Clear placeholder content
+    vscodeListEl.innerHTML = '';
+
+    const items = vscodeData.items.slice(0, 10);
+
+    // Performance optimization: Use DocumentFragment for batched DOM insertion
+    const fragment = document.createDocumentFragment();
+
+    items.forEach((item, index) => {
+        const itemEl = document.createElement('div');
+        itemEl.className = 'list-item';
+        itemEl.dataset.index = index;
+        itemEl.dataset.link = item.link || '';
+
+        // Store full content HTML for detail panel rendering
+        itemEl.dataset.fullDescription = item.content || item.description || '';
+
+        const title = item.title || 'Untitled';
+        const timestamp = formatDate(item.pubDate);
+        const description = truncate(stripHtml(item.description || ''), 120);
+
+        itemEl.innerHTML = `
+            <div class="list-item-title">${title}</div>
+            <div class="list-item-timestamp">${timestamp}</div>
+            <div class="list-item-description">${description}</div>
+        `;
+
+        fragment.appendChild(itemEl);
+    });
+
+    // Single DOM write (one reflow)
+    vscodeListEl.appendChild(fragment);
+
+    console.log(`renderVSCodeList: Rendered ${items.length} VS Code update items`);
     return items.length;
 }
 
@@ -619,7 +669,7 @@ async function fetchAllData() {
         
         // Parallel fetch with Promise.all (AC requirement)
         // Per-column error isolation: each fetch has its own catch block
-        const [blogData, changelogData, statusData] = await Promise.all([
+        const [blogData, changelogData, statusData, vscodeData] = await Promise.all([
             fetchBlogFromApiClient().catch(err => {
                 console.error('fetchAllData: Blog fetch failed:', err);
                 anyFetchFailed = true;
@@ -632,6 +682,11 @@ async function fetchAllData() {
             }),
             fetchStatusFromApiClient().catch(err => {
                 console.error('fetchAllData: Status fetch failed:', err);
+                anyFetchFailed = true;
+                return null;
+            }),
+            fetchVSCodeFromApiClient().catch(err => {
+                console.error('fetchAllData: VS Code updates fetch failed:', err);
                 anyFetchFailed = true;
                 return null;
             })
@@ -655,6 +710,7 @@ async function fetchAllData() {
         let blogItemCount = 0;
         let changelogItemCount = 0;
         let statusItemCount = 0;
+        let vscodeItemCount = 0;
         
         // Render each page (with error handling for null data)
         if (blogData) {
@@ -694,6 +750,12 @@ async function fetchAllData() {
                 window.persistentAlertInstance.hide();
             }
         }
+
+        if (vscodeData) {
+            vscodeItemCount = renderVSCodeList(vscodeData);
+        } else {
+            renderErrorState('vscode-list', 'Unable to load VS Code updates');
+        }
         
         // CRITICAL: Restart highlighter on current page with updated item count
         // Timer states must be preserved (do NOT call reset() - that would break timer)
@@ -725,6 +787,7 @@ async function fetchAllData() {
         renderErrorState('blog-list', 'Dashboard initialization failed');
         renderErrorState('changelog-list', 'Dashboard initialization failed');
         renderErrorState('status-list', 'Dashboard initialization failed');
+        renderErrorState('vscode-list', 'Dashboard initialization failed');
     }
 }
 
@@ -777,10 +840,11 @@ if (window.carouselInstance) {
 const DEFAULT_PAGE_INTERVAL = 30000; // 30 seconds per page
 const PAGE_INTERVAL_OVERRIDES = {
   blog: 90000,
-  changelog: 90000
+  changelog: 90000,
+  vscode: 90000
 };
 
-window.carouselInstance = new CarouselController({ interval: DEFAULT_PAGE_INTERVAL, pageIntervals: PAGE_INTERVAL_OVERRIDES }); // 30 seconds per page default, overridden per page
+window.carouselInstance = new CarouselController({ interval: DEFAULT_PAGE_INTERVAL, pages: ['blog', 'changelog', 'status', 'vscode'], pageIntervals: PAGE_INTERVAL_OVERRIDES }); // 30 seconds per page default, overridden per page
 
 // Initialize item highlighter
 if (window.itemHighlighterInstance) {
@@ -790,7 +854,8 @@ if (window.itemHighlighterInstance) {
 const DEFAULT_ITEM_INTERVAL = 8000; // 8 seconds per item
 const ITEM_INTERVAL_OVERRIDES = {
   blog: 24000,
-  changelog: 24000
+  changelog: 24000,
+  vscode: 24000
 };
 
 function applyItemIntervalForPage(pageName) {
