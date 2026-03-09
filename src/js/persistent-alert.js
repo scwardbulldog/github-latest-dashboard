@@ -51,10 +51,11 @@ export class PersistentAlert {
     this.element.style.display = 'none';
     this.currentOutages = null;
     
-    // Stop any scrolling animation
+    // Stop any scrolling animation and remove scrolling classes
     if (this.trackElement) {
       this.trackElement.classList.remove('persistent-alert__track--scrolling');
     }
+    this.element.classList.remove('persistent-alert--scrolling');
   }
   
   /**
@@ -109,9 +110,11 @@ export class PersistentAlert {
       // Duplicate content for seamless loop
       this.trackElement.textContent = tickerContent + separator + tickerContent;
       this.trackElement.classList.add('persistent-alert__track--scrolling');
+      this.element.classList.add('persistent-alert--scrolling');
     } else {
-      // Content fits, no scrolling needed
+      // Content fits, no scrolling needed - keep text centered
       this.trackElement.classList.remove('persistent-alert__track--scrolling');
+      this.element.classList.remove('persistent-alert--scrolling');
     }
   }
   
