@@ -70,10 +70,10 @@ export class DetailPanel {
    * @param {Object} item - Item data { title, timestamp, description, link, articleUrl }
    * @param {Function} contentFetcher - Async function to fetch full content (optional)
    * @param {Object} options - Additional options
-   * @param {boolean} options.hideTitle - Hide the title (useful when fetched content includes title)
+   * @param {boolean} options.hideHeader - Hide the title and timestamp (useful when fetched content includes them)
    */
   async renderWithAsyncContent(item, contentFetcher, options = {}) {
-    const { hideTitle = false } = options;
+    const { hideHeader = false } = options;
     // Generate unique ID for this item render using counter for guaranteed uniqueness
     const itemId = `${item.link || ''}-${Date.now()}-${++DetailPanel.itemIdCounter}`;
     this.currentItemId = itemId;
@@ -106,7 +106,7 @@ export class DetailPanel {
       
       // Phase 2: Show initial content with loading indicator if we have a content fetcher
       const showLoading = !!contentFetcher && item.link;
-      this.container.innerHTML = this.buildContentWithLoading(item, showLoading, hideTitle);
+      this.container.innerHTML = this.buildContentWithLoading(item, showLoading, hideHeader);
       
       // Phase 3: Fade in (100ms)
       this.container.style.opacity = '1';
@@ -147,10 +147,10 @@ export class DetailPanel {
    * @private
    * @param {Object} item - Item data
    * @param {boolean} showLoading - Whether to show loading indicator
-   * @param {boolean} hideTitle - Whether to hide the title (useful when fetched content includes title)
+   * @param {boolean} hideHeader - Whether to hide the title and timestamp (useful when fetched content includes them)
    * @returns {string} HTML string
    */
-  buildContentWithLoading(item, showLoading = false, hideTitle = false) {
+  buildContentWithLoading(item, showLoading = false, hideHeader = false) {
     const safeTitle = this.sanitizeHtml(item.title || 'Untitled');
     const safeTimestamp = item.timestamp || 'Unknown date';
     const safeDescription = this.sanitizeHtml(
@@ -165,13 +165,14 @@ export class DetailPanel {
       </div>
     ` : '';
     
-    // Only show title if hideTitle is false
-    const titleHtml = hideTitle ? '' : `<h2 class="detail-panel__title">${safeTitle}</h2>`;
+    // Only show title and timestamp if hideHeader is false
+    const headerHtml = hideHeader ? '' : `
+        <h2 class="detail-panel__title">${safeTitle}</h2>
+        <time class="detail-panel__timestamp">${safeTimestamp}</time>`;
     
     return `
       <div class="detail-panel-content">
-        ${titleHtml}
-        <time class="detail-panel__timestamp">${safeTimestamp}</time>
+        ${headerHtml}
         ${loadingIndicator}
         <div class="detail-panel__content" id="detail-content">${safeDescription}</div>
         ${safeLink ? `<a href="${safeLink}" class="detail-panel__link" target="_blank" rel="noopener noreferrer">View on VS Code site →</a>` : ''}
