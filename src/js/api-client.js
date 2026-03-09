@@ -14,12 +14,6 @@ const cache = {
 // Cache duration: 5 minutes (matches existing auto-refresh interval)
 const CACHE_DURATION = 5 * 60 * 1000;
 
-// VS Code full content fetch configuration
-const MAX_ITEMS_WITH_FULL_CONTENT = 10; // Limit items to fetch full content for
-const MIN_CONTENT_LENGTH_THRESHOLD = 1000; // Min chars to consider content "full"
-const MAX_BODY_CONTENT_LENGTH = 10000; // Max chars to extract from body fallback
-const CONCURRENT_CONTENT_FETCHES = 3; // Max concurrent article fetches
-
 /**
  * Retry a fetch operation with exponential backoff
  * @param {Function} fetchFn - Async function to retry
@@ -220,96 +214,8 @@ export function getCacheEntry(source) {
 }
 
 /**
- * Fetch full article content from VS Code updates page
- * Uses DOMParser for safe HTML parsing
- * @param {string} url - Article URL
- * @returns {Promise<string>} Full article HTML content
- */
-async function fetchVSCodeArticleContent(url) {
-  try {
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
-    }
-    
-    const html = await response.text();
-    
-    // Use DOMParser for safe HTML parsing (prevents XSS and parsing issues)
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(html, 'text/html');
-    
-    // Try to extract main content from the VS Code updates page
-    // Priority: <article> > <main> > limited <body> content
-    
-    const article = doc.querySelector('article');
-    if (article) {
-      return article.innerHTML;
-    }
-    
-    const main = doc.querySelector('main');
-    if (main) {
-      return main.innerHTML;
-    }
-    
-    // Last resort: return limited portion of body to avoid huge content
-    const body = doc.querySelector('body');
-    if (body) {
-      const bodyContent = body.innerHTML;
-      return bodyContent.substring(0, MAX_BODY_CONTENT_LENGTH);
-    }
-    
-    return '';
-  } catch (error) {
-    console.warn(`Failed to fetch full content from ${url}:`, error.message);
-    return '';
-  }
-}
-
-/**
- * Process items with rate limiting to avoid server overload
- * Fetches full content with controlled concurrency
- * @param {Array} items - RSS items to process
- * @param {number} concurrency - Max concurrent fetches
- * @returns {Promise<Array>} Items with full content
- */
-async function fetchItemsWithRateLimit(items, concurrency = CONCURRENT_CONTENT_FETCHES) {
-  const results = [];
-  
-  for (let i = 0; i < items.length; i += concurrency) {
-    const batch = items.slice(i, i + concurrency);
-    const batchResults = await Promise.all(
-      batch.map(async (item) => {
-        // If content field is already substantial, use it
-        if (item.content && item.content.length > MIN_CONTENT_LENGTH_THRESHOLD) {
-          return item;
-        }
-        
-        // Otherwise, fetch full content from the article URL
-        if (item.link) {
-          const fullContent = await fetchVSCodeArticleContent(item.link);
-          if (fullContent) {
-            return {
-              ...item,
-              content: fullContent,
-              // Keep original for fallback
-              originalContent: item.content || item.description
-            };
-          }
-        }
-        
-        return item;
-      })
-    );
-    results.push(...batchResults);
-  }
-  
-  return results;
-}
-
-/**
  * Fetch VS Code Updates data with caching and retry logic
- * Enhanced to fetch full article content for each item
- * @returns {Promise<Object>} VS Code Updates RSS data with full content
+ * @returns {Promise<Object>} VS Code Updates RSS data
  * @throws {Error} If fetch fails and no cached data available
  */
 export async function fetchVSCode() {
@@ -342,21 +248,9 @@ export async function fetchVSCode() {
       return jsonData;
     });
 
-    // Fetch full content for each item with rate limiting to avoid server overload
-    console.log('fetchVSCode: Fetching full article content for items...');
-    const itemsWithFullContent = await fetchItemsWithRateLimit(
-      data.items.slice(0, MAX_ITEMS_WITH_FULL_CONTENT)
-    );
-
-    // Replace items with enhanced versions
-    const enhancedData = {
-      ...data,
-      items: itemsWithFullContent
-    };
-
-    cache.vscode = { data: enhancedData, timestamp: now };
-    console.log(`fetchVSCode: Fetched ${enhancedData.items.length} items with full content`);
-    return enhancedData;
+    cache.vscode = { data, timestamp: now };
+    console.log(`fetchVSCode: Fetched ${data.items.length} items`);
+    return data;
   } catch (error) {
     console.error('fetchVSCode: Error fetching VS Code updates after retries:', error);
 
