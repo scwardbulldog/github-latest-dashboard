@@ -17,7 +17,8 @@ import {
     fetchStatus as fetchStatusFromApiClient,
     fetchVSCode as fetchVSCodeFromApiClient,
     getCacheEntry,
-    detectActiveOutages
+    detectActiveOutages,
+    fetchArticleContent
 } from './api-client.js';
 
 // Configuration
@@ -930,9 +931,18 @@ window.itemHighlighterInstance.onItemHighlight = (itemElement, itemIndex) => {
   // Extract data from DOM element
   const itemData = extractItemData(itemElement);
   
-  // Render in detail panel
-  window.detailPanelInstance.render(itemData);
-  console.log(`DetailPanel rendering item ${itemIndex}:`, itemData.title);
+  // Check if we're on the VS Code page - use async content fetching
+  const isVSCodePage = activePage.id === 'page-vscode';
+  
+  if (isVSCodePage && itemData.link) {
+    // Use async content fetching for VS Code items
+    window.detailPanelInstance.renderWithAsyncContent(itemData, fetchArticleContent);
+    console.log(`DetailPanel rendering VS Code item ${itemIndex} with async content:`, itemData.title);
+  } else {
+    // Regular rendering for other pages
+    window.detailPanelInstance.render(itemData);
+    console.log(`DetailPanel rendering item ${itemIndex}:`, itemData.title);
+  }
 };
 
 // ============================================================================

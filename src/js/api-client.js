@@ -317,3 +317,156 @@ export function detectActiveOutages(statusData) {
   };
 }
 
+// Cache for article content (separate from RSS cache)
+const articleCache = new Map();
+const ARTICLE_CACHE_DURATION = 30 * 60 * 1000; // 30 minutes for article content
+
+// CORS proxy for fetching external pages
+// Note: Using a public CORS proxy is necessary for this client-side only application.
+// The proxy (allorigins.win) acts as an intermediary to bypass CORS restrictions.
+// Security consideration: This proxy can see all fetched content. Only use for 
+// public, non-sensitive content (VS Code update pages are public documentation).
+// Alternative: Deploy your own CORS proxy or backend endpoint for production use.
+const CORS_PROXY = 'https://api.allorigins.win/raw?url=';
+
+/**
+ * Fetch article content from a VS Code update page URL
+ * @param {string} url - The full URL of the article page
+ * @returns {Promise<string>} The extracted article HTML content
+ * @throws {Error} If fetch fails
+ */
+export async function fetchArticleContent(url) {
+  if (!url) {
+    console.warn('fetchArticleContent: No URL provided');
+    return null;
+  }
+
+  const now = Date.now();
+  
+  // Check cache first
+  const cached = articleCache.get(url);
+  if (cached && now - cached.timestamp < ARTICLE_CACHE_DURATION) {
+    console.log('fetchArticleContent: Using cached content for', url);
+    return cached.content;
+  }
+
+  try {
+    const content = await retryFetch(async () => {
+      const proxyUrl = CORS_PROXY + encodeURIComponent(url);
+      console.log('fetchArticleContent: Fetching from', url);
+      
+      const response = await fetch(proxyUrl);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const html = await response.text();
+      
+      // Extract main article content from the page
+      return extractVSCodeArticleContent(html);
+    }, 2, [1000, 2000]); // 2 retries with shorter delays
+
+    // Cache the extracted content
+    articleCache.set(url, { content, timestamp: now });
+    console.log('fetchArticleContent: Successfully fetched and cached content');
+    
+    return content;
+  } catch (error) {
+    console.error('fetchArticleContent: Error fetching article content:', error);
+    
+    // Return cached content if available (stale cache)
+    if (cached) {
+      console.warn('fetchArticleContent: Using stale cached content due to fetch error');
+      return cached.content;
+    }
+    
+    return null;
+  }
+}
+
+/**
+ * Extract the main article content from VS Code update page HTML
+ * @param {string} html - The full HTML of the page
+ * @returns {string} The extracted article content HTML
+ */
+function extractVSCodeArticleContent(html) {
+  if (!html) return '';
+  
+  // Selectors to remove from content (scripts, styles, navigation, etc.)
+  const ELEMENTS_TO_REMOVE = [
+    'script', 'style', 'nav', 'header', 'footer', 
+    '.nav', '.header', '.footer', '.sidebar', '.toc', '.navigation'
+  ];
+  
+  // Create a DOM parser to extract content
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, 'text/html');
+  
+  // VS Code pages typically have main content in these selectors
+  // Try multiple selectors in order of specificity
+  const contentSelectors = [
+    'article',
+    '.main-content',
+    'main',
+    '.content',
+    '#main-content',
+    '.release-notes',
+    '.update-notes'
+  ];
+  
+  let contentEl = null;
+  for (const selector of contentSelectors) {
+    contentEl = doc.querySelector(selector);
+    if (contentEl) break;
+  }
+  
+  if (!contentEl) {
+    // Fallback: try to get body content without nav/footer
+    const body = doc.body;
+    if (body) {
+      // Remove navigation and footer elements from body before using as content
+      ELEMENTS_TO_REMOVE.forEach(sel => {
+        body.querySelectorAll(sel).forEach(el => el.remove());
+      });
+      contentEl = body;
+    }
+  }
+  
+  if (!contentEl) {
+    console.warn('extractVSCodeArticleContent: Could not find main content');
+    return '';
+  }
+  
+  // Clean up the content - remove unwanted elements
+  ELEMENTS_TO_REMOVE.forEach(sel => {
+    contentEl.querySelectorAll(sel).forEach(el => el.remove());
+  });
+  
+  // Remove event handlers from all elements
+  contentEl.querySelectorAll('*').forEach(el => {
+    Array.from(el.attributes).forEach(attr => {
+      if (attr.name.startsWith('on')) {
+        el.removeAttribute(attr.name);
+      }
+    });
+  });
+  
+  // Make all links open in new tab
+  contentEl.querySelectorAll('a').forEach(a => {
+    a.setAttribute('target', '_blank');
+    a.setAttribute('rel', 'noopener noreferrer');
+  });
+  
+  // Get the cleaned HTML
+  return contentEl.innerHTML;
+}
+
+/**
+ * Clear the article cache (useful for testing or manual refresh)
+ */
+export function clearArticleCache() {
+  articleCache.clear();
+  console.log('Article cache cleared');
+}
+

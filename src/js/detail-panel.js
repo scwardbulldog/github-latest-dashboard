@@ -3,6 +3,9 @@
  * @class
  */
 export class DetailPanel {
+  // Counter for generating unique item IDs
+  static itemIdCounter = 0;
+  
   /**
    * Create a DetailPanel instance
    * @param {Object} config - Configuration options
@@ -12,6 +15,7 @@ export class DetailPanel {
     this.containerId = containerId;
     this.container = null;
     this.isTransitioning = false; // Prevent overlapping transitions
+    this.currentItemId = null; // Track current item to prevent stale updates
   }
   
   /**
@@ -57,6 +61,151 @@ export class DetailPanel {
       this.container.style.opacity = '1';
     } finally {
       this.isTransitioning = false;
+    }
+  }
+  
+  /**
+   * Render item details with async content loading
+   * Shows initial content immediately, then fetches full content asynchronously
+   * @param {Object} item - Item data { title, timestamp, description, link, articleUrl }
+   * @param {Function} contentFetcher - Async function to fetch full content (optional)
+   */
+  async renderWithAsyncContent(item, contentFetcher) {
+    // Generate unique ID for this item render using counter for guaranteed uniqueness
+    const itemId = `${item.link || ''}-${Date.now()}-${++DetailPanel.itemIdCounter}`;
+    this.currentItemId = itemId;
+    
+    // Get active page's detail panel
+    const activePage = document.querySelector('.carousel-page.active');
+    if (!activePage) {
+      console.warn('DetailPanel: No active page found');
+      return;
+    }
+    
+    this.container = activePage.querySelector('.detail-panel');
+    if (!this.container) {
+      console.error('DetailPanel: No .detail-panel found on active page');
+      return;
+    }
+    
+    // Prevent overlapping transitions
+    if (this.isTransitioning) {
+      console.debug('DetailPanel: Transition in progress, skipping render');
+      return;
+    }
+    
+    this.isTransitioning = true;
+    
+    try {
+      // Phase 1: Fade out (100ms)
+      this.container.style.opacity = '0';
+      await this.wait(100);
+      
+      // Phase 2: Show initial content with loading indicator if we have a content fetcher
+      const showLoading = !!contentFetcher && item.link;
+      this.container.innerHTML = this.buildContentWithLoading(item, showLoading);
+      
+      // Phase 3: Fade in (100ms)
+      this.container.style.opacity = '1';
+      await this.wait(100);
+    } catch (error) {
+      console.error('DetailPanel: Error during render transition', error);
+      this.container.style.opacity = '1';
+    } finally {
+      this.isTransitioning = false;
+    }
+    
+    // If we have a content fetcher and a link, fetch the full content asynchronously
+    if (contentFetcher && item.link) {
+      try {
+        const fullContent = await contentFetcher(item.link);
+        
+        // Check if this item is still the current one (prevent stale updates)
+        if (this.currentItemId !== itemId) {
+          console.debug('DetailPanel: Skipping stale content update');
+          return;
+        }
+        
+        if (fullContent) {
+          this.updateContent(fullContent, item);
+        } else {
+          // Remove loading indicator if fetch failed
+          this.removeLoadingIndicator();
+        }
+      } catch (error) {
+        console.error('DetailPanel: Error fetching async content', error);
+        this.removeLoadingIndicator();
+      }
+    }
+  }
+  
+  /**
+   * Build HTML content with optional loading indicator
+   * @private
+   * @param {Object} item - Item data
+   * @param {boolean} showLoading - Whether to show loading indicator
+   * @returns {string} HTML string
+   */
+  buildContentWithLoading(item, showLoading = false) {
+    const safeTitle = this.sanitizeHtml(item.title || 'Untitled');
+    const safeTimestamp = item.timestamp || 'Unknown date';
+    const safeDescription = this.sanitizeHtml(
+      item.description || 'No description available'
+    );
+    const safeLink = item.link || '';
+    
+    const loadingIndicator = showLoading ? `
+      <div class="detail-panel__loading" id="detail-loading">
+        <div class="detail-panel__loading-spinner"></div>
+        <span>Loading full article...</span>
+      </div>
+    ` : '';
+    
+    return `
+      <div class="detail-panel-content">
+        <h2 class="detail-panel__title">${safeTitle}</h2>
+        <time class="detail-panel__timestamp">${safeTimestamp}</time>
+        ${loadingIndicator}
+        <div class="detail-panel__content" id="detail-content">${safeDescription}</div>
+        ${safeLink ? `<a href="${safeLink}" class="detail-panel__link" target="_blank" rel="noopener noreferrer">View on VS Code site →</a>` : ''}
+      </div>
+    `;
+  }
+  
+  /**
+   * Update the content area with fetched content
+   * @private
+   * @param {string} content - The new HTML content
+   * @param {Object} item - Original item data for fallback
+   */
+  updateContent(content, item) {
+    if (!this.container) return;
+    
+    const contentEl = this.container.querySelector('#detail-content');
+    const loadingEl = this.container.querySelector('#detail-loading');
+    
+    if (contentEl) {
+      // Sanitize and update content
+      const sanitizedContent = this.sanitizeHtml(content);
+      contentEl.innerHTML = sanitizedContent;
+      console.log('DetailPanel: Updated with full article content');
+    }
+    
+    if (loadingEl) {
+      loadingEl.remove();
+    }
+  }
+  
+  /**
+   * Remove the loading indicator
+   * @private
+   */
+  removeLoadingIndicator() {
+    if (!this.container) return;
+    
+    const loadingEl = this.container.querySelector('#detail-loading');
+    if (loadingEl) {
+      loadingEl.remove();
     }
   }
   
