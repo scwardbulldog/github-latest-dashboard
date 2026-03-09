@@ -69,8 +69,11 @@ export class DetailPanel {
    * Shows initial content immediately, then fetches full content asynchronously
    * @param {Object} item - Item data { title, timestamp, description, link, articleUrl }
    * @param {Function} contentFetcher - Async function to fetch full content (optional)
+   * @param {Object} options - Additional options
+   * @param {boolean} options.hideTitle - Hide the title (useful when fetched content includes title)
    */
-  async renderWithAsyncContent(item, contentFetcher) {
+  async renderWithAsyncContent(item, contentFetcher, options = {}) {
+    const { hideTitle = false } = options;
     // Generate unique ID for this item render using counter for guaranteed uniqueness
     const itemId = `${item.link || ''}-${Date.now()}-${++DetailPanel.itemIdCounter}`;
     this.currentItemId = itemId;
@@ -103,7 +106,7 @@ export class DetailPanel {
       
       // Phase 2: Show initial content with loading indicator if we have a content fetcher
       const showLoading = !!contentFetcher && item.link;
-      this.container.innerHTML = this.buildContentWithLoading(item, showLoading);
+      this.container.innerHTML = this.buildContentWithLoading(item, showLoading, hideTitle);
       
       // Phase 3: Fade in (100ms)
       this.container.style.opacity = '1';
@@ -144,9 +147,10 @@ export class DetailPanel {
    * @private
    * @param {Object} item - Item data
    * @param {boolean} showLoading - Whether to show loading indicator
+   * @param {boolean} hideTitle - Whether to hide the title (useful when fetched content includes title)
    * @returns {string} HTML string
    */
-  buildContentWithLoading(item, showLoading = false) {
+  buildContentWithLoading(item, showLoading = false, hideTitle = false) {
     const safeTitle = this.sanitizeHtml(item.title || 'Untitled');
     const safeTimestamp = item.timestamp || 'Unknown date';
     const safeDescription = this.sanitizeHtml(
@@ -161,9 +165,12 @@ export class DetailPanel {
       </div>
     ` : '';
     
+    // Only show title if hideTitle is false
+    const titleHtml = hideTitle ? '' : `<h2 class="detail-panel__title">${safeTitle}</h2>`;
+    
     return `
       <div class="detail-panel-content">
-        <h2 class="detail-panel__title">${safeTitle}</h2>
+        ${titleHtml}
         <time class="detail-panel__timestamp">${safeTimestamp}</time>
         ${loadingIndicator}
         <div class="detail-panel__content" id="detail-content">${safeDescription}</div>

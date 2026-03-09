@@ -936,7 +936,8 @@ window.itemHighlighterInstance.onItemHighlight = (itemElement, itemIndex) => {
   
   if (isVSCodePage && itemData.link) {
     // Use async content fetching for VS Code items
-    window.detailPanelInstance.renderWithAsyncContent(itemData, fetchArticleContent);
+    // Hide the title since the fetched article content already includes it
+    window.detailPanelInstance.renderWithAsyncContent(itemData, fetchArticleContent, { hideTitle: true });
     console.log(`DetailPanel rendering VS Code item ${itemIndex} with async content:`, itemData.title);
   } else {
     // Regular rendering for other pages
