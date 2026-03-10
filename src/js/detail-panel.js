@@ -71,9 +71,10 @@ export class DetailPanel {
    * @param {Function} contentFetcher - Async function to fetch full content (optional)
    * @param {Object} options - Additional options
    * @param {boolean} options.hideHeader - Hide the title and timestamp (useful when fetched content includes them)
+   * @param {boolean} options.skipInitialContent - Skip showing initial description, only show loading state and fetched content
    */
   async renderWithAsyncContent(item, contentFetcher, options = {}) {
-    const { hideHeader = false } = options;
+    const { hideHeader = false, skipInitialContent = false } = options;
     // Generate unique ID for this item render using counter for guaranteed uniqueness
     const itemId = `${item.link || ''}-${Date.now()}-${++DetailPanel.itemIdCounter}`;
     this.currentItemId = itemId;
@@ -106,7 +107,7 @@ export class DetailPanel {
       
       // Phase 2: Show initial content with loading indicator if we have a content fetcher
       const showLoading = !!contentFetcher && item.link;
-      this.container.innerHTML = this.buildContentWithLoading(item, showLoading, hideHeader);
+      this.container.innerHTML = this.buildContentWithLoading(item, showLoading, hideHeader, skipInitialContent);
       
       // Phase 3: Fade in (100ms)
       this.container.style.opacity = '1';
@@ -148,9 +149,10 @@ export class DetailPanel {
    * @param {Object} item - Item data
    * @param {boolean} showLoading - Whether to show loading indicator
    * @param {boolean} hideHeader - Whether to hide the title and timestamp (useful when fetched content includes them)
+   * @param {boolean} skipInitialContent - Skip showing initial description, only show loading state
    * @returns {string} HTML string
    */
-  buildContentWithLoading(item, showLoading = false, hideHeader = false) {
+  buildContentWithLoading(item, showLoading = false, hideHeader = false, skipInitialContent = false) {
     const safeTitle = this.sanitizeHtml(item.title || 'Untitled');
     const safeTimestamp = item.timestamp || 'Unknown date';
     const safeDescription = this.sanitizeHtml(
@@ -170,11 +172,14 @@ export class DetailPanel {
         <h2 class="detail-panel__title">${safeTitle}</h2>
         <time class="detail-panel__timestamp">${safeTimestamp}</time>`;
     
+    // If skipInitialContent is true, don't show description - only show loading state then fetched content
+    const contentHtml = skipInitialContent ? '' : `<div class="detail-panel__content" id="detail-content">${safeDescription}</div>`;
+    
     return `
       <div class="detail-panel-content">
         ${headerHtml}
         ${loadingIndicator}
-        <div class="detail-panel__content" id="detail-content">${safeDescription}</div>
+        ${contentHtml}
         ${safeLink ? `<a href="${safeLink}" class="detail-panel__link" target="_blank" rel="noopener noreferrer">View on VS Code site →</a>` : ''}
       </div>
     `;
@@ -189,16 +194,38 @@ export class DetailPanel {
   updateContent(content, item) {
     if (!this.container) return;
     
-    const contentEl = this.container.querySelector('#detail-content');
+    let contentEl = this.container.querySelector('#detail-content');
     const loadingEl = this.container.querySelector('#detail-loading');
     
-    if (contentEl) {
-      // Sanitize and update content
-      const sanitizedContent = this.sanitizeHtml(content);
-      contentEl.innerHTML = sanitizedContent;
-      console.log('DetailPanel: Updated with full article content');
+    // If no content div exists (skipInitialContent was true), create it
+    if (!contentEl) {
+      contentEl = document.createElement('div');
+      contentEl.className = 'detail-panel__content';
+      contentEl.id = 'detail-content';
+      
+      // Insert it where the loading indicator is (or at the end)
+      if (loadingEl) {
+        loadingEl.parentNode.insertBefore(contentEl, loadingEl.nextSibling);
+      } else {
+        const panelContent = this.container.querySelector('.detail-panel-content');
+        if (panelContent) {
+          // Insert before the link if it exists, otherwise append
+          const link = panelContent.querySelector('.detail-panel__link');
+          if (link) {
+            panelContent.insertBefore(contentEl, link);
+          } else {
+            panelContent.appendChild(contentEl);
+          }
+        }
+      }
     }
     
+    // Sanitize and update content
+    const sanitizedContent = this.sanitizeHtml(content);
+    contentEl.innerHTML = sanitizedContent;
+    console.log('DetailPanel: Updated with full article content');
+    
+    // Remove loading indicator after content is inserted
     if (loadingEl) {
       loadingEl.remove();
     }
