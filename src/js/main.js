@@ -845,7 +845,7 @@ const PAGE_INTERVAL_OVERRIDES = {
   vscode: 90000
 };
 
-window.carouselInstance = new CarouselController({ interval: DEFAULT_PAGE_INTERVAL, pages: ['blog', 'changelog', 'status', 'vscode'], pageIntervals: PAGE_INTERVAL_OVERRIDES }); // 30 seconds per page default, overridden per page
+window.carouselInstance = new CarouselController({ interval: DEFAULT_PAGE_INTERVAL, pages: ['vscode', 'blog', 'changelog', 'status'], pageIntervals: PAGE_INTERVAL_OVERRIDES }); // 30 seconds per page default, overridden per page
 
 // Initialize item highlighter
 if (window.itemHighlighterInstance) {
