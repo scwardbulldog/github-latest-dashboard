@@ -766,6 +766,18 @@ async function fetchAllData() {
             window.dataInitialized = true;
             console.log('fetchAllData: First data load complete');
             
+            // Hide loading overlay and remove loading class
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            const dashboardContainer = document.querySelector('.dashboard-container');
+            if (loadingOverlay) {
+                loadingOverlay.classList.add('hidden');
+                // Remove overlay from DOM after transition completes
+                setTimeout(() => loadingOverlay.remove(), 300);
+            }
+            if (dashboardContainer) {
+                dashboardContainer.classList.remove('loading');
+            }
+            
             // Initialize ItemHighlighter with real data
             const initialPage = window.carouselInstance.pages[window.carouselInstance.currentPage];
             const initialItemCount = getItemCountForPage(initialPage);
@@ -782,6 +794,18 @@ async function fetchAllData() {
         
     } catch (error) {
         console.error('fetchAllData: Critical error during data initialization:', error);
+        
+        // Hide loading overlay even on error
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const dashboardContainer = document.querySelector('.dashboard-container');
+        if (loadingOverlay) {
+            loadingOverlay.classList.add('hidden');
+            setTimeout(() => loadingOverlay.remove(), 300);
+        }
+        if (dashboardContainer) {
+            dashboardContainer.classList.remove('loading');
+        }
+        
         // Fallback: show error state for all pages
         isOffline = true;
         updateLiveIndicator();

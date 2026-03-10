@@ -45,7 +45,13 @@
         </div>
     </div>
 
-    <div class="dashboard-container">
+    <!-- Initial Loading Overlay -->
+    <div class="dashboard-loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Loading GitHub Updates...</div>
+    </div>
+
+    <div class="dashboard-container loading">
         <!-- Blog Page -->
         <div class="carousel-page" id="page-blog">
             <div class="page-header">BLOG</div>
