@@ -16,6 +16,7 @@ import {
     fetchChangelog as fetchChangelogFromApiClient,
     fetchStatus as fetchStatusFromApiClient,
     fetchVSCode as fetchVSCodeFromApiClient,
+    fetchVisualStudio as fetchVisualStudioFromApiClient,
     getCacheEntry,
     detectActiveOutages,
     fetchArticleContent
@@ -102,22 +103,24 @@ function updateLiveIndicator() {
 }
 
 /**
- * Render Blog page data
- * @param {Object} blogData - Blog RSS data from API
+ * Shared RSS list renderer - DRY implementation for all RSS-based pages
+ * @param {Object} data - RSS data from API with items array
+ * @param {string} containerId - DOM element ID for the list container
+ * @param {string} sourceName - Human-readable source name for logging/errors
  * @returns {number} Number of items rendered
  */
-function renderBlogList(blogData) {
-    const blogListEl = document.getElementById('blog-list');
-    if (!blogListEl) {
-        console.error('renderBlogList: blog-list element not found');
+function renderRSSList(data, containerId, sourceName) {
+    const listEl = document.getElementById(containerId);
+    if (!listEl) {
+        console.error(`renderRSSList: ${containerId} element not found`);
         return 0;
     }
     
     // Clear placeholder content
-    blogListEl.innerHTML = '';
+    listEl.innerHTML = '';
     
     // Render at least 10 items (AC requirement)
-    const items = blogData.items.slice(0, 10);
+    const items = data.items.slice(0, 10);
     
     // Performance optimization: Use DocumentFragment for batched DOM insertion
     // This eliminates layout thrashing (only one reflow instead of N reflows)
@@ -147,10 +150,19 @@ function renderBlogList(blogData) {
     });
     
     // Single DOM write (one reflow)
-    blogListEl.appendChild(fragment);
+    listEl.appendChild(fragment);
     
-    console.log(`renderBlogList: Rendered ${items.length} blog items`);
+    console.log(`renderRSSList: Rendered ${items.length} ${sourceName} items`);
     return items.length;
+}
+
+/**
+ * Render Blog page data
+ * @param {Object} blogData - Blog RSS data from API
+ * @returns {number} Number of items rendered
+ */
+function renderBlogList(blogData) {
+    return renderRSSList(blogData, 'blog-list', 'blog');
 }
 
 /**
@@ -159,50 +171,7 @@ function renderBlogList(blogData) {
  * @returns {number} Number of items rendered
  */
 function renderChangelogList(changelogData) {
-    const changelogListEl = document.getElementById('changelog-list');
-    if (!changelogListEl) {
-        console.error('renderChangelogList: changelog-list element not found');
-        return 0;
-    }
-    
-    // Clear placeholder content
-    changelogListEl.innerHTML = '';
-    
-    // Render at least 10 items (AC requirement)
-    const items = changelogData.items.slice(0, 10);
-    
-    // Performance optimization: Use DocumentFragment for batched DOM insertion
-    const fragment = document.createDocumentFragment();
-    
-    items.forEach((item, index) => {
-        const itemEl = document.createElement('div');
-        itemEl.className = 'list-item';
-        itemEl.dataset.index = index;
-        itemEl.dataset.link = item.link || '';
-        
-        // Store full content HTML for detail panel rendering (use 'content' field, fallback to 'description')
-        itemEl.dataset.fullDescription = item.content || item.description || '';
-        
-        const title = item.title || 'Untitled';
-        const timestamp = formatDate(item.pubDate);
-        // Strip HTML for list view, preserve for detail panel
-        const description = truncate(stripHtml(item.description || ''), 120);
-        
-        itemEl.innerHTML = `
-            <div class="list-item-title">${title}</div>
-            <div class="list-item-timestamp">${timestamp}</div>
-            <div class="list-item-description">${description}</div>
-        `;
-        
-        // Append to fragment (no DOM reflow)
-        fragment.appendChild(itemEl);
-    });
-    
-    // Single DOM write (one reflow)
-    changelogListEl.appendChild(fragment);
-    
-    console.log(`renderChangelogList: Rendered ${items.length} changelog items`);
-    return items.length;
+    return renderRSSList(changelogData, 'changelog-list', 'changelog');
 }
 
 /**
@@ -211,47 +180,16 @@ function renderChangelogList(changelogData) {
  * @returns {number} Number of items rendered
  */
 function renderVSCodeList(vscodeData) {
-    const vscodeListEl = document.getElementById('vscode-list');
-    if (!vscodeListEl) {
-        console.error('renderVSCodeList: vscode-list element not found');
-        return 0;
-    }
+    return renderRSSList(vscodeData, 'vscode-list', 'VS Code update');
+}
 
-    // Clear placeholder content
-    vscodeListEl.innerHTML = '';
-
-    const items = vscodeData.items.slice(0, 10);
-
-    // Performance optimization: Use DocumentFragment for batched DOM insertion
-    const fragment = document.createDocumentFragment();
-
-    items.forEach((item, index) => {
-        const itemEl = document.createElement('div');
-        itemEl.className = 'list-item';
-        itemEl.dataset.index = index;
-        itemEl.dataset.link = item.link || '';
-
-        // Store full content HTML for detail panel rendering
-        itemEl.dataset.fullDescription = item.content || item.description || '';
-
-        const title = item.title || 'Untitled';
-        const timestamp = formatDate(item.pubDate);
-        const description = truncate(stripHtml(item.description || ''), 120);
-
-        itemEl.innerHTML = `
-            <div class="list-item-title">${title}</div>
-            <div class="list-item-timestamp">${timestamp}</div>
-            <div class="list-item-description">${description}</div>
-        `;
-
-        fragment.appendChild(itemEl);
-    });
-
-    // Single DOM write (one reflow)
-    vscodeListEl.appendChild(fragment);
-
-    console.log(`renderVSCodeList: Rendered ${items.length} VS Code update items`);
-    return items.length;
+/**
+ * Render Visual Studio DevBlog list data
+ * @param {Object} visualstudioData - Visual Studio DevBlog RSS data from API
+ * @returns {number} Number of items rendered
+ */
+function renderVisualStudioList(visualstudioData) {
+    return renderRSSList(visualstudioData, 'visualstudio-list', 'Visual Studio update');
 }
 
 /**
@@ -665,37 +603,49 @@ async function fetchAllData() {
     console.log('fetchAllData: Starting parallel API fetches...');
     
     try {
-        // Track fetch failures for network status indicator
-        let anyFetchFailed = false;
+        // Track fetch failures for intelligent network status detection
+        // We track failures per source to determine if we're truly offline
+        let failureCount = 0;
+        let totalSources = 5;
         
         // Parallel fetch with Promise.all (AC requirement)
         // Per-column error isolation: each fetch has its own catch block
-        const [blogData, changelogData, statusData, vscodeData] = await Promise.all([
+        const [blogData, changelogData, statusData, vscodeData, visualstudioData] = await Promise.all([
             fetchBlogFromApiClient().catch(err => {
                 console.error('fetchAllData: Blog fetch failed:', err);
-                anyFetchFailed = true;
+                failureCount++;
                 return null; // Per-column isolation
             }),
             fetchChangelogFromApiClient().catch(err => {
                 console.error('fetchAllData: Changelog fetch failed:', err);
-                anyFetchFailed = true;
+                failureCount++;
                 return null;
             }),
             fetchStatusFromApiClient().catch(err => {
                 console.error('fetchAllData: Status fetch failed:', err);
-                anyFetchFailed = true;
+                failureCount++;
                 return null;
             }),
             fetchVSCodeFromApiClient().catch(err => {
                 console.error('fetchAllData: VS Code updates fetch failed:', err);
-                anyFetchFailed = true;
+                failureCount++;
+                return null;
+            }),
+            fetchVisualStudioFromApiClient().catch(err => {
+                console.error('fetchAllData: Visual Studio updates fetch failed:', err);
+                failureCount++;
                 return null;
             })
         ]);
         
-        // Update offline state based on fetch results
+        // Update offline state based on failure threshold
+        // Only mark as offline if majority of sources fail (3+ out of 5)
+        // This prevents false "offline" status from single feed issues
         const wasOffline = isOffline;
-        isOffline = anyFetchFailed;
+        isOffline = failureCount >= 3;
+        
+        // Log network status for debugging
+        console.log(`Network status: ${failureCount}/${totalSources} sources failed, offline=${isOffline}`);
         
         // Update live indicator if offline state changed
         if (wasOffline !== isOffline) {
@@ -712,6 +662,7 @@ async function fetchAllData() {
         let changelogItemCount = 0;
         let statusItemCount = 0;
         let vscodeItemCount = 0;
+        let visualstudioItemCount = 0;
         
         // Render each page (with error handling for null data)
         if (blogData) {
@@ -756,6 +707,12 @@ async function fetchAllData() {
             vscodeItemCount = renderVSCodeList(vscodeData);
         } else {
             renderErrorState('vscode-list', 'Unable to load VS Code updates');
+        }
+
+        if (visualstudioData) {
+            visualstudioItemCount = renderVisualStudioList(visualstudioData);
+        } else {
+            renderErrorState('visualstudio-list', 'Unable to load Visual Studio updates');
         }
         
         // CRITICAL: Restart highlighter on current page with updated item count
@@ -866,10 +823,11 @@ const DEFAULT_PAGE_INTERVAL = 30000; // 30 seconds per page
 const PAGE_INTERVAL_OVERRIDES = {
   blog: 90000,
   changelog: 90000,
-  vscode: 90000
+  vscode: 90000,
+  visualstudio: 90000
 };
 
-window.carouselInstance = new CarouselController({ interval: DEFAULT_PAGE_INTERVAL, pages: ['vscode', 'blog', 'changelog', 'status'], pageIntervals: PAGE_INTERVAL_OVERRIDES }); // 30 seconds per page default, overridden per page
+window.carouselInstance = new CarouselController({ interval: DEFAULT_PAGE_INTERVAL, pages: ['vscode', 'visualstudio', 'blog', 'changelog', 'status'], pageIntervals: PAGE_INTERVAL_OVERRIDES }); // 30 seconds per page default, overridden per page
 
 // Initialize item highlighter
 if (window.itemHighlighterInstance) {
@@ -880,7 +838,8 @@ const DEFAULT_ITEM_INTERVAL = 8000; // 8 seconds per item
 const ITEM_INTERVAL_OVERRIDES = {
   blog: 24000,
   changelog: 24000,
-  vscode: 24000
+  vscode: 24000,
+  visualstudio: 24000
 };
 
 function applyItemIntervalForPage(pageName) {

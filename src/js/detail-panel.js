@@ -180,7 +180,7 @@ export class DetailPanel {
         ${headerHtml}
         ${loadingIndicator}
         ${contentHtml}
-        ${safeLink ? `<a href="${safeLink}" class="detail-panel__link" target="_blank" rel="noopener noreferrer">View on VS Code site →</a>` : ''}
+        ${safeLink ? `<a href="${safeLink}" class="detail-panel__link" target="_blank" rel="noopener noreferrer">Read more →</a>` : ''}
       </div>
     `;
   }
