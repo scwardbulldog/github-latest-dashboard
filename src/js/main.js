@@ -17,7 +17,8 @@ import {
     fetchStatus as fetchStatusFromApiClient,
     fetchVSCode as fetchVSCodeFromApiClient,
     getCacheEntry,
-    detectActiveOutages
+    detectActiveOutages,
+    fetchArticleContent
 } from './api-client.js';
 
 // Configuration
@@ -765,6 +766,18 @@ async function fetchAllData() {
             window.dataInitialized = true;
             console.log('fetchAllData: First data load complete');
             
+            // Hide loading overlay and remove loading class
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            const dashboardContainer = document.querySelector('.dashboard-container');
+            if (loadingOverlay) {
+                loadingOverlay.classList.add('hidden');
+                // Remove overlay from DOM after transition completes
+                setTimeout(() => loadingOverlay.remove(), 300);
+            }
+            if (dashboardContainer) {
+                dashboardContainer.classList.remove('loading');
+            }
+            
             // Initialize ItemHighlighter with real data
             const initialPage = window.carouselInstance.pages[window.carouselInstance.currentPage];
             const initialItemCount = getItemCountForPage(initialPage);
@@ -781,6 +794,18 @@ async function fetchAllData() {
         
     } catch (error) {
         console.error('fetchAllData: Critical error during data initialization:', error);
+        
+        // Hide loading overlay even on error
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const dashboardContainer = document.querySelector('.dashboard-container');
+        if (loadingOverlay) {
+            loadingOverlay.classList.add('hidden');
+            setTimeout(() => loadingOverlay.remove(), 300);
+        }
+        if (dashboardContainer) {
+            dashboardContainer.classList.remove('loading');
+        }
+        
         // Fallback: show error state for all pages
         isOffline = true;
         updateLiveIndicator();
@@ -844,7 +869,7 @@ const PAGE_INTERVAL_OVERRIDES = {
   vscode: 90000
 };
 
-window.carouselInstance = new CarouselController({ interval: DEFAULT_PAGE_INTERVAL, pages: ['blog', 'changelog', 'status', 'vscode'], pageIntervals: PAGE_INTERVAL_OVERRIDES }); // 30 seconds per page default, overridden per page
+window.carouselInstance = new CarouselController({ interval: DEFAULT_PAGE_INTERVAL, pages: ['vscode', 'blog', 'changelog', 'status'], pageIntervals: PAGE_INTERVAL_OVERRIDES }); // 30 seconds per page default, overridden per page
 
 // Initialize item highlighter
 if (window.itemHighlighterInstance) {
@@ -930,9 +955,20 @@ window.itemHighlighterInstance.onItemHighlight = (itemElement, itemIndex) => {
   // Extract data from DOM element
   const itemData = extractItemData(itemElement);
   
-  // Render in detail panel
-  window.detailPanelInstance.render(itemData);
-  console.log(`DetailPanel rendering item ${itemIndex}:`, itemData.title);
+  // Check if we're on the VS Code page - use async content fetching
+  const isVSCodePage = activePage.id === 'page-vscode';
+  
+  if (isVSCodePage && itemData.link) {
+    // Use async content fetching for VS Code items
+    // Hide the header (title + timestamp) since the fetched article content already includes them
+    // Skip initial RSS content - only show loading state then full article
+    window.detailPanelInstance.renderWithAsyncContent(itemData, fetchArticleContent, { hideHeader: true, skipInitialContent: true });
+    console.log(`DetailPanel rendering VS Code item ${itemIndex} with async content:`, itemData.title);
+  } else {
+    // Regular rendering for other pages
+    window.detailPanelInstance.render(itemData);
+    console.log(`DetailPanel rendering item ${itemIndex}:`, itemData.title);
+  }
 };
 
 // ============================================================================
