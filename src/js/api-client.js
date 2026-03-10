@@ -406,9 +406,11 @@ function extractVSCodeArticleContent(html) {
   // VS Code pages typically have main content in these selectors
   // Try multiple selectors in order of specificity
   const contentSelectors = [
+    'main.docs-main-content',  // VS Code update pages - most specific
+    '.docs-main-content',       // VS Code docs content
     'article',
     '.main-content',
-    'main',
+    'main',                     // Generic fallback
     '.content',
     '#main-content',
     '.release-notes',
