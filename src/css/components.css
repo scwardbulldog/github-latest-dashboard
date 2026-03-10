@@ -52,6 +52,9 @@
   padding: var(--space-1) var(--space-3);  /* 4px 16px - compact for header */
   border-radius: 6px;                      /* GitHub Primer standard */
   
+  /* Center text by default (when not scrolling) */
+  text-align: center;
+  
   /* Background color set dynamically via JavaScript based on severity */
 }
 
@@ -78,6 +81,11 @@
 
 .persistent-alert__track--scrolling {
   animation: ticker-scroll 20s linear infinite; /* Smooth continuous scroll */
+}
+
+/* When scrolling, reset text alignment to left for proper animation */
+.persistent-alert--scrolling {
+  text-align: left;
 }
 
 /* Major Outage Styling (Red) */
