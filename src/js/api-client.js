@@ -8,7 +8,8 @@ const cache = {
   blog: { data: null, timestamp: 0 },
   changelog: { data: null, timestamp: 0 },
   status: { data: null, timestamp: 0 },
-  vscode: { data: null, timestamp: 0 }
+  vscode: { data: null, timestamp: 0 },
+  visualstudio: { data: null, timestamp: 0 }
 };
 
 // Cache duration: 5 minutes (matches existing auto-refresh interval)
@@ -48,6 +49,7 @@ const GITHUB_BLOG_RSS = 'https://github.blog/feed/';
 const GITHUB_CHANGELOG_RSS = 'https://github.blog/changelog/feed/';
 const GITHUB_STATUS_API = 'https://www.githubstatus.com/api/v2/incidents.json';
 const VSCODE_UPDATES_RSS = 'https://code.visualstudio.com/feed.xml';
+const VISUALSTUDIO_DEVBLOG_RSS = 'https://devblogs.microsoft.com/visualstudio/feed/';
 
 /**
  * Fetch GitHub Blog data with caching and retry logic
@@ -258,6 +260,58 @@ export async function fetchVSCode() {
     if (cache.vscode.data) {
       console.warn('fetchVSCode: Using stale cached data due to fetch error');
       return cache.vscode.data;
+    }
+
+    // No cache available, propagate error
+    throw error;
+  }
+}
+
+/**
+ * Fetch Visual Studio DevBlog data with caching and retry logic
+ * @returns {Promise<Object>} Visual Studio DevBlog RSS data
+ * @throws {Error} If fetch fails and no cached data available
+ */
+export async function fetchVisualStudio() {
+  const now = Date.now();
+
+  // Return cached data if still fresh
+  if (cache.visualstudio.data && now - cache.visualstudio.timestamp < CACHE_DURATION) {
+    console.log('fetchVisualStudio: Using cached data');
+    return cache.visualstudio.data;
+  }
+
+  // Fetch new data with retry logic
+  try {
+    const data = await retryFetch(async () => {
+      const url = `${RSS2JSON_API}?rss_url=${encodeURIComponent(VISUALSTUDIO_DEVBLOG_RSS)}`;
+      console.log('fetchVisualStudio: Fetching from API...');
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const jsonData = await response.json();
+
+      // Validate response structure
+      if (!jsonData || !jsonData.items || !Array.isArray(jsonData.items)) {
+        throw new Error('Invalid RSS2JSON response structure');
+      }
+
+      return jsonData;
+    });
+
+    cache.visualstudio = { data, timestamp: now };
+    console.log(`fetchVisualStudio: Fetched ${data.items.length} items`);
+    return data;
+  } catch (error) {
+    console.error('fetchVisualStudio: Error fetching Visual Studio updates after retries:', error);
+
+    // Return stale cache if available (graceful degradation)
+    if (cache.visualstudio.data) {
+      console.warn('fetchVisualStudio: Using stale cached data due to fetch error');
+      return cache.visualstudio.data;
     }
 
     // No cache available, propagate error
