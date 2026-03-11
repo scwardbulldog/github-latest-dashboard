@@ -919,9 +919,9 @@ window.itemHighlighterInstance.onItemHighlight = (itemElement, itemIndex) => {
   
   if (isVSCodePage && itemData.link) {
     // Use async content fetching for VS Code items
-    // Hide the header (title + timestamp) since the fetched article content already includes them
-    // Skip initial RSS content - only show loading state then full article
-    window.detailPanelInstance.renderWithAsyncContent(itemData, fetchArticleContent, { hideHeader: true, skipInitialContent: true });
+    // Hide header since fetched article includes title
+    // Show RSS description initially to avoid blank state while full article loads
+    window.detailPanelInstance.renderWithAsyncContent(itemData, fetchArticleContent, { hideHeader: true, skipInitialContent: false });
     console.log(`DetailPanel rendering VS Code item ${itemIndex} with async content:`, itemData.title);
   } else {
     // Regular rendering for other pages

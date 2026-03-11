@@ -122,23 +122,34 @@ export class DetailPanel {
     // If we have a content fetcher and a link, fetch the full content asynchronously
     if (contentFetcher && item.link) {
       try {
+        console.log(`DetailPanel: Fetching full content for: ${item.title}`);
         const fullContent = await contentFetcher(item.link);
         
         // Check if this item is still the current one (prevent stale updates)
         if (this.currentItemId !== itemId) {
-          console.debug('DetailPanel: Skipping stale content update');
+          console.debug('DetailPanel: Skipping stale content update (item changed during fetch)');
           return;
         }
         
         if (fullContent) {
+          console.log(`DetailPanel: Successfully fetched content for: ${item.title}`);
           this.updateContent(fullContent, item);
         } else {
-          // Remove loading indicator if fetch failed
-          this.removeLoadingIndicator();
+          console.warn(`DetailPanel: Fetch returned null/empty content for: ${item.title}`);
+          // Only remove loading indicator if this item is still current
+          if (this.currentItemId === itemId) {
+            this.removeLoadingIndicator();
+          }
         }
       } catch (error) {
-        console.error('DetailPanel: Error fetching async content', error);
-        this.removeLoadingIndicator();
+        console.error(`DetailPanel: Error fetching async content for ${item.title}:`, error);
+        // Only remove loading indicator if this item is still current
+        // This prevents removing the spinner from a newer item when an old fetch times out
+        if (this.currentItemId === itemId) {
+          this.removeLoadingIndicator();
+        } else {
+          console.debug(`DetailPanel: Not removing loading indicator - item changed during fetch (expected ${itemId}, current ${this.currentItemId})`);
+        }
       }
     }
   }
@@ -192,7 +203,23 @@ export class DetailPanel {
    * @param {Object} item - Original item data for fallback
    */
   updateContent(content, item) {
-    if (!this.container) return;
+    if (!this.container) {
+      console.warn('DetailPanel.updateContent: No container reference');
+      return;
+    }
+    
+    // Re-query container to ensure it's still valid (in case DOM changed)
+    const activePage = document.querySelector('.carousel-page.active');
+    if (!activePage) {
+      console.warn('DetailPanel.updateContent: No active page found');
+      return;
+    }
+    
+    this.container = activePage.querySelector('.detail-panel');
+    if (!this.container) {
+      console.error('DetailPanel.updateContent: No .detail-panel found on active page');
+      return;
+    }
     
     let contentEl = this.container.querySelector('#detail-content');
     const loadingEl = this.container.querySelector('#detail-loading');
@@ -216,6 +243,9 @@ export class DetailPanel {
           } else {
             panelContent.appendChild(contentEl);
           }
+        } else {
+          console.error('DetailPanel.updateContent: No .detail-panel-content container found');
+          return;
         }
       }
     }
