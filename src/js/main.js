@@ -657,28 +657,21 @@ async function fetchAllData() {
             }
         }
         
-        // Store item counts for highlighter restart
-        let blogItemCount = 0;
-        let changelogItemCount = 0;
-        let statusItemCount = 0;
-        let vscodeItemCount = 0;
-        let visualstudioItemCount = 0;
-        
         // Render each page (with error handling for null data)
         if (blogData) {
-            blogItemCount = renderBlogList(blogData);
+            renderBlogList(blogData);
         } else {
             renderErrorState('blog-list', 'Unable to load blog posts');
         }
         
         if (changelogData) {
-            changelogItemCount = renderChangelogList(changelogData);
+            renderChangelogList(changelogData);
         } else {
             renderErrorState('changelog-list', 'Unable to load changelog');
         }
         
         if (statusData) {
-            statusItemCount = renderStatusList(statusData);
+            renderStatusList(statusData);
             
             // Story 4.3: Check for active outages and update persistent indicator
             try {
@@ -704,13 +697,13 @@ async function fetchAllData() {
         }
 
         if (vscodeData) {
-            vscodeItemCount = renderVSCodeList(vscodeData);
+            renderVSCodeList(vscodeData);
         } else {
             renderErrorState('vscode-list', 'Unable to load VS Code updates');
         }
 
         if (visualstudioData) {
-            visualstudioItemCount = renderVisualStudioList(visualstudioData);
+            renderVisualStudioList(visualstudioData);
         } else {
             renderErrorState('visualstudio-list', 'Unable to load Visual Studio updates');
         }
@@ -770,6 +763,7 @@ async function fetchAllData() {
         renderErrorState('changelog-list', 'Dashboard initialization failed');
         renderErrorState('status-list', 'Dashboard initialization failed');
         renderErrorState('vscode-list', 'Dashboard initialization failed');
+        renderErrorState('visualstudio-list', 'Dashboard initialization failed');
     }
 }
 
