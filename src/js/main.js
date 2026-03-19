@@ -245,11 +245,22 @@ function renderAnthropicList(anthropicData) {
         const description = truncate(stripHtml(item.description || ''), 120);
 
         const textEl = document.createElement('div');
-        textEl.innerHTML = `
-            <div class="list-item-title">${title}</div>
-            <div class="list-item-timestamp">${timestamp}</div>
-            <div class="list-item-description">${description}</div>
-        `;
+
+        const titleEl = document.createElement('div');
+        titleEl.className = 'list-item-title';
+        titleEl.textContent = title;
+        textEl.appendChild(titleEl);
+
+        const timestampEl = document.createElement('div');
+        timestampEl.className = 'list-item-timestamp';
+        timestampEl.textContent = timestamp;
+        textEl.appendChild(timestampEl);
+
+        const descriptionEl = document.createElement('div');
+        descriptionEl.className = 'list-item-description';
+        descriptionEl.textContent = description;
+        textEl.appendChild(descriptionEl);
+
         itemEl.appendChild(textEl);
 
         fragment.appendChild(itemEl);
@@ -714,10 +725,10 @@ async function fetchAllData() {
         ]);
         
         // Update offline state based on failure threshold
-        // Only mark as offline if majority of sources fail (4+ out of 6)
-        // This prevents false "offline" status from single feed issues
+        // Only mark as offline if majority of sources fail (> half of totalSources)
+        // Deriving from totalSources keeps this correct if sources are added/removed
         const wasOffline = isOffline;
-        isOffline = failureCount >= 4;
+        isOffline = failureCount > totalSources / 2;
         
         // Log network status for debugging
         console.log(`Network status: ${failureCount}/${totalSources} sources failed, offline=${isOffline}`);
