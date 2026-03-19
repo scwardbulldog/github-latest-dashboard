@@ -45,6 +45,10 @@
   color: var(--color-success-fg);
 }
 
+#page-anthropic .page-header {
+  color: var(--color-attention-fg);
+}
+
 .page-content {
   flex: 1;
   overflow: auto;
@@ -83,6 +87,16 @@
   border-radius: 6px;
   background: var(--color-canvas-default);
   border: 1px solid var(--color-border-default);
+}
+
+/* Thumbnail image shown inside list items (e.g. Anthropic news cards) */
+.list-item-thumbnail {
+  display: block;
+  width: 100%;
+  max-height: 72px;
+  object-fit: cover;
+  border-radius: 4px;
+  margin-bottom: var(--space-2);
 }
 
 .list-item-title {

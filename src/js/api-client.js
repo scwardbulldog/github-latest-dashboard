@@ -9,7 +9,8 @@ const cache = {
   changelog: { data: null, timestamp: 0 },
   status: { data: null, timestamp: 0 },
   vscode: { data: null, timestamp: 0 },
-  visualstudio: { data: null, timestamp: 0 }
+  visualstudio: { data: null, timestamp: 0 },
+  anthropic: { data: null, timestamp: 0 }
 };
 
 // Cache duration: 5 minutes (matches existing auto-refresh interval)
@@ -50,6 +51,8 @@ const GITHUB_CHANGELOG_RSS = 'https://github.blog/changelog/feed/';
 const GITHUB_STATUS_API = 'https://www.githubstatus.com/api/v2/incidents.json';
 const VSCODE_UPDATES_RSS = 'https://code.visualstudio.com/feed.xml';
 const VISUALSTUDIO_DEVBLOG_RSS = 'https://devblogs.microsoft.com/visualstudio/feed/';
+// Olshansk's community-maintained Anthropic feed: better at capturing hero images/thumbnails
+const ANTHROPIC_NEWS_RSS = 'https://raw.githubusercontent.com/Olshansk/rss-feeds/refs/heads/main/feeds/feed_anthropic.xml';
 
 /**
  * Fetch GitHub Blog data with caching and retry logic
@@ -524,5 +527,58 @@ function extractVSCodeArticleContent(html) {
 export function clearArticleCache() {
   articleCache.clear();
   console.log('Article cache cleared');
+}
+
+/**
+ * Fetch Anthropic News data with caching and retry logic
+ * Uses Olshansk's community-maintained RSS feed (better hero image/thumbnail coverage)
+ * @returns {Promise<Object>} Anthropic News RSS data
+ * @throws {Error} If fetch fails and no cached data available
+ */
+export async function fetchAnthropic() {
+  const now = Date.now();
+
+  // Return cached data if still fresh
+  if (cache.anthropic.data && now - cache.anthropic.timestamp < CACHE_DURATION) {
+    console.log('fetchAnthropic: Using cached data');
+    return cache.anthropic.data;
+  }
+
+  // Fetch new data with retry logic
+  try {
+    const data = await retryFetch(async () => {
+      const url = `${RSS2JSON_API}?rss_url=${encodeURIComponent(ANTHROPIC_NEWS_RSS)}`;
+      console.log('fetchAnthropic: Fetching from API...');
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const jsonData = await response.json();
+
+      // Validate response structure
+      if (!jsonData || !jsonData.items || !Array.isArray(jsonData.items)) {
+        throw new Error('Invalid RSS2JSON response structure');
+      }
+
+      return jsonData;
+    });
+
+    cache.anthropic = { data, timestamp: now };
+    console.log(`fetchAnthropic: Fetched ${data.items.length} items`);
+    return data;
+  } catch (error) {
+    console.error('fetchAnthropic: Error fetching Anthropic news after retries:', error);
+
+    // Return stale cache if available (graceful degradation)
+    if (cache.anthropic.data) {
+      console.warn('fetchAnthropic: Using stale cached data due to fetch error');
+      return cache.anthropic.data;
+    }
+
+    // No cache available, propagate error
+    throw error;
+  }
 }
 

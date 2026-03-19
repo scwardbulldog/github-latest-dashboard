@@ -17,6 +17,7 @@ import {
     fetchStatus as fetchStatusFromApiClient,
     fetchVSCode as fetchVSCodeFromApiClient,
     fetchVisualStudio as fetchVisualStudioFromApiClient,
+    fetchAnthropic as fetchAnthropicFromApiClient,
     getCacheEntry,
     detectActiveOutages,
     fetchArticleContent
@@ -190,6 +191,75 @@ function renderVSCodeList(vscodeData) {
  */
 function renderVisualStudioList(visualstudioData) {
     return renderRSSList(visualstudioData, 'visualstudio-list', 'Visual Studio update');
+}
+
+/**
+ * Render Anthropic News list data with thumbnail support
+ * Thumbnails are sourced from item.thumbnail or item.enclosure.link
+ * Descriptions are HTML-stripped via stripHtml() to prevent XSS
+ * @param {Object} anthropicData - Anthropic News RSS data from API
+ * @returns {number} Number of items rendered
+ */
+function renderAnthropicList(anthropicData) {
+    const listEl = document.getElementById('anthropic-list');
+    if (!listEl) {
+        console.error('renderAnthropicList: anthropic-list element not found');
+        return 0;
+    }
+
+    // Clear placeholder content
+    listEl.innerHTML = '';
+
+    const items = anthropicData.items.slice(0, 10);
+
+    // Performance optimization: Use DocumentFragment for batched DOM insertion
+    const fragment = document.createDocumentFragment();
+
+    items.forEach((item, index) => {
+        const itemEl = document.createElement('div');
+        itemEl.className = 'list-item';
+        itemEl.dataset.index = index;
+        itemEl.dataset.link = item.link || '';
+
+        // Store full content for detail panel (HTML stripped for safety)
+        itemEl.dataset.fullDescription = stripHtml(item.content || item.description || '');
+
+        // Resolve thumbnail: prefer item.thumbnail, fall back to enclosure URL
+        const thumbnail = item.thumbnail ||
+            (item.enclosure && item.enclosure.link ? item.enclosure.link : null);
+
+        if (thumbnail) {
+            itemEl.dataset.thumbnail = thumbnail;
+            // Build img element via DOM API to avoid inline event handlers (XSS prevention)
+            const imgEl = document.createElement('img');
+            imgEl.className = 'list-item-thumbnail';
+            imgEl.src = thumbnail;
+            imgEl.alt = '';
+            imgEl.loading = 'lazy';
+            imgEl.addEventListener('error', function() { this.remove(); });
+            itemEl.appendChild(imgEl);
+        }
+
+        const title = item.title || 'Untitled';
+        const timestamp = formatDate(item.pubDate);
+        const description = truncate(stripHtml(item.description || ''), 120);
+
+        const textEl = document.createElement('div');
+        textEl.innerHTML = `
+            <div class="list-item-title">${title}</div>
+            <div class="list-item-timestamp">${timestamp}</div>
+            <div class="list-item-description">${description}</div>
+        `;
+        itemEl.appendChild(textEl);
+
+        fragment.appendChild(itemEl);
+    });
+
+    // Single DOM write (one reflow)
+    listEl.appendChild(fragment);
+
+    console.log(`renderAnthropicList: Rendered ${items.length} Anthropic news items`);
+    return items.length;
 }
 
 /**
@@ -606,11 +676,11 @@ async function fetchAllData() {
         // Track fetch failures for intelligent network status detection
         // We track failures per source to determine if we're truly offline
         let failureCount = 0;
-        let totalSources = 5;
+        let totalSources = 6;
         
         // Parallel fetch with Promise.all (AC requirement)
         // Per-column error isolation: each fetch has its own catch block
-        const [blogData, changelogData, statusData, vscodeData, visualstudioData] = await Promise.all([
+        const [blogData, changelogData, statusData, vscodeData, visualstudioData, anthropicData] = await Promise.all([
             fetchBlogFromApiClient().catch(err => {
                 console.error('fetchAllData: Blog fetch failed:', err);
                 failureCount++;
@@ -635,14 +705,19 @@ async function fetchAllData() {
                 console.error('fetchAllData: Visual Studio updates fetch failed:', err);
                 failureCount++;
                 return null;
+            }),
+            fetchAnthropicFromApiClient().catch(err => {
+                console.error('fetchAllData: Anthropic news fetch failed:', err);
+                failureCount++;
+                return null;
             })
         ]);
         
         // Update offline state based on failure threshold
-        // Only mark as offline if majority of sources fail (3+ out of 5)
+        // Only mark as offline if majority of sources fail (4+ out of 6)
         // This prevents false "offline" status from single feed issues
         const wasOffline = isOffline;
-        isOffline = failureCount >= 3;
+        isOffline = failureCount >= 4;
         
         // Log network status for debugging
         console.log(`Network status: ${failureCount}/${totalSources} sources failed, offline=${isOffline}`);
@@ -707,6 +782,12 @@ async function fetchAllData() {
         } else {
             renderErrorState('visualstudio-list', 'Unable to load Visual Studio updates');
         }
+
+        if (anthropicData) {
+            renderAnthropicList(anthropicData);
+        } else {
+            renderErrorState('anthropic-list', 'Unable to load Anthropic news');
+        }
         
         // CRITICAL: Restart highlighter on current page with updated item count
         // Timer states must be preserved (do NOT call reset() - that would break timer)
@@ -764,6 +845,7 @@ async function fetchAllData() {
         renderErrorState('status-list', 'Dashboard initialization failed');
         renderErrorState('vscode-list', 'Dashboard initialization failed');
         renderErrorState('visualstudio-list', 'Dashboard initialization failed');
+        renderErrorState('anthropic-list', 'Dashboard initialization failed');
     }
 }
 
@@ -818,10 +900,11 @@ const PAGE_INTERVAL_OVERRIDES = {
   blog: 90000,
   changelog: 90000,
   vscode: 90000,
-  visualstudio: 90000
+  visualstudio: 90000,
+  anthropic: 90000
 };
 
-window.carouselInstance = new CarouselController({ interval: DEFAULT_PAGE_INTERVAL, pages: ['vscode', 'visualstudio', 'blog', 'changelog', 'status'], pageIntervals: PAGE_INTERVAL_OVERRIDES }); // 30 seconds per page default, overridden per page
+window.carouselInstance = new CarouselController({ interval: DEFAULT_PAGE_INTERVAL, pages: ['vscode', 'visualstudio', 'blog', 'changelog', 'status', 'anthropic'], pageIntervals: PAGE_INTERVAL_OVERRIDES }); // 30 seconds per page default, overridden per page
 
 // Initialize item highlighter
 if (window.itemHighlighterInstance) {
@@ -833,7 +916,8 @@ const ITEM_INTERVAL_OVERRIDES = {
   blog: 24000,
   changelog: 24000,
   vscode: 24000,
-  visualstudio: 24000
+  visualstudio: 24000,
+  anthropic: 24000
 };
 
 function applyItemIntervalForPage(pageName) {
