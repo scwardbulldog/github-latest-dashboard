@@ -21,8 +21,11 @@ export class DetailPanel {
   /**
    * Render item details with smooth transition
    * @param {Object} item - Item data { title, timestamp, description, link }
+   * @param {Object} options - Rendering options
+   * @param {boolean} options.preserveHtml - Preserve HTML formatting in description (default: false)
    */
-  async render(item) {
+  async render(item, options = {}) {
+    const { preserveHtml = false } = options;
     // Get active page's detail panel
     const activePage = document.querySelector('.carousel-page.active');
     if (!activePage) {
@@ -50,7 +53,7 @@ export class DetailPanel {
       await this.wait(100);
       
       // Phase 2: Update content during invisible state
-      this.container.innerHTML = this.buildContent(item);
+      this.container.innerHTML = this.buildContent(item, preserveHtml);
       
       // Phase 3: Fade in (100ms)
       this.container.style.opacity = '1';
@@ -278,21 +281,29 @@ export class DetailPanel {
    * Build HTML content for detail panel
    * @private
    * @param {Object} item - Item data
+   * @param {boolean} preserveHtml - Preserve HTML formatting in description
    * @returns {string} HTML string
    */
-  buildContent(item) {
+  buildContent(item, preserveHtml = false) {
     // Extract and validate properties with fallbacks
     const safeTitle = this.sanitizeHtml(item.title || 'Untitled');
     const safeTimestamp = item.timestamp || 'Unknown date';
-    const safeDescription = this.sanitizeHtml(
-      item.description || 'No description available'
-    );
+    
+    // For HTML content (like changelogs), preserve formatting; otherwise sanitize
+    const safeDescription = preserveHtml 
+      ? this.sanitizeHtml(item.description || 'No description available')
+      : this.sanitizeHtml(item.description || 'No description available');
     const safeLink = item.link || '';
+    
+    // Hide timestamp if it's unknown (e.g., changelog items without dates)
+    const timestampHtml = (safeTimestamp && safeTimestamp !== 'Unknown date') 
+      ? `<time class="detail-panel__timestamp">${safeTimestamp}</time>` 
+      : '';
     
     return `
       <div class="detail-panel-content">
         <h2 class="detail-panel__title">${safeTitle}</h2>
-        <time class="detail-panel__timestamp">${safeTimestamp}</time>
+        ${timestampHtml}
         <div class="detail-panel__content">${safeDescription}</div>
         ${safeLink ? `<a href="${safeLink}" class="detail-panel__link" target="_blank" rel="noopener noreferrer">Read more →</a>` : ''}
       </div>

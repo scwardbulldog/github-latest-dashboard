@@ -17,6 +17,7 @@ import {
     fetchStatus as fetchStatusFromApiClient,
     fetchVSCode as fetchVSCodeFromApiClient,
     fetchVisualStudio as fetchVisualStudioFromApiClient,
+    fetchAnthropic as fetchAnthropicFromApiClient,
     getCacheEntry,
     detectActiveOutages,
     fetchArticleContent
@@ -190,6 +191,80 @@ function renderVSCodeList(vscodeData) {
  */
 function renderVisualStudioList(visualstudioData) {
     return renderRSSList(visualstudioData, 'visualstudio-list', 'Visual Studio update');
+}
+
+/**
+ * Render Claude Code Changelog list data with thumbnail support
+ * Thumbnails are sourced from item.thumbnail or item.enclosure.link
+ * Descriptions are HTML-stripped via stripHtml() to prevent XSS
+ * @param {Object} anthropicData - Claude Code Changelog RSS data from API
+ * @returns {number} Number of items rendered
+ */
+function renderAnthropicList(anthropicData) {
+    const listEl = document.getElementById('anthropic-list');
+    if (!listEl) {
+        console.error('renderAnthropicList: anthropic-list element not found');
+        return 0;
+    }
+
+    // Clear placeholder content
+    listEl.innerHTML = '';
+
+    const items = anthropicData.items.slice(0, 10);
+
+    // Performance optimization: Use DocumentFragment for batched DOM insertion
+    const fragment = document.createDocumentFragment();
+
+    items.forEach((item, index) => {
+        const itemEl = document.createElement('div');
+        itemEl.className = 'list-item';
+        itemEl.dataset.index = index;
+        itemEl.dataset.link = item.link || '';
+
+        // Store full content for detail panel
+        // For changelog: preserve HTML formatting (sanitized in DetailPanel)
+        // For other sources: strip HTML for safety
+        const fullContent = item.content || item.description || '';
+        itemEl.dataset.fullDescription = fullContent;
+        itemEl.dataset.isHtmlContent = 'true'; // Flag to preserve HTML formatting
+
+        // Resolve thumbnail: prefer item.thumbnail, fall back to enclosure URL
+        const thumbnail = item.thumbnail ||
+            (item.enclosure && item.enclosure.link ? item.enclosure.link : null);
+
+        if (thumbnail) {
+            itemEl.dataset.thumbnail = thumbnail;
+            // Build img element via DOM API to avoid inline event handlers (XSS prevention)
+            const imgEl = document.createElement('img');
+            imgEl.className = 'list-item-thumbnail';
+            imgEl.src = thumbnail;
+            imgEl.alt = '';
+            imgEl.loading = 'lazy';
+            imgEl.addEventListener('error', function() { this.remove(); });
+            itemEl.appendChild(imgEl);
+        }
+
+        const title = item.title || 'Untitled';
+
+        const textEl = document.createElement('div');
+
+        const titleEl = document.createElement('div');
+        titleEl.className = 'list-item-title';
+        titleEl.textContent = title;
+        textEl.appendChild(titleEl);
+
+        // No timestamp or description for changelog items - clean version-only display
+
+        itemEl.appendChild(textEl);
+
+        fragment.appendChild(itemEl);
+    });
+
+    // Single DOM write (one reflow)
+    listEl.appendChild(fragment);
+
+    console.log(`renderAnthropicList: Rendered ${items.length} Claude Code changelog items`);
+    return items.length;
 }
 
 /**
@@ -606,11 +681,11 @@ async function fetchAllData() {
         // Track fetch failures for intelligent network status detection
         // We track failures per source to determine if we're truly offline
         let failureCount = 0;
-        let totalSources = 5;
+        let totalSources = 6;
         
         // Parallel fetch with Promise.all (AC requirement)
         // Per-column error isolation: each fetch has its own catch block
-        const [blogData, changelogData, statusData, vscodeData, visualstudioData] = await Promise.all([
+        const [blogData, changelogData, statusData, vscodeData, visualstudioData, anthropicData] = await Promise.all([
             fetchBlogFromApiClient().catch(err => {
                 console.error('fetchAllData: Blog fetch failed:', err);
                 failureCount++;
@@ -635,14 +710,19 @@ async function fetchAllData() {
                 console.error('fetchAllData: Visual Studio updates fetch failed:', err);
                 failureCount++;
                 return null;
+            }),
+            fetchAnthropicFromApiClient().catch(err => {
+                console.error('fetchAllData: Claude Code changelog fetch failed:', err);
+                failureCount++;
+                return null;
             })
         ]);
         
         // Update offline state based on failure threshold
-        // Only mark as offline if majority of sources fail (3+ out of 5)
-        // This prevents false "offline" status from single feed issues
+        // Only mark as offline if majority of sources fail (> half of totalSources)
+        // Deriving from totalSources keeps this correct if sources are added/removed
         const wasOffline = isOffline;
-        isOffline = failureCount >= 3;
+        isOffline = failureCount > totalSources / 2;
         
         // Log network status for debugging
         console.log(`Network status: ${failureCount}/${totalSources} sources failed, offline=${isOffline}`);
@@ -707,6 +787,12 @@ async function fetchAllData() {
         } else {
             renderErrorState('visualstudio-list', 'Unable to load Visual Studio updates');
         }
+
+        if (anthropicData) {
+            renderAnthropicList(anthropicData);
+        } else {
+            renderErrorState('anthropic-list', 'Unable to load Claude Code changelog');
+        }
         
         // CRITICAL: Restart highlighter on current page with updated item count
         // Timer states must be preserved (do NOT call reset() - that would break timer)
@@ -764,6 +850,7 @@ async function fetchAllData() {
         renderErrorState('status-list', 'Dashboard initialization failed');
         renderErrorState('vscode-list', 'Dashboard initialization failed');
         renderErrorState('visualstudio-list', 'Dashboard initialization failed');
+        renderErrorState('anthropic-list', 'Dashboard initialization failed');
     }
 }
 
@@ -815,25 +902,27 @@ if (window.carouselInstance) {
 
 const DEFAULT_PAGE_INTERVAL = 30000; // 30 seconds per page
 const PAGE_INTERVAL_OVERRIDES = {
-  blog: 90000,
-  changelog: 90000,
-  vscode: 90000,
-  visualstudio: 90000
+  blog: 80000,        // 5 cards at 16s each
+  changelog: 80000,    // 5 cards at 16s each
+  vscode: 80000,       // 5 cards at 16s each
+  visualstudio: 80000, // 5 cards at 16s each
+  anthropic: 80000     // 5 cards at 16s each
 };
 
-window.carouselInstance = new CarouselController({ interval: DEFAULT_PAGE_INTERVAL, pages: ['vscode', 'visualstudio', 'blog', 'changelog', 'status'], pageIntervals: PAGE_INTERVAL_OVERRIDES }); // 30 seconds per page default, overridden per page
+window.carouselInstance = new CarouselController({ interval: DEFAULT_PAGE_INTERVAL, pages: ['vscode', 'visualstudio', 'blog', 'changelog', 'status', 'anthropic'], pageIntervals: PAGE_INTERVAL_OVERRIDES }); // 30 seconds per page default, overridden per page
 
 // Initialize item highlighter
 if (window.itemHighlighterInstance) {
   window.itemHighlighterInstance.stop();
 }
 
-const DEFAULT_ITEM_INTERVAL = 8000; // 8 seconds per item
+const DEFAULT_ITEM_INTERVAL = 5333; // ~5.3 seconds per item (decreased by 1.5x)
 const ITEM_INTERVAL_OVERRIDES = {
-  blog: 24000,
-  changelog: 24000,
-  vscode: 24000,
-  visualstudio: 24000
+  blog: 16000,       // 16 seconds per item (decreased by 1.5x)
+  changelog: 16000,
+  vscode: 16000,
+  visualstudio: 16000,
+  anthropic: 16000
 };
 
 function applyItemIntervalForPage(pageName) {
@@ -908,10 +997,18 @@ window.itemHighlighterInstance.onItemHighlight = (itemElement, itemIndex) => {
   // Extract data from DOM element
   const itemData = extractItemData(itemElement);
   
+  // Check if this is HTML content that should be preserved (like changelog)
+  const isHtmlContent = itemElement.dataset.isHtmlContent === 'true';
+  
   // Check if we're on the VS Code page - use async content fetching
   const isVSCodePage = activePage.id === 'page-vscode';
   
-  if (isVSCodePage && itemData.link) {
+  // If this is HTML content (like changelog), render it directly with HTML preserved
+  if (isHtmlContent && !isVSCodePage) {
+    // Render with HTML formatting preserved
+    window.detailPanelInstance.render(itemData, { preserveHtml: true });
+    console.log(`DetailPanel rendering HTML content for item ${itemIndex}:`, itemData.title);
+  } else if (isVSCodePage && itemData.link) {
     // Use async content fetching for VS Code items
     // Hide header since fetched article includes title
     // Show RSS description initially to avoid blank state while full article loads

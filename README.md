@@ -1,6 +1,6 @@
-# GitHub Updates Office Dashboard
+# R&D Tools Updates Office Dashboard
 
-A single-page web dashboard designed to run full-screen on a large office TV, displaying the latest updates from GitHub across three sources.
+A single-page web dashboard designed to run full-screen on a large office TV, displaying the latest updates from developer tools and platforms.
 
 ## Features
 
