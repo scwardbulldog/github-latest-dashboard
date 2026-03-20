@@ -51,8 +51,8 @@ const GITHUB_CHANGELOG_RSS = 'https://github.blog/changelog/feed/';
 const GITHUB_STATUS_API = 'https://www.githubstatus.com/api/v2/incidents.json';
 const VSCODE_UPDATES_RSS = 'https://code.visualstudio.com/feed.xml';
 const VISUALSTUDIO_DEVBLOG_RSS = 'https://devblogs.microsoft.com/visualstudio/feed/';
-// Olshansk's community-maintained Anthropic feed: better at capturing hero images/thumbnails
-const ANTHROPIC_NEWS_RSS = 'https://raw.githubusercontent.com/Olshansk/rss-feeds/refs/heads/main/feeds/feed_anthropic.xml';
+// Olshansk's community-maintained Claude Code changelog feed
+const ANTHROPIC_NEWS_RSS = 'https://raw.githubusercontent.com/Olshansk/rss-feeds/refs/heads/main/feeds/feed_anthropic_changelog_claude_code.xml';
 
 /**
  * Fetch GitHub Blog data with caching and retry logic
@@ -530,9 +530,9 @@ export function clearArticleCache() {
 }
 
 /**
- * Fetch Anthropic News data with caching and retry logic
- * Uses Olshansk's community-maintained RSS feed (better hero image/thumbnail coverage)
- * @returns {Promise<Object>} Anthropic News RSS data
+ * Fetch Claude Code Changelog data with caching and retry logic
+ * Uses Olshansk's community-maintained RSS feed for Claude Code version updates
+ * @returns {Promise<Object>} Claude Code Changelog RSS data
  * @throws {Error} If fetch fails and no cached data available
  */
 export async function fetchAnthropic() {

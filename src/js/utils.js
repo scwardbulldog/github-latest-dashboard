@@ -4,7 +4,23 @@
  * @returns {string} Formatted relative time string
  */
 export function formatDate(dateString) {
+    // Handle null, undefined, or invalid date strings
+    if (!dateString || dateString === 'null') {
+        return 'Unknown date';
+    }
+    
     const date = new Date(dateString);
+    
+    // Check if date is valid
+    if (isNaN(date.getTime())) {
+        return 'Unknown date';
+    }
+    
+    // Check if date is suspiciously old (before 1970) - likely invalid
+    if (date.getFullYear() < 1970) {
+        return 'Unknown date';
+    }
+    
     const now = new Date();
     const diffTime = Math.abs(now - date);
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));

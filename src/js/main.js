@@ -194,10 +194,10 @@ function renderVisualStudioList(visualstudioData) {
 }
 
 /**
- * Render Anthropic News list data with thumbnail support
+ * Render Claude Code Changelog list data with thumbnail support
  * Thumbnails are sourced from item.thumbnail or item.enclosure.link
  * Descriptions are HTML-stripped via stripHtml() to prevent XSS
- * @param {Object} anthropicData - Anthropic News RSS data from API
+ * @param {Object} anthropicData - Claude Code Changelog RSS data from API
  * @returns {number} Number of items rendered
  */
 function renderAnthropicList(anthropicData) {
@@ -221,8 +221,12 @@ function renderAnthropicList(anthropicData) {
         itemEl.dataset.index = index;
         itemEl.dataset.link = item.link || '';
 
-        // Store full content for detail panel (HTML stripped for safety)
-        itemEl.dataset.fullDescription = stripHtml(item.content || item.description || '');
+        // Store full content for detail panel
+        // For changelog: preserve HTML formatting (sanitized in DetailPanel)
+        // For other sources: strip HTML for safety
+        const fullContent = item.content || item.description || '';
+        itemEl.dataset.fullDescription = fullContent;
+        itemEl.dataset.isHtmlContent = 'true'; // Flag to preserve HTML formatting
 
         // Resolve thumbnail: prefer item.thumbnail, fall back to enclosure URL
         const thumbnail = item.thumbnail ||
@@ -241,8 +245,6 @@ function renderAnthropicList(anthropicData) {
         }
 
         const title = item.title || 'Untitled';
-        const timestamp = formatDate(item.pubDate);
-        const description = truncate(stripHtml(item.description || ''), 120);
 
         const textEl = document.createElement('div');
 
@@ -251,15 +253,7 @@ function renderAnthropicList(anthropicData) {
         titleEl.textContent = title;
         textEl.appendChild(titleEl);
 
-        const timestampEl = document.createElement('div');
-        timestampEl.className = 'list-item-timestamp';
-        timestampEl.textContent = timestamp;
-        textEl.appendChild(timestampEl);
-
-        const descriptionEl = document.createElement('div');
-        descriptionEl.className = 'list-item-description';
-        descriptionEl.textContent = description;
-        textEl.appendChild(descriptionEl);
+        // No timestamp or description for changelog items - clean version-only display
 
         itemEl.appendChild(textEl);
 
@@ -269,7 +263,7 @@ function renderAnthropicList(anthropicData) {
     // Single DOM write (one reflow)
     listEl.appendChild(fragment);
 
-    console.log(`renderAnthropicList: Rendered ${items.length} Anthropic news items`);
+    console.log(`renderAnthropicList: Rendered ${items.length} Claude Code changelog items`);
     return items.length;
 }
 
@@ -718,7 +712,7 @@ async function fetchAllData() {
                 return null;
             }),
             fetchAnthropicFromApiClient().catch(err => {
-                console.error('fetchAllData: Anthropic news fetch failed:', err);
+                console.error('fetchAllData: Claude Code changelog fetch failed:', err);
                 failureCount++;
                 return null;
             })
@@ -797,7 +791,7 @@ async function fetchAllData() {
         if (anthropicData) {
             renderAnthropicList(anthropicData);
         } else {
-            renderErrorState('anthropic-list', 'Unable to load Anthropic news');
+            renderErrorState('anthropic-list', 'Unable to load Claude Code changelog');
         }
         
         // CRITICAL: Restart highlighter on current page with updated item count
@@ -908,11 +902,11 @@ if (window.carouselInstance) {
 
 const DEFAULT_PAGE_INTERVAL = 30000; // 30 seconds per page
 const PAGE_INTERVAL_OVERRIDES = {
-  blog: 90000,
-  changelog: 90000,
-  vscode: 90000,
-  visualstudio: 90000,
-  anthropic: 90000
+  blog: 80000,        // 5 cards at 16s each
+  changelog: 80000,    // 5 cards at 16s each
+  vscode: 80000,       // 5 cards at 16s each
+  visualstudio: 80000, // 5 cards at 16s each
+  anthropic: 80000     // 5 cards at 16s each
 };
 
 window.carouselInstance = new CarouselController({ interval: DEFAULT_PAGE_INTERVAL, pages: ['vscode', 'visualstudio', 'blog', 'changelog', 'status', 'anthropic'], pageIntervals: PAGE_INTERVAL_OVERRIDES }); // 30 seconds per page default, overridden per page
@@ -922,13 +916,13 @@ if (window.itemHighlighterInstance) {
   window.itemHighlighterInstance.stop();
 }
 
-const DEFAULT_ITEM_INTERVAL = 8000; // 8 seconds per item
+const DEFAULT_ITEM_INTERVAL = 5333; // ~5.3 seconds per item (decreased by 1.5x)
 const ITEM_INTERVAL_OVERRIDES = {
-  blog: 24000,
-  changelog: 24000,
-  vscode: 24000,
-  visualstudio: 24000,
-  anthropic: 24000
+  blog: 16000,       // 16 seconds per item (decreased by 1.5x)
+  changelog: 16000,
+  vscode: 16000,
+  visualstudio: 16000,
+  anthropic: 16000
 };
 
 function applyItemIntervalForPage(pageName) {
@@ -1003,10 +997,18 @@ window.itemHighlighterInstance.onItemHighlight = (itemElement, itemIndex) => {
   // Extract data from DOM element
   const itemData = extractItemData(itemElement);
   
+  // Check if this is HTML content that should be preserved (like changelog)
+  const isHtmlContent = itemElement.dataset.isHtmlContent === 'true';
+  
   // Check if we're on the VS Code page - use async content fetching
   const isVSCodePage = activePage.id === 'page-vscode';
   
-  if (isVSCodePage && itemData.link) {
+  // If this is HTML content (like changelog), render it directly with HTML preserved
+  if (isHtmlContent && !isVSCodePage) {
+    // Render with HTML formatting preserved
+    window.detailPanelInstance.render(itemData, { preserveHtml: true });
+    console.log(`DetailPanel rendering HTML content for item ${itemIndex}:`, itemData.title);
+  } else if (isVSCodePage && itemData.link) {
     // Use async content fetching for VS Code items
     // Hide header since fetched article includes title
     // Show RSS description initially to avoid blank state while full article loads
