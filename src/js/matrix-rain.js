@@ -229,7 +229,7 @@ export function checkForNewIncidents(statusData) {
   
   // Filter for new major/critical incidents that we haven't seen
   // Only trigger for incidents with impact of 'major' or 'critical'
-  // Do not trigger for 'resolved' or 'investigating' status (FR-14, FR-8)
+  // Do not trigger for 'resolved' or 'postmortem' status (only active incidents)
   const newIncidents = statusData.incidents.filter(incident => {
     const isNew = !seenIncidents.includes(incident.id);
     const isMajorOrCritical = incident.impact === 'major' || incident.impact === 'critical';
@@ -337,7 +337,8 @@ function saveSeenIncidents(incidents) {
 
 /**
  * Force trigger Matrix rain for testing purposes
- * Creates a mock incident and triggers the animation
+ * Creates a mock incident and triggers the animation directly,
+ * bypassing the incident detection filter.
  * 
  * @param {string} severity - 'minor', 'major', or 'critical'
  */
@@ -346,7 +347,7 @@ export function testMatrixRain(severity = 'major') {
     id: `test-${Date.now()}`,
     name: 'Test Incident',
     impact: severity,
-    status: 'investigating'
+    status: 'identified' // Active status that would pass detection filter
   };
   
   console.log(`MatrixRain: Test trigger with severity: ${severity}`);
