@@ -70,9 +70,8 @@ export class MatrixRain {
       });
     }
     
-    // Fill initial black background
-    this.ctx.fillStyle = 'rgba(0, 0, 0, 0.9)';
-    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    // Clear canvas (transparent background - dashboard shows through)
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     
     console.log(`MatrixRain: Initialized with ${dropCount} drops (intensity: ${this.intensity})`);
   }
@@ -118,28 +117,34 @@ export class MatrixRain {
       return;
     }
     
-    // Fade effect: semi-transparent black overlay
-    // This creates the "trail" effect as characters fall
-    this.ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
-    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    // Clear canvas each frame to maintain transparency (dashboard shows through)
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     
     // Set up text rendering
     this.ctx.font = `${this.fontSize}px monospace`;
     
-    // Draw falling characters
+    // Draw falling characters with trailing effect
     this.drops.forEach(drop => {
-      // Randomly select character
-      const char = this.getRandomChar();
-      
-      // Head of the drop: bright green (#00FF00)
-      this.ctx.fillStyle = '#00FF00';
-      this.ctx.fillText(char, drop.x, drop.y);
+      // Draw trail (fading characters behind the head)
+      const trailLength = 15;
+      for (let i = 0; i < trailLength; i++) {
+        const trailY = drop.y - (i * this.fontSize);
+        if (trailY < 0) continue;
+        
+        // Fade from bright green to dim green
+        const alpha = 1 - (i / trailLength);
+        const greenValue = Math.floor(255 * alpha);
+        this.ctx.fillStyle = `rgba(0, ${greenValue}, 0, ${alpha})`;
+        
+        const char = this.getRandomChar();
+        this.ctx.fillText(char, drop.x, trailY);
+      }
       
       // Move drop down
       drop.y += drop.speed;
       
       // Reset drop to top when it falls off screen (with some randomness)
-      if (drop.y > this.canvas.height) {
+      if (drop.y > this.canvas.height + (trailLength * this.fontSize)) {
         drop.y = -this.fontSize;
         drop.x = Math.random() * this.canvas.width;
         drop.speed = Math.random() * 3 + 2; // Randomize speed on reset

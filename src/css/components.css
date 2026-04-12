@@ -534,6 +534,10 @@
   /* Above all content but below critical UI */
   z-index: 9998;
   
+  /* Semi-transparent dark background (lighter to show dashboard clearly)
+     Dashboard content remains clearly visible behind the animation */
+  background: rgba(0, 0, 0, 0.4);
+  
   /* Allow clicks to dismiss (handled by JS) */
   pointer-events: auto;
   
