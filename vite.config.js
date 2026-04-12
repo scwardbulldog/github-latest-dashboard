@@ -24,7 +24,7 @@ function serveImgPlugin() {
 
 export default defineConfig({
   root: 'src',  // Set src as the root directory for dev server
-  publicDir: '../img',  // Copy img folder to dist during build
+  publicDir: false,  // Don't copy public dir (images handled by post-build)
   plugins: [viteSingleFile(), serveImgPlugin()],
   server: {
     port: 5173,
@@ -32,7 +32,6 @@ export default defineConfig({
   },
   build: {
     // Build to dist/ folder (Vite best practice)
-    // Post-build script copies index.html to root for Pi deployment
     outDir: resolve(__dirname, 'dist'),  // Absolute path to dist/
     emptyOutDir: true,          // Clean dist/ on each build
     rollupOptions: {
