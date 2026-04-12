@@ -248,28 +248,15 @@
           <strong id="share-item-title"></strong>
         </div>
         
-        <div class="share-options" id="shareOptions">
-          <button class="btn-export" data-format="markdown">
-            📝 Export as Markdown
-          </button>
-          <button class="btn-export" data-format="html">
-            🌐 Export as HTML
-          </button>
-          <button class="btn-export" data-format="link">
-            🔗 Copy Link
-          </button>
-          <button class="btn-export" data-format="qr-png">
-            📱 Share as QR Code
-          </button>
-        </div>
-        
-        <!-- QR Code Display (shown when QR is generated) -->
-        <div class="qr-display" id="qrDisplay" hidden>
+        <!-- QR Code Display (shown immediately when share opens) -->
+        <div class="qr-display" id="qrDisplay">
           <div class="qr-code-container">
             <img id="qrCodeImage" alt="QR Code" />
           </div>
-          <div class="qr-timer" id="qrTimer">Displaying for 30 seconds...</div>
-          <button class="btn-close-qr" id="closeQrDisplay">Close QR Code</button>
+          <div class="qr-timer" id="qrTimer">Auto-closing in 30 seconds...</div>
+          <button class="btn-export btn-copy-link" data-format="link">
+            🔗 Copy Link
+          </button>
         </div>
       </div>
     </div>

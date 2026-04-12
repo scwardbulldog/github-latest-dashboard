@@ -1357,7 +1357,6 @@ function initializeExportFunctionality() {
     const shareModal = document.getElementById('shareModal');
     const closeBtn = document.getElementById('closeShareModal');
     const backdrop = shareModal?.querySelector('.share-modal-backdrop');
-    const closeQrBtn = document.getElementById('closeQrDisplay');
     
     // Close modal handlers
     if (closeBtn) {
@@ -1368,12 +1367,7 @@ function initializeExportFunctionality() {
         backdrop.addEventListener('click', closeShareModal);
     }
     
-    // Close QR display button
-    if (closeQrBtn) {
-        closeQrBtn.addEventListener('click', closeQrDisplay);
-    }
-    
-    // Export format buttons
+    // Export format buttons (now only handles 'link' button)
     const exportButtons = document.querySelectorAll('.btn-export');
     exportButtons.forEach(btn => {
         btn.addEventListener('click', async () => {
@@ -1399,12 +1393,15 @@ function initializeExportFunctionality() {
 /**
  * Open share modal with item data
  * Automatically pauses the dashboard while modal is open
+ * Shows QR code immediately and starts 30-second auto-close timer
  * @param {Object} item - Item data
  */
-function openShareModal(item) {
+async function openShareModal(item) {
     currentShareItem = item;
     const shareModal = document.getElementById('shareModal');
     const shareTitle = document.getElementById('share-item-title');
+    const qrImage = document.getElementById('qrCodeImage');
+    const qrTimer = document.getElementById('qrTimer');
     
     // Pause dashboard if not already paused
     if (!isPaused) {
@@ -1416,15 +1413,46 @@ function openShareModal(item) {
         shareTitle.textContent = item.title || 'Untitled';
     }
     
+    // Clear any existing timers
+    clearQrDisplayTimers();
+    
+    // Generate QR code immediately
+    if (qrImage && exportController && item.link) {
+        try {
+            const qrDataUrl = await exportController.generateQRCode(item, 'png');
+            qrImage.src = qrDataUrl;
+        } catch (error) {
+            console.error('Failed to generate QR code:', error);
+            // Set a placeholder or error image
+            qrImage.alt = 'Failed to load QR code';
+        }
+    }
+    
     if (shareModal) {
         shareModal.removeAttribute('hidden');
     }
     
-    // Ensure share options are visible and QR display is hidden
-    const shareOptions = document.getElementById('shareOptions');
-    const qrDisplay = document.getElementById('qrDisplay');
-    if (shareOptions) shareOptions.removeAttribute('hidden');
-    if (qrDisplay) qrDisplay.setAttribute('hidden', '');
+    // Start 30 second countdown timer
+    let secondsRemaining = 30;
+    if (qrTimer) {
+        qrTimer.textContent = `Auto-closing in ${secondsRemaining} seconds...`;
+    }
+    
+    qrCountdownInterval = setInterval(() => {
+        secondsRemaining--;
+        if (qrTimer) {
+            if (secondsRemaining > 0) {
+                qrTimer.textContent = `Auto-closing in ${secondsRemaining} second${secondsRemaining === 1 ? '' : 's'}...`;
+            } else {
+                qrTimer.textContent = 'Closing...';
+            }
+        }
+    }, 1000);
+    
+    // Auto-close after 30 seconds
+    qrDisplayTimer = setTimeout(() => {
+        closeShareModal();
+    }, 30000);
 }
 
 /**
@@ -1464,57 +1492,9 @@ function clearQrDisplayTimers() {
 }
 
 /**
- * Show QR code display with 30-second timeout
- * @param {string} qrDataUrl - Data URL of the QR code image
- */
-function showQrDisplay(qrDataUrl) {
-    const shareOptions = document.getElementById('shareOptions');
-    const qrDisplay = document.getElementById('qrDisplay');
-    const qrImage = document.getElementById('qrCodeImage');
-    const qrTimer = document.getElementById('qrTimer');
-    
-    if (!qrDisplay || !qrImage) return;
-    
-    // Hide share options, show QR display
-    if (shareOptions) shareOptions.setAttribute('hidden', '');
-    qrDisplay.removeAttribute('hidden');
-    qrImage.src = qrDataUrl;
-    
-    // Start 30 second countdown
-    let secondsRemaining = 30;
-    qrTimer.textContent = `Displaying for ${secondsRemaining} seconds...`;
-    
-    qrCountdownInterval = setInterval(() => {
-        secondsRemaining--;
-        if (secondsRemaining > 0) {
-            qrTimer.textContent = `Displaying for ${secondsRemaining} second${secondsRemaining === 1 ? '' : 's'}...`;
-        } else {
-            qrTimer.textContent = 'Closing...';
-        }
-    }, 1000);
-    
-    // Auto-close after 30 seconds
-    qrDisplayTimer = setTimeout(() => {
-        closeShareModal();
-    }, 30000);
-}
-
-/**
- * Close QR display and return to share options
- */
-function closeQrDisplay() {
-    clearQrDisplayTimers();
-    
-    const shareOptions = document.getElementById('shareOptions');
-    const qrDisplay = document.getElementById('qrDisplay');
-    
-    if (qrDisplay) qrDisplay.setAttribute('hidden', '');
-    if (shareOptions) shareOptions.removeAttribute('hidden');
-}
-
-/**
  * Handle export based on selected format
- * @param {string} format - Export format ('markdown', 'html', 'link', 'qr-png')
+ * Now only handles 'link' format since QR is shown automatically
+ * @param {string} format - Export format ('link')
  */
 async function handleExport(format) {
     if (!currentShareItem || !exportController) {
@@ -1523,51 +1503,14 @@ async function handleExport(format) {
     }
     
     try {
-        switch (format) {
-            case 'markdown': {
-                const markdown = exportController.exportMarkdown(currentShareItem);
-                const filename = `${exportController.sanitizeFilename(currentShareItem.title)}.md`;
-                exportController.downloadFile(markdown, filename, 'text/markdown');
-                exportController.showToast('Markdown file downloaded!');
-                break;
-            }
-            
-            case 'html': {
-                const html = exportController.exportHTML(currentShareItem);
-                const filename = `${exportController.sanitizeFilename(currentShareItem.title)}.html`;
-                exportController.downloadFile(html, filename, 'text/html');
-                exportController.showToast('HTML file downloaded!');
-                break;
-            }
-            
-            case 'link': {
-                await exportController.copyLink(currentShareItem);
-                break;
-            }
-            
-            case 'qr-png': {
-                try {
-                    const qrDataUrl = await exportController.generateQRCode(currentShareItem, 'png');
-                    // Display QR code for 30 seconds instead of downloading
-                    showQrDisplay(qrDataUrl);
-                    exportController.showToast('QR code displayed for 30 seconds');
-                    // Don't close modal here - QR display will handle closing
-                    return;
-                } catch (error) {
-                    exportController.showToast(error.message || 'Failed to generate QR code', 'error');
-                }
-                break;
-            }
-            
-            default:
-                console.error('Unknown export format:', format);
+        if (format === 'link') {
+            await exportController.copyLink(currentShareItem);
+            // Don't close modal - let user see the QR code still
+            // Timer will auto-close
         }
-        
-        // Close modal after successful export
-        closeShareModal();
     } catch (error) {
         console.error('Export error:', error);
-        exportController.showToast('Export failed', 'error');
+        exportController.showToast('Failed to copy link', 'error');
     }
 }
 
