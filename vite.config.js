@@ -3,6 +3,7 @@ import { viteSingleFile } from 'vite-plugin-singlefile';
 import { resolve } from 'path';
 import { existsSync, createReadStream } from 'fs';
 import { join } from 'path';
+import { execSync } from 'child_process';
 
 // Custom plugin to serve /img from project root in dev
 function serveImgPlugin() {
@@ -22,10 +23,39 @@ function serveImgPlugin() {
   };
 }
 
+/**
+ * Vite plugin to inject git commit hash and build date into HTML
+ * Creates a subtle version watermark below the clock element
+ * 
+ * @returns {import('vite').Plugin}
+ */
+function gitHashPlugin() {
+  return {
+    name: 'git-hash-inject',
+    transformIndexHtml(html) {
+      let hash = 'dev-build';
+      let buildDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+
+      try {
+        // Get short commit hash (first 7 characters)
+        hash = execSync('git rev-parse --short HEAD').toString().trim();
+      } catch {
+        // Fallback if git command fails (e.g., no git CLI, not a git repo)
+        console.warn('[git-hash-inject] Could not retrieve git commit hash, using fallback');
+      }
+
+      // Inject the commit ticker element before closing </body>
+      const tickerHtml = `<div class="commit-hash-ticker" data-commit="${hash}" data-date="${buildDate}">${hash} • ${buildDate}</div>`;
+      
+      return html.replace('</body>', `${tickerHtml}</body>`);
+    }
+  };
+}
+
 export default defineConfig({
   root: 'src',  // Set src as the root directory for dev server
   publicDir: resolve(__dirname, 'public'),  // Copy public/ folder contents to dist/
-  plugins: [viteSingleFile(), serveImgPlugin()],
+  plugins: [gitHashPlugin(), viteSingleFile(), serveImgPlugin()],
   server: {
     port: 5173,
     open: true
