@@ -103,14 +103,19 @@ export class TimeBasedMessages {
    * @param {{time: string, text: string, duration: number}} message - Message to display
    */
   showMessage(message) {
-    // Create overlay element
+    // Create overlay element using DOM methods (safer than innerHTML)
     const overlay = document.createElement('div');
     overlay.className = 'time-message-overlay';
-    overlay.innerHTML = `
-      <div class="time-message-card">
-        <p class="time-message-text">${message.text}</p>
-      </div>
-    `;
+
+    const card = document.createElement('div');
+    card.className = 'time-message-card';
+
+    const text = document.createElement('p');
+    text.className = 'time-message-text';
+    text.textContent = message.text; // Safe: textContent escapes any HTML
+
+    card.appendChild(text);
+    overlay.appendChild(card);
 
     // Add to DOM
     document.body.appendChild(overlay);
