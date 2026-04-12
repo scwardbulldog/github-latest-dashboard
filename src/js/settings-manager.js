@@ -308,7 +308,7 @@ export class SettingsManager {
 
   /**
    * Check whether settings have been previously saved to localStorage.
-   * @returns {boolean} True if a stored settings entry exists
+   * @returns {boolean} True if a stored settings entry exists, false if using defaults or storage unavailable
    */
   hasStoredSettings() {
     try {
