@@ -113,6 +113,9 @@
   /* Performance: Only transition background-color (GPU-accelerated) */
   /* font-weight and border-color change instantly (no animation overhead) */
   transition: background-color 200ms ease;
+  
+  /* Pi 3B optimization: isolate layout/paint calculations per item */
+  contain: content;
 }
 
 .list-item--highlighted {
@@ -317,6 +320,9 @@
 /* Transition Support for Detail Panel */
 .detail-panel {
   transition: opacity 100ms ease;
+  
+  /* Pi 3B optimization: strict containment for detail view */
+  contain: strict;
 }
 
 /* Loading Indicator for Async Content */

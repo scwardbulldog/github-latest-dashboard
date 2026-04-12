@@ -14,6 +14,9 @@
   
   /* Smooth transition for fade in/out */
   transition: opacity 300ms ease;
+  
+  /* Pi 3B optimization: isolate layout/style per page */
+  contain: layout style;
 }
 
 .carousel-page.active {
