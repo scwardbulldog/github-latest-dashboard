@@ -158,9 +158,8 @@ export async function loadConfig() {
   try {
     // Try to fetch config.json from the same origin
     // Works on both Pi (static file) and Vercel (CDN)
-    const response = await fetch('/config.json', {
-      cache: 'no-cache' // Ensure fresh config on reload
-    });
+    // Uses default browser caching (config is loaded once on startup)
+    const response = await fetch('/config.json');
     
     if (!response.ok) {
       if (response.status === 404) {

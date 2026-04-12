@@ -27,6 +27,7 @@ import {
 import {
     loadConfig,
     getConfig,
+    getDefaultConfig,
     getItemsPerFeed,
     getPageInterval,
     getItemInterval
@@ -118,10 +119,10 @@ function updateLiveIndicator() {
  * @param {Object} data - RSS data from API with items array
  * @param {string} containerId - DOM element ID for the list container
  * @param {string} sourceName - Human-readable source name for logging/errors
- * @param {string} feedName - Feed name for config lookup (e.g., 'blog', 'changelog')
+ * @param {string} feedName - Feed name for config lookup (e.g., 'blog', 'changelog'). Required for proper config lookup.
  * @returns {number} Number of items rendered
  */
-function renderRSSList(data, containerId, sourceName, feedName = null) {
+function renderRSSList(data, containerId, sourceName, feedName) {
     const listEl = document.getElementById(containerId);
     if (!listEl) {
         console.error(`renderRSSList: ${containerId} element not found`);
@@ -131,8 +132,8 @@ function renderRSSList(data, containerId, sourceName, feedName = null) {
     // Clear placeholder content
     listEl.innerHTML = '';
     
-    // Get item count from config (defaults to 5 if not specified)
-    const itemCount = getItemsPerFeed(feedName || sourceName);
+    // Get item count from config (feedName must be a valid config key)
+    const itemCount = getItemsPerFeed(feedName);
     const items = data.items.slice(0, itemCount);
     
     // Performance optimization: Use DocumentFragment for batched DOM insertion
@@ -950,15 +951,15 @@ async function initializeWithConfig() {
     // Update refresh interval from config
     REFRESH_INTERVAL = config.refreshInterval;
     
-    // Set up page intervals from config
+    // Set up page intervals from config (destructure to exclude 'default' key)
     DEFAULT_PAGE_INTERVAL = config.pageIntervals.default;
-    PAGE_INTERVAL_OVERRIDES = { ...config.pageIntervals };
-    delete PAGE_INTERVAL_OVERRIDES.default; // Remove 'default' key for CarouselController
+    const { default: _pageDefault, ...pageOverrides } = config.pageIntervals;
+    PAGE_INTERVAL_OVERRIDES = pageOverrides;
     
-    // Set up item intervals from config
+    // Set up item intervals from config (destructure to exclude 'default' key)
     DEFAULT_ITEM_INTERVAL = config.itemIntervals.default;
-    ITEM_INTERVAL_OVERRIDES = { ...config.itemIntervals };
-    delete ITEM_INTERVAL_OVERRIDES.default; // Remove 'default' key
+    const { default: _itemDefault, ...itemOverrides } = config.itemIntervals;
+    ITEM_INTERVAL_OVERRIDES = itemOverrides;
     
     // Log configuration summary
     console.log('📋 Dashboard configuration loaded:');
@@ -1140,11 +1141,13 @@ initializeWithConfig().then(() => {
     console.log('🚀 Dashboard started with configuration');
 }).catch((error) => {
     console.error('Failed to initialize dashboard:', error);
-    // Fall back to defaults and start anyway
+    // Fall back to defaults from config-loader and start anyway
+    const defaults = getDefaultConfig();
+    const { default: _pd, ...defaultPageOverrides } = defaults.pageIntervals;
     window.carouselInstance = new CarouselController({
-        interval: 30000,
-        pages: ['vscode', 'visualstudio', 'blog', 'changelog', 'status', 'anthropic'],
-        pageIntervals: { blog: 80000, changelog: 80000, vscode: 80000, visualstudio: 80000, anthropic: 80000 }
+        interval: defaults.pageIntervals.default,
+        pages: defaults.pages,
+        pageIntervals: defaultPageOverrides
     });
     startDashboard();
 });
