@@ -2,13 +2,66 @@
 
 This guide covers development patterns, coding standards, and best practices for contributing to the GitHub Updates Dashboard.
 
+**We welcome contributions from both human developers and AI agents!** Whether you're a developer using your favorite IDE or an AI coding assistant, this guide will help you contribute effectively to this project.
+
 ## Table of Contents
+
+- [AI Agent Contributors](#ai-agent-contributors)
 
 - [Naming Conventions](#naming-conventions)
 - [Component Communication Pattern](#component-communication-pattern)
 - [Error Handling Pattern](#error-handling-pattern)
 - [Testing Approach](#testing-approach)
 - [Critical Development Rules](#critical-development-rules)
+
+## AI Agent Contributors
+
+AI coding agents (GitHub Copilot, Claude, Cursor, Aider, etc.) are first-class contributors to this project. This section provides essential context and guidance for effective AI-assisted development.
+
+### Quick Start for AI Agents
+
+1. **Read the project context first:** [`_bmad-output/project-context.md`](../_bmad-output/project-context.md) contains all critical rules, patterns, and constraints optimized for LLM consumption
+2. **Understand the architecture:** [`docs/architecture.md`](architecture.md) explains component relationships and data flow
+3. **Check implementation status:** [`IMPLEMENTATION_TRACKER.md`](../IMPLEMENTATION_TRACKER.md) shows current progress and completed stories
+
+### Critical Rules for AI Agents
+
+:warning: **These rules prevent common AI mistakes:**
+
+| Rule | Why It Matters |
+|------|----------------|
+| **Edit `/src/` files only** | `/index.html` at root is a build artifact - your changes will be overwritten |
+| **Run `npm run build`** | Changes in `/src/` must be built to produce deployable `/index.html` |
+| **Use Primer design tokens** | Never hardcode colors, spacing, or fonts - use `var(--token-name)` |
+| **Include `.js` in imports** | ES modules require explicit file extensions for browser compatibility |
+| **Target Chromium 84** | Pi 3B runs an older browser - use `-webkit-` prefixes, avoid bleeding-edge features |
+| **Implement `stop()` methods** | All timers need cleanup to prevent memory leaks over 24+ hour runtime |
+
+### Project Context Files
+
+| File | Purpose |
+|------|----------|
+| [`_bmad-output/project-context.md`](../_bmad-output/project-context.md) | **Primary AI context** - rules, patterns, constraints (read this first) |
+| [`docs/architecture.md`](architecture.md) | Component design, data flow, timing specifications |
+| [`docs/troubleshooting.md`](troubleshooting.md) | Common issues and solutions |
+| [`IMPLEMENTATION_TRACKER.md`](../IMPLEMENTATION_TRACKER.md) | Story status and implementation progress |
+
+### Best Practices for AI Contributions
+
+- **Validate your changes:** Run `npm run test:validate` to check design token compliance
+- **Build before committing:** Always run `npm run build` after editing source files
+- **Test locally:** Use `npm run dev` to preview changes with hot reload
+- **Follow existing patterns:** The codebase uses direct callbacks (not events) for component communication
+- **Respect Pi constraints:** This runs on Raspberry Pi 3B with 1GB RAM - keep it lightweight
+- **Check the story file:** Implementation artifacts in `_bmad-output/implementation-artifacts/` contain detailed requirements
+
+### What AI Agents Do Well Here
+
+- Implementing component logic following established patterns
+- Applying consistent coding style across the codebase
+- Generating boilerplate with proper design tokens
+- Refactoring while maintaining code conventions
+- Creating documentation and inline comments
 
 ## Naming Conventions
 
@@ -365,7 +418,7 @@ ssh pi@github-dashboard.local "sudo systemctl restart kiosk.service"
 
 ## Code Review Guidelines
 
-When reviewing pull requests, check for:
+When reviewing pull requests (from humans or AI agents), check for:
 
 1. **File Editing Rules:** Changes in `/src/`, not root `/index.html`
 2. **Build Artifact:** Both source and built file committed
@@ -378,8 +431,16 @@ When reviewing pull requests, check for:
 9. **Testing Evidence:** Manual testing on Pi mentioned in PR description
 10. **Documentation:** README or docs updated if behavior changes
 
+### Additional Checks for AI-Generated Code
+
+- **Pattern consistency:** Verify AI followed existing project patterns, not generic best practices
+- **Chromium 84 compatibility:** Check for modern JS/CSS features that may not work
+- **No over-engineering:** AI sometimes adds unnecessary abstractions - keep it simple
+- **Correct file paths:** Ensure AI edited `/src/` files, not build artifacts
+
 ## Getting Help
 
+- **AI Agent Context:** See [`_bmad-output/project-context.md`](../_bmad-output/project-context.md) (optimized for LLMs)
 - **Architecture Questions:** See [Architecture Guide](architecture.md)
 - **Deployment Issues:** See [Deployment Guide](deployment.md)
 - **Common Problems:** See [Troubleshooting Guide](troubleshooting.md)
@@ -389,3 +450,7 @@ When reviewing pull requests, check for:
 ## Questions?
 
 Open an issue or start a discussion in the repository.
+
+---
+
+*This guide is designed to be useful for both human developers and AI coding assistants. If you're an AI agent reading this, please also consume the project context file for comprehensive rules and patterns.*
