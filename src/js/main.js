@@ -10,6 +10,9 @@ import { DetailPanel } from './detail-panel.js';
 // Import persistent alert component (Story 4.3)
 import { PersistentAlert } from './persistent-alert.js';
 
+// Import theme toggle
+import { ThemeToggle } from './theme-toggle.js';
+
 // Import time-based messages component (Easter Egg)
 import { TimeBasedMessages } from './time-based-messages.js';
 
@@ -1073,6 +1076,10 @@ if (window.persistentAlertInstance) {
 }
 
 window.persistentAlertInstance = new PersistentAlert();
+
+// Initialize theme toggle
+window.themeToggleInstance = new ThemeToggle();
+window.themeToggleInstance.init();
 
 // Initialize time-based messages (Easter Egg)
 if (window.timeBasedMessagesInstance) {
