@@ -327,7 +327,9 @@ function getSeenIncidents() {
  */
 function saveSeenIncidents(incidents) {
   try {
-    // Keep only last 100 incidents to prevent localStorage bloat
+    // Limit to 100 most recent incidents to prevent localStorage bloat
+    // while maintaining sufficient history for duplicate detection
+    // (GitHub rarely has more than a few incidents per month)
     const trimmed = incidents.slice(-100);
     localStorage.setItem(SEEN_INCIDENTS_KEY, JSON.stringify(trimmed));
   } catch (error) {
@@ -336,9 +338,13 @@ function saveSeenIncidents(incidents) {
 }
 
 /**
- * Force trigger Matrix rain for testing purposes
+ * Force trigger Matrix rain for testing purposes.
  * Creates a mock incident and triggers the animation directly,
- * bypassing the incident detection filter.
+ * bypassing the incident detection filter and localStorage tracking.
+ * 
+ * Note: This function can be called multiple times without triggering
+ * the "already seen" logic since it bypasses checkForNewIncidents().
+ * This is intentional to allow repeated testing.
  * 
  * @param {string} severity - 'minor', 'major', or 'critical'
  */
