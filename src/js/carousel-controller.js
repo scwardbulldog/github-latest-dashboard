@@ -313,6 +313,10 @@ export class CarouselController {
    * @returns {boolean} True if the page was found and activated, false otherwise
    */
   goToPage(pageName) {
+    if (this.timer !== null) {
+      console.warn('CarouselController: goToPage() called after start() – call it before starting the carousel for predictable behavior.');
+    }
+
     const pageIndex = this.pages.indexOf(pageName);
     if (pageIndex === -1) {
       console.warn(`CarouselController: goToPage('${pageName}') – page not found in pages:`, this.pages);

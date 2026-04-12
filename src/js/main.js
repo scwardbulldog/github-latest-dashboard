@@ -164,12 +164,23 @@ function renderRSSList(data, containerId, sourceName, feedName) {
         const title = stripHtml(item.title || 'Untitled');
         const timestamp = formatDate(item.pubDate);
         const description = truncate(stripHtml(item.description || ''), 120);
-        
-        itemEl.innerHTML = `
-            <div class="list-item-title">${title}</div>
-            <div class="list-item-timestamp">${timestamp}</div>
-            <div class="list-item-description">${description}</div>
-        `;
+
+        // Build child elements using textContent to prevent XSS from RSS data
+        const titleEl = document.createElement('div');
+        titleEl.className = 'list-item-title';
+        titleEl.textContent = title;
+
+        const timestampEl = document.createElement('div');
+        timestampEl.className = 'list-item-timestamp';
+        timestampEl.textContent = timestamp;
+
+        const descEl = document.createElement('div');
+        descEl.className = 'list-item-description';
+        descEl.textContent = description;
+
+        itemEl.appendChild(titleEl);
+        itemEl.appendChild(timestampEl);
+        itemEl.appendChild(descEl);
         
         // Append to fragment (no DOM reflow)
         fragment.appendChild(itemEl);
@@ -1326,8 +1337,9 @@ function updateStorageIndicator() {
     if (!window.settingsManager.isStorageAvailable()) {
         indicator.textContent = '⚠️ Storage unavailable';
     } else {
-        const raw = localStorage.getItem('github-dashboard-settings');
-        indicator.textContent = raw ? '💾 Settings saved locally' : '💾 Using defaults';
+        indicator.textContent = window.settingsManager.hasStoredSettings()
+            ? '💾 Settings saved locally'
+            : '💾 Using defaults';
     }
 }
 

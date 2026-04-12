@@ -275,13 +275,14 @@ export class SettingsManager {
 
   /**
    * Read a value from a nested object using dot notation.
+   * Uses explicit null checks for Chromium 84 compatibility (no optional chaining).
    * @param {Object} obj
    * @param {string} key - Dot-separated path
    * @returns {*}
    * @private
    */
   _getNestedValue(obj, key) {
-    return key.split('.').reduce((cur, k) => cur?.[k], obj);
+    return key.split('.').reduce((cur, k) => (cur != null ? cur[k] : undefined), obj);
   }
 
   /**
@@ -303,6 +304,18 @@ export class SettingsManager {
       cursor = cursor[k];
     }
     cursor[last] = value;
+  }
+
+  /**
+   * Check whether settings have been previously saved to localStorage.
+   * @returns {boolean} True if a stored settings entry exists
+   */
+  hasStoredSettings() {
+    try {
+      return localStorage.getItem(STORAGE_KEY) !== null;
+    } catch (_e) {
+      return false;
+    }
   }
 
   /**
