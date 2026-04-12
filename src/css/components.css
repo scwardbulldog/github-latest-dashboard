@@ -517,3 +517,39 @@
   /* Comfortable line height for emoji support */
   line-height: var(--lineheight-default);
 }
+
+/* ============================================
+   Matrix Rain Easter Egg
+   Triggered on major/critical GitHub status incidents
+   ============================================ */
+
+.matrix-rain-canvas {
+  /* Fixed full-screen overlay */
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  
+  /* Above all content but below critical UI */
+  z-index: 9998;
+  
+  /* Semi-transparent dark background (lighter to show dashboard clearly)
+     Dashboard content remains clearly visible behind the animation */
+  background: rgba(0, 0, 0, 0.4);
+  
+  /* Allow clicks to dismiss (handled by JS) */
+  pointer-events: auto;
+  
+  /* Initial state */
+  display: block;
+  
+  /* Fade-in transition */
+  opacity: 1;
+  transition: opacity 0.5s ease-out;
+}
+
+.matrix-rain-canvas--fading {
+  /* Fade-out when animation completes */
+  opacity: 0;
+}
