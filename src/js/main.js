@@ -218,7 +218,7 @@ function renderRSSList(data, containerId, sourceName, feedName) {
             title,
             link: item.link,
             description: stripHtml(item.description || ''),
-            content: item.content || item.description,
+            content: stripHtml(item.content || item.description || ''),
             pubDate: item.pubDate,
             source: sourceName
         }, index);

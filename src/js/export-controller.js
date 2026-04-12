@@ -213,11 +213,17 @@ Exported from GitHub Latest Dashboard on ${new Date().toLocaleString()}
    * @returns {string} Sanitized filename
    */
   sanitizeFilename(title) {
-    return title
+    if (!title || typeof title !== 'string') {
+      return 'untitled';
+    }
+    
+    const sanitized = title
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-|-$/g, '')
       .substring(0, 50);
+    
+    return sanitized || 'untitled';
   }
   
   /**
@@ -226,6 +232,14 @@ Exported from GitHub Latest Dashboard on ${new Date().toLocaleString()}
    * @returns {string} Escaped HTML
    */
   escapeHtml(text) {
+    if (text == null || text === undefined) {
+      return '';
+    }
+    
+    if (typeof text !== 'string') {
+      text = String(text);
+    }
+    
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
