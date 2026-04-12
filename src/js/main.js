@@ -953,12 +953,12 @@ async function initializeWithConfig() {
     
     // Set up page intervals from config (destructure to exclude 'default' key)
     DEFAULT_PAGE_INTERVAL = config.pageIntervals.default;
-    const { default: _pageDefault, ...pageOverrides } = config.pageIntervals;
+    const { default: _, ...pageOverrides } = config.pageIntervals;
     PAGE_INTERVAL_OVERRIDES = pageOverrides;
     
     // Set up item intervals from config (destructure to exclude 'default' key)
     DEFAULT_ITEM_INTERVAL = config.itemIntervals.default;
-    const { default: _itemDefault, ...itemOverrides } = config.itemIntervals;
+    const { default: __, ...itemOverrides } = config.itemIntervals;
     ITEM_INTERVAL_OVERRIDES = itemOverrides;
     
     // Log configuration summary
@@ -1143,7 +1143,7 @@ initializeWithConfig().then(() => {
     console.error('Failed to initialize dashboard:', error);
     // Fall back to defaults from config-loader and start anyway
     const defaults = getDefaultConfig();
-    const { default: _pd, ...defaultPageOverrides } = defaults.pageIntervals;
+    const { default: _, ...defaultPageOverrides } = defaults.pageIntervals;
     window.carouselInstance = new CarouselController({
         interval: defaults.pageIntervals.default,
         pages: defaults.pages,

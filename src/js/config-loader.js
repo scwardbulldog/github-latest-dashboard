@@ -205,11 +205,12 @@ export function getConfig() {
 
 /**
  * Get the default configuration
+ * Returns a deep clone to prevent mutation of defaults
  * Useful for resetting or comparing
- * @returns {Object} Default configuration object
+ * @returns {Object} Default configuration object (deep clone)
  */
 export function getDefaultConfig() {
-  return { ...DEFAULT_CONFIG };
+  return JSON.parse(JSON.stringify(DEFAULT_CONFIG));
 }
 
 /**
