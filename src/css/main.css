@@ -87,7 +87,7 @@ body {
     height: 4px;
     background: linear-gradient(90deg, var(--color-accent-emphasis) 0%, var(--color-accent-fg) 100%);
     z-index: 1000;
-    transition: width 1s linear;
+    /* RAF handles smooth updates - no CSS transition needed */
 }
 
 .refresh-progress.refreshing {
@@ -102,8 +102,7 @@ body {
     left: 0;
     transform: translateX(-50%); /* Static position transform OK (not animated) */
     z-index: 1001;
-    transition: left 1s linear;
-    /* Removed expensive filter: drop-shadow for Pi 3B performance */
+    /* RAF handles smooth position updates - no CSS transition needed */
 }
 
 .octocat-traveler canvas {

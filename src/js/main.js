@@ -627,14 +627,16 @@ function togglePause() {
         pauseText.textContent = 'Resume';
         updateLiveIndicator();
         
-        // Clear refresh interval
+        // Clear refresh interval and progress animation (top bar)
         if (refreshIntervalId) {
             clearInterval(refreshIntervalId);
         }
-        if (progressInterval) {
-            clearInterval(progressInterval);
+        if (progressAnimationFrame) {
+            cancelAnimationFrame(progressAnimationFrame);
+            progressAnimationFrame = null;
         }
-        document.getElementById('refreshProgress').style.width = '0%';
+        document.getElementById('progressBar').style.width = '0%';
+        // Note: Carousel continues during pause, so bottom bar + octocat keep animating
     } else {
         // Resume mode
         pauseIcon.textContent = '⏸';
@@ -651,43 +653,42 @@ function togglePause() {
     }
 }
 
-// Refresh Progress Bar Animation
-let progressInterval;
+// Refresh Progress Bar Animation (RAF-based for smooth 60fps updates)
+// Top bar (#progressBar) tracks 5-minute refresh cycle
+// Octocat handled by CarouselController on bottom bar
+let progressAnimationFrame = null;
 let progressStartTime;
 
 function startProgressBar() {
-    const progressBar = document.getElementById('refreshProgress');
+    const progressBar = document.getElementById('progressBar');
     progressStartTime = Date.now();
     
     progressBar.style.width = '0%';
-    progressBar.classList.remove('refreshing');
     
-    if (progressInterval) clearInterval(progressInterval);
+    // Cancel any existing animation
+    if (progressAnimationFrame) {
+        cancelAnimationFrame(progressAnimationFrame);
+    }
     
-    progressInterval = setInterval(() => {
+    function updateProgressBar() {
         const elapsed = Date.now() - progressStartTime;
         const progress = Math.min((elapsed / REFRESH_INTERVAL) * 100, 100);
         
         progressBar.style.width = progress + '%';
         
-        // Update octocat sprite position
-        const octocat = document.getElementById('octocatTraveler');
-        octocat.style.left = progress + '%';
-        
-        // Add glow effect in last 10 seconds
-        if (progress > 96.67) {
-            progressBar.classList.add('refreshing');
-        }
-        
-        // Reset when complete
-        if (progress >= 100) {
+        // Continue animation until complete
+        if (progress < 100) {
+            progressAnimationFrame = requestAnimationFrame(updateProgressBar);
+        } else {
+            // Reset after brief hold at 100%
             setTimeout(() => {
                 progressBar.style.width = '0%';
-                progressBar.classList.remove('refreshing');
-                octocat.style.left = '0%';
             }, 500);
         }
-    }, 1000);
+    }
+    
+    // Start animation loop
+    progressAnimationFrame = requestAnimationFrame(updateProgressBar);
 }
 
 // Fetch all data

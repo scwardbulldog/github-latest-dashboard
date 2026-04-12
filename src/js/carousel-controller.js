@@ -24,7 +24,8 @@ export class CarouselController {
     this.onPageChange = null;   // Callback: (page: string) => void
     
     // Progress tracking properties
-    this.progressBar = null;    // DOM element reference
+    this.progressBar = null;    // DOM element reference (bottom bar)
+    this.octocat = null;        // Octocat traveler element
     this.startTime = null;      // Timestamp when current page started
     this.animationFrame = null; // requestAnimationFrame handle
     
@@ -158,18 +159,19 @@ export class CarouselController {
   }
   
   /**
-   * Initialize progress bar DOM reference
+   * Initialize progress bar and octocat DOM references
    * @private
    */
   initProgressBar() {
-    this.progressBar = document.getElementById('progressBar');
+    this.progressBar = document.getElementById('refreshProgress');
+    this.octocat = document.getElementById('octocatTraveler');
     if (!this.progressBar) {
       console.warn('CarouselController: Progress bar element not found');
     }
   }
   
   /**
-   * Update progress bar width based on elapsed time
+   * Update progress bar width and octocat position based on elapsed time
    * Uses requestAnimationFrame for smooth animation
    * @private
    */
@@ -181,18 +183,26 @@ export class CarouselController {
     
     this.progressBar.style.width = `${progress}%`;
     
+    // Update octocat position to match progress
+    if (this.octocat) {
+      this.octocat.style.left = `${progress}%`;
+    }
+    
     // Continue animation loop
     this.animationFrame = requestAnimationFrame(() => this.updateProgress());
   }
   
   /**
-   * Reset progress to 0%
+   * Reset progress and octocat to 0%
    * @private
    */
   resetProgress() {
     this.startTime = Date.now();
     if (this.progressBar) {
       this.progressBar.style.width = '0%';
+    }
+    if (this.octocat) {
+      this.octocat.style.left = '0%';
     }
   }
   
