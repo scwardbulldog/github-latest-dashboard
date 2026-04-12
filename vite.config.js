@@ -24,7 +24,7 @@ function serveImgPlugin() {
 
 export default defineConfig({
   root: 'src',  // Set src as the root directory for dev server
-  publicDir: false,  // Images served via custom plugin
+  publicDir: '../img',  // Copy img folder to dist during build
   plugins: [viteSingleFile(), serveImgPlugin()],
   server: {
     port: 5173,
