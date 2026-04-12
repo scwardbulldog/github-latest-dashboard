@@ -10,6 +10,9 @@ import { DetailPanel } from './detail-panel.js';
 // Import persistent alert component (Story 4.3)
 import { PersistentAlert } from './persistent-alert.js';
 
+// Import time-based messages component (Easter Egg)
+import { TimeBasedMessages } from './time-based-messages.js';
+
 // Import API client for data fetching (Story 3.5)
 import {
     fetchBlog as fetchBlogFromApiClient,
@@ -1005,6 +1008,15 @@ if (window.persistentAlertInstance) {
 
 window.persistentAlertInstance = new PersistentAlert();
 
+// Initialize time-based messages (Easter Egg)
+if (window.timeBasedMessagesInstance) {
+  // Clean up if exists (hot reload support)
+  window.timeBasedMessagesInstance.stop();
+  window.timeBasedMessagesInstance = null;
+}
+
+window.timeBasedMessagesInstance = new TimeBasedMessages();
+
 /**
  * Extract item data from a list item DOM element
  * @param {HTMLElement} itemElement - The list item element
@@ -1127,6 +1139,10 @@ function startDashboard() {
     
     // Start carousel
     window.carouselInstance.start();
+    
+    // Start time-based messages (Easter Egg)
+    // Independent of carousel and item highlighting (FR-16)
+    window.timeBasedMessagesInstance.start();
     
     // ItemHighlighter will be initialized in fetchAllData() after data is loaded
     // This ensures the first item is highlighted immediately when data is ready

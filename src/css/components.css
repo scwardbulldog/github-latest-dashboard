@@ -457,3 +457,63 @@
   user-select: none;                      /* Cannot be selected */
   -webkit-user-select: none;              /* Chromium 84 compatibility */
 }
+
+/* ============================================
+   Time-Based Messages (Easter Egg)
+   Added for contextual messages at specific times
+   ============================================ */
+
+.time-message-overlay {
+  /* Full-screen overlay (FR-12) */
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+
+  /* Semi-transparent backdrop (FR-13) */
+  background: rgba(0, 0, 0, 0.7);
+
+  /* Center the message card */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  /* Above all content */
+  z-index: 9999;
+
+  /* Initial state: invisible (FR-15: 0.5s fade) */
+  opacity: 0;
+  transition: opacity 0.5s ease;
+
+  /* Don't block interactions (FR-3) */
+  pointer-events: none;
+}
+
+.time-message-overlay.visible {
+  opacity: 1;
+}
+
+.time-message-card {
+  /* Primer design (FR-14) */
+  background: var(--color-canvas-default);
+  border: 1px solid var(--color-border-default);
+  border-radius: 6px;
+  padding: var(--space-6);
+  max-width: 600px;
+
+  /* Floating card shadow - simplified for Pi 3B performance */
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.time-message-text {
+  /* Large readable text (FR-14) */
+  font-size: var(--fontsize-h2);
+  font-weight: var(--fontweight-semibold);
+  color: var(--color-fg-default);
+  text-align: center;
+  margin: 0;
+
+  /* Comfortable line height for emoji support */
+  line-height: var(--lineheight-default);
+}
