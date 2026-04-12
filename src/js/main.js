@@ -420,21 +420,14 @@ function renderStatusList(statusData) {
 // (Removed: fetchBlog, fetchChangelog, fetchStatus stubs)
 
 // ============================================================================
-// SpriteAnimator Class - Production Version
+// FrameSequenceAnimator Class - Loads and plays individual frame images
 // ============================================================================
 
-class SpriteAnimator {
+class FrameSequenceAnimator {
     constructor(config) {
         this.canvas = config.canvas;
         this.ctx = this.canvas.getContext('2d');
-        this.spriteSheetPath = config.spriteSheetPath;
-        
-        this.gridColumns = config.gridColumns || 5;
-        this.gridRows = config.gridRows || 3;
-        this.paletteRows = config.paletteRows || 1;
-        this.framePadding = config.framePadding || 0;
-        this.verticalOffsets = config.verticalOffsets || [44, 90];
-        this.verticalOffset = config.verticalOffset || 0;
+        this.framePaths = config.framePaths || [];
         
         this.fps = config.fps || 6;
         this.scale = config.scale || 1;
@@ -444,10 +437,7 @@ class SpriteAnimator {
         this.chromaKeyTolerance = config.chromaKeyTolerance || 10;
         this.backgroundColor = config.backgroundColor || 'transparent';
         
-        this.spriteSheet = null;
-        this.frameWidth = 0;
-        this.frameHeight = 0;
-        this.totalFrames = this.gridColumns * (this.gridRows - this.paletteRows);
+        this.frames = [];
         this.currentFrame = 0;
         this.isPlaying = false;
         this.lastFrameTime = 0;
@@ -455,33 +445,61 @@ class SpriteAnimator {
         
         this.onLoad = config.onLoad || null;
         
-        this.loadSpriteSheet();
+        this.loadFrames();
     }
     
-    loadSpriteSheet() {
-        this.spriteSheet = new Image();
-        this.spriteSheet.onload = () => {
-            this.calculateFrameDimensions();
-            this.resizeCanvas();
-            this.draw();
-            if (this.onLoad) this.onLoad(this);
-        };
-        this.spriteSheet.src = this.spriteSheetPath;
+    /**
+     * Load all individual frame images in parallel
+     */
+    loadFrames() {
+        if (this.framePaths.length === 0) {
+            console.error('FrameSequenceAnimator: No frame paths provided');
+            return;
+        }
+        
+        let loadedCount = 0;
+        this.frames = new Array(this.framePaths.length);
+        
+        this.framePaths.forEach((path, index) => {
+            const img = new Image();
+            img.onload = () => {
+                this.frames[index] = img;
+                loadedCount++;
+                
+                // All frames loaded
+                if (loadedCount === this.framePaths.length) {
+                    this.resizeCanvas();
+                    this.draw();
+                    if (this.onLoad) this.onLoad(this);
+                }
+            };
+            img.onerror = () => {
+                console.error(`FrameSequenceAnimator: Failed to load frame ${index} (${path})`);
+                loadedCount++;
+                if (loadedCount === this.framePaths.length) {
+                    console.warn(`FrameSequenceAnimator: Loaded ${loadedCount} frames with errors`);
+                    if (this.onLoad) this.onLoad(this);
+                }
+            };
+            img.src = path;
+        });
     }
     
-    calculateFrameDimensions() {
-        this.frameWidth = Math.floor(this.spriteSheet.width / this.gridColumns);
-        this.frameHeight = Math.floor(this.spriteSheet.height / this.gridRows);
-    }
-    
+    /**
+     * Size canvas to fit the first loaded frame
+     */
     resizeCanvas() {
-        const displayWidth = (this.frameWidth - (this.framePadding * 2));
-        const displayHeight = (this.frameHeight - (this.framePadding * 2));
-        this.canvas.width = displayWidth * this.scale;
-        this.canvas.height = displayHeight * this.scale;
+        if (this.frames.length === 0 || !this.frames[0]) return;
+        
+        const firstFrame = this.frames[0];
+        this.canvas.width = firstFrame.width * this.scale;
+        this.canvas.height = firstFrame.height * this.scale;
         this.ctx.imageSmoothingEnabled = false;
     }
     
+    /**
+     * Draw current frame to canvas
+     */
     draw() {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         
@@ -490,26 +508,17 @@ class SpriteAnimator {
             this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         }
         
-        if (!this.spriteSheet) return;
+        const frame = this.frames[this.currentFrame];
+        if (!frame) return;
         
-        const frameRow = Math.floor(this.currentFrame / this.gridColumns);
-        const frameCol = this.currentFrame % this.gridColumns;
-        const rowOffset = this.verticalOffsets[frameRow] || this.verticalOffset;
-        
-        const sourceX = (frameCol * this.frameWidth) + this.framePadding;
-        const sourceY = (frameRow * this.frameHeight) + this.framePadding + rowOffset;
-        const sourceWidth = this.frameWidth - (this.framePadding * 2);
-        const sourceHeight = this.frameHeight - (this.framePadding * 2);
-        
-        this.ctx.drawImage(
-            this.spriteSheet,
-            sourceX, sourceY, sourceWidth, sourceHeight,
-            0, 0, this.canvas.width, this.canvas.height
-        );
+        this.ctx.drawImage(frame, 0, 0, this.canvas.width, this.canvas.height);
         
         if (this.chromaKeyEnabled) this.applyChromaKey();
     }
     
+    /**
+     * Apply chroma key transparency to current frame
+     */
     applyChromaKey() {
         try {
             const imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
@@ -535,6 +544,9 @@ class SpriteAnimator {
         }
     }
     
+    /**
+     * Convert hex color to RGB object
+     */
     hexToRgb(hex) {
         hex = hex.replace('#', '');
         return {
@@ -544,6 +556,9 @@ class SpriteAnimator {
         };
     }
     
+    /**
+     * Animation loop - advances frame based on FPS
+     */
     animate(timestamp) {
         if (!this.isPlaying) return;
         
@@ -551,7 +566,7 @@ class SpriteAnimator {
         const elapsed = timestamp - this.lastFrameTime;
         
         if (elapsed >= frameInterval) {
-            this.currentFrame = (this.currentFrame + 1) % this.totalFrames;
+            this.currentFrame = (this.currentFrame + 1) % this.frames.length;
             this.draw();
             this.lastFrameTime = timestamp - (elapsed % frameInterval);
         }
@@ -559,6 +574,9 @@ class SpriteAnimator {
         this.animationId = requestAnimationFrame((ts) => this.animate(ts));
     }
     
+    /**
+     * Start animation playback
+     */
     play() {
         if (this.isPlaying) return;
         this.isPlaying = true;
@@ -566,6 +584,9 @@ class SpriteAnimator {
         this.animationId = requestAnimationFrame((ts) => this.animate(ts));
     }
     
+    /**
+     * Pause animation playback
+     */
     pause() {
         this.isPlaying = false;
         if (this.animationId) {
@@ -854,21 +875,17 @@ async function fetchAllData() {
     }
 }
 
-// Initialize sprite animator
+// Initialize frame sequence animator with individual cut images
 const canvas = document.getElementById('spriteCanvas');
-skaterAnimator = new SpriteAnimator({
+const framePaths = Array.from({length: 15}, (_, i) => 
+    `img/ghskatecat/ghskatecat_${String(i).padStart(4, '0')}_ghcatskatev2_${String(15 - i).padStart(2, '0')}.png`
+);
+skaterAnimator = new FrameSequenceAnimator({
     canvas: canvas,
-    spriteSheetPath: 'octocat-skater-v2.png',
-    gridColumns: 5,
-    gridRows: 3,
-    paletteRows: 1,
-    framePadding: 0,
-    verticalOffsets: [44, 90],
+    framePaths: framePaths,
     fps: 6,
-    scale: 0.15,
-    chromaKey: true,
-    chromaKeyColor: '#161B22',
-    chromaKeyTolerance: 10,
+    scale: 0.22,  // ~50% larger than original 0.15
+    chromaKey: false,  // Images already have transparent background
     onLoad: (animator) => {
         animator.play();
     }

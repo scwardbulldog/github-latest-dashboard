@@ -112,7 +112,7 @@ body {
     image-rendering: crisp-edges;
 }
 
-/* Sprite animation handled by SpriteAnimator class */
+/* Animation handled by FrameSequenceAnimator class (individual PNG frames) */
 
 /* Performance Optimization: Removed expensive transform-based animations
  * Expensive properties (transform, rotate, scale) cause CPU-intensive
@@ -121,16 +121,8 @@ body {
  * GPU-accelerated alternatives (opacity, background-color) provide smooth
  * 30+ FPS animations on resource-constrained hardware.
  * 
- * Removed animations:
- * - @keyframes skateboard-tilt (transform: rotate, translateY)
- * - @keyframes wheel-spin (transform: rotate) 
- * - @keyframes car-vibrate (transform: translateX, translateY)
- * - @keyframes speed-whoosh (transform: translateX with opacity)
- * - @keyframes victory-jump (transform: translateY, rotate)
- * - @keyframes star-twinkle (transform: scale, rotate with opacity)
- * 
- * If sprite animations are needed in future, use canvas-based sprite sheets
- * (already implemented via SpriteAnimator class) which are GPU-optimized.
+ * Octocat skating animation uses pre-cut PNG frames in /img/ghskatecat/
+ * rendered via canvas for optimal performance.
  */
 
 .header {

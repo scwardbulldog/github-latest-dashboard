@@ -1,10 +1,35 @@
 import { defineConfig } from 'vite';
 import { viteSingleFile } from 'vite-plugin-singlefile';
 import { resolve } from 'path';
+import { existsSync, createReadStream } from 'fs';
+import { join } from 'path';
+
+// Custom plugin to serve /img from project root in dev
+function serveImgPlugin() {
+  return {
+    name: 'serve-img',
+    configureServer(server) {
+      server.middlewares.use('/img', (req, res, next) => {
+        const filePath = join(__dirname, 'img', req.url);
+        if (existsSync(filePath)) {
+          res.setHeader('Content-Type', 'image/png');
+          createReadStream(filePath).pipe(res);
+        } else {
+          next();
+        }
+      });
+    }
+  };
+}
 
 export default defineConfig({
   root: 'src',  // Set src as the root directory for dev server
-  plugins: [viteSingleFile()],
+  publicDir: false,  // Images served via custom plugin
+  plugins: [viteSingleFile(), serveImgPlugin()],
+  server: {
+    port: 5173,
+    open: true
+  },
   build: {
     // Build to dist/ folder (Vite best practice)
     // Post-build script copies index.html to root for Pi deployment
@@ -19,9 +44,5 @@ export default defineConfig({
     },
     minify: 'terser',         // Minify for smaller output
     target: 'es2020',         // Chromium 84 compatibility
-  },
-  server: {
-    port: 5173,               // Standard Vite dev port
-    open: true                // Auto-open browser
   }
 });
