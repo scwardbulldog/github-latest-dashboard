@@ -42,6 +42,25 @@
                 <span class="pause-icon" id="pauseIcon">⏸</span>
                 <span id="pauseText">Pause</span>
             </button>
+            <!-- Settings Panel Toggle -->
+            <div class="settings-container" id="settingsContainer">
+                <button class="settings-button" id="settingsButton" aria-label="Open settings" title="Settings">
+                    <span class="settings-icon">⚙️</span>
+                </button>
+                <div class="settings-panel" id="settingsPanel" style="display: none;" role="dialog" aria-label="Dashboard settings">
+                    <div class="settings-storage-status" id="settingsStorageStatus">
+                        <span class="storage-indicator" id="storageIndicator">💾 Settings saved locally</span>
+                    </div>
+                    <div class="settings-actions">
+                        <button class="btn-settings btn-export-settings" id="exportSettingsBtn" title="Download settings as JSON">
+                            📤 Export
+                        </button>
+                        <button class="btn-settings btn-reset-settings" id="resetSettingsBtn" title="Reset all settings to defaults">
+                            🗑️ Reset
+                        </button>
+                    </div>
+                </div>
+            </div>
             <div class="timestamp" id="timestamp">--:-- --</div>
         </div>
     </div>

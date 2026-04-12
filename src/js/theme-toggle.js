@@ -94,6 +94,7 @@ export class ThemeToggle {
         this._button = null;
         this._currentTheme = DARK;
         this._mediaQuery = null;
+        this.onThemeChange = null; // Callback: (theme: 'dark'|'light') => void
     }
 
     /**
@@ -132,6 +133,7 @@ export class ThemeToggle {
         this._currentTheme = this._currentTheme === DARK ? LIGHT : DARK;
         applyTheme(this._currentTheme, this._button);
         storeTheme(this._currentTheme);
+        if (this.onThemeChange) this.onThemeChange(this._currentTheme);
     }
 
     /**
@@ -143,6 +145,7 @@ export class ThemeToggle {
         this._currentTheme = theme;
         applyTheme(this._currentTheme, this._button);
         storeTheme(this._currentTheme);
+        if (this.onThemeChange) this.onThemeChange(this._currentTheme);
     }
 
     /**
