@@ -10,7 +10,7 @@ function serveImgPlugin() {
     name: 'serve-img',
     configureServer(server) {
       server.middlewares.use('/img', (req, res, next) => {
-        const filePath = join(__dirname, 'img', req.url);
+        const filePath = join(__dirname, 'public', 'img', req.url);
         if (existsSync(filePath)) {
           res.setHeader('Content-Type', 'image/png');
           createReadStream(filePath).pipe(res);
@@ -24,7 +24,7 @@ function serveImgPlugin() {
 
 export default defineConfig({
   root: 'src',  // Set src as the root directory for dev server
-  publicDir: false,  // Don't copy public dir (images handled by post-build)
+  publicDir: resolve(__dirname, 'public'),  // Copy public/ folder contents to dist/
   plugins: [viteSingleFile(), serveImgPlugin()],
   server: {
     port: 5173,

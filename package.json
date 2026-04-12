@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "vite build && node -e \"const fs = require('fs'); const path = require('path'); fs.cpSync(path.join('img'), path.join('dist', 'img'), {recursive: true}); fs.copyFileSync(path.join('dist', 'index.html'), 'index.html');\"",
+    "build": "vite build && node -e \"const fs = require('fs'); const path = require('path'); fs.copyFileSync(path.join('dist', 'index.html'), 'index.html');\"",
     "preview": "vite preview",
     "test:memory": "node test/memory-monitor.js",
     "test:burn-in": "bash test/burn-in-test.sh",
