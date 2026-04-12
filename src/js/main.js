@@ -23,8 +23,18 @@ import {
     fetchArticleContent
 } from './api-client.js';
 
-// Configuration
-const REFRESH_INTERVAL = 5 * 60 * 1000; // 5 minutes
+// Import config loader for user-configurable settings
+import {
+    loadConfig,
+    getConfig,
+    getItemsPerFeed,
+    getPageInterval,
+    getItemInterval
+} from './config-loader.js';
+
+// Configuration - loaded from config.json with fallback defaults
+// These will be populated by initializeWithConfig()
+let REFRESH_INTERVAL = 5 * 60 * 1000; // 5 minutes (default, updated from config)
 
 // Network status state (Story 4.1)
 let isOffline = false;
@@ -108,9 +118,10 @@ function updateLiveIndicator() {
  * @param {Object} data - RSS data from API with items array
  * @param {string} containerId - DOM element ID for the list container
  * @param {string} sourceName - Human-readable source name for logging/errors
+ * @param {string} feedName - Feed name for config lookup (e.g., 'blog', 'changelog')
  * @returns {number} Number of items rendered
  */
-function renderRSSList(data, containerId, sourceName) {
+function renderRSSList(data, containerId, sourceName, feedName = null) {
     const listEl = document.getElementById(containerId);
     if (!listEl) {
         console.error(`renderRSSList: ${containerId} element not found`);
@@ -120,8 +131,9 @@ function renderRSSList(data, containerId, sourceName) {
     // Clear placeholder content
     listEl.innerHTML = '';
     
-    // Render at least 10 items (AC requirement)
-    const items = data.items.slice(0, 10);
+    // Get item count from config (defaults to 5 if not specified)
+    const itemCount = getItemsPerFeed(feedName || sourceName);
+    const items = data.items.slice(0, itemCount);
     
     // Performance optimization: Use DocumentFragment for batched DOM insertion
     // This eliminates layout thrashing (only one reflow instead of N reflows)
@@ -163,7 +175,7 @@ function renderRSSList(data, containerId, sourceName) {
  * @returns {number} Number of items rendered
  */
 function renderBlogList(blogData) {
-    return renderRSSList(blogData, 'blog-list', 'blog');
+    return renderRSSList(blogData, 'blog-list', 'blog', 'blog');
 }
 
 /**
@@ -172,7 +184,7 @@ function renderBlogList(blogData) {
  * @returns {number} Number of items rendered
  */
 function renderChangelogList(changelogData) {
-    return renderRSSList(changelogData, 'changelog-list', 'changelog');
+    return renderRSSList(changelogData, 'changelog-list', 'changelog', 'changelog');
 }
 
 /**
@@ -181,7 +193,7 @@ function renderChangelogList(changelogData) {
  * @returns {number} Number of items rendered
  */
 function renderVSCodeList(vscodeData) {
-    return renderRSSList(vscodeData, 'vscode-list', 'VS Code update');
+    return renderRSSList(vscodeData, 'vscode-list', 'VS Code update', 'vscode');
 }
 
 /**
@@ -190,7 +202,7 @@ function renderVSCodeList(vscodeData) {
  * @returns {number} Number of items rendered
  */
 function renderVisualStudioList(visualstudioData) {
-    return renderRSSList(visualstudioData, 'visualstudio-list', 'Visual Studio update');
+    return renderRSSList(visualstudioData, 'visualstudio-list', 'Visual Studio update', 'visualstudio');
 }
 
 /**
@@ -210,7 +222,9 @@ function renderAnthropicList(anthropicData) {
     // Clear placeholder content
     listEl.innerHTML = '';
 
-    const items = anthropicData.items.slice(0, 10);
+    // Get item count from config
+    const itemCount = getItemsPerFeed('anthropic');
+    const items = anthropicData.items.slice(0, itemCount);
 
     // Performance optimization: Use DocumentFragment for batched DOM insertion
     const fragment = document.createDocumentFragment();
@@ -918,30 +932,53 @@ if (window.carouselInstance) {
   window.carouselInstance.stop();
 }
 
-const DEFAULT_PAGE_INTERVAL = 30000; // 30 seconds per page
-const PAGE_INTERVAL_OVERRIDES = {
-  blog: 80000,        // 5 cards at 16s each
-  changelog: 80000,    // 5 cards at 16s each
-  vscode: 80000,       // 5 cards at 16s each
-  visualstudio: 80000, // 5 cards at 16s each
-  anthropic: 80000     // 5 cards at 16s each
-};
+// Page and item intervals are now loaded from config
+// These variables are set by initializeWithConfig()
+let DEFAULT_PAGE_INTERVAL = 30000;
+let PAGE_INTERVAL_OVERRIDES = {};
+let DEFAULT_ITEM_INTERVAL = 5333;
+let ITEM_INTERVAL_OVERRIDES = {};
 
-window.carouselInstance = new CarouselController({ interval: DEFAULT_PAGE_INTERVAL, pages: ['vscode', 'visualstudio', 'blog', 'changelog', 'status', 'anthropic'], pageIntervals: PAGE_INTERVAL_OVERRIDES }); // 30 seconds per page default, overridden per page
+/**
+ * Initialize dashboard with user configuration
+ * Loads config.json and sets up all intervals and pages
+ */
+async function initializeWithConfig() {
+    // Load configuration from config.json (or use defaults if not found)
+    const config = await loadConfig();
+    
+    // Update refresh interval from config
+    REFRESH_INTERVAL = config.refreshInterval;
+    
+    // Set up page intervals from config
+    DEFAULT_PAGE_INTERVAL = config.pageIntervals.default;
+    PAGE_INTERVAL_OVERRIDES = { ...config.pageIntervals };
+    delete PAGE_INTERVAL_OVERRIDES.default; // Remove 'default' key for CarouselController
+    
+    // Set up item intervals from config
+    DEFAULT_ITEM_INTERVAL = config.itemIntervals.default;
+    ITEM_INTERVAL_OVERRIDES = { ...config.itemIntervals };
+    delete ITEM_INTERVAL_OVERRIDES.default; // Remove 'default' key
+    
+    // Log configuration summary
+    console.log('📋 Dashboard configuration loaded:');
+    console.log(`   - Refresh interval: ${REFRESH_INTERVAL / 1000}s`);
+    console.log(`   - Pages: ${config.pages.join(', ')}`);
+    console.log(`   - Default page interval: ${DEFAULT_PAGE_INTERVAL / 1000}s`);
+    console.log(`   - Default item interval: ${DEFAULT_ITEM_INTERVAL / 1000}s`);
+    
+    // Initialize carousel with configured pages and intervals
+    window.carouselInstance = new CarouselController({
+        interval: DEFAULT_PAGE_INTERVAL,
+        pages: config.pages,
+        pageIntervals: PAGE_INTERVAL_OVERRIDES
+    });
+}
 
 // Initialize item highlighter
 if (window.itemHighlighterInstance) {
   window.itemHighlighterInstance.stop();
 }
-
-const DEFAULT_ITEM_INTERVAL = 5333; // ~5.3 seconds per item (decreased by 1.5x)
-const ITEM_INTERVAL_OVERRIDES = {
-  blog: 16000,       // 16 seconds per item (decreased by 1.5x)
-  changelog: 16000,
-  vscode: 16000,
-  visualstudio: 16000,
-  anthropic: 16000
-};
 
 function applyItemIntervalForPage(pageName) {
     const pageSpecificInterval = ITEM_INTERVAL_OVERRIDES[pageName];
@@ -1059,37 +1096,58 @@ window.itemHighlighterInstance.onItemHighlight = (itemElement, itemIndex) => {
 // 5. Both timers persist through 5-minute API refresh cycles
 // ============================================================================
 
-// Set carousel callback BEFORE starting (Story 3.2/3.4)
-// This callback is triggered when the page changes (default 30s, extended on Blog/Changelog)
-window.carouselInstance.onPageChange = (pageName) => {
-    console.log(`Page changed to: ${pageName}`);
+/**
+ * Start the dashboard after configuration is loaded
+ * Sets up callbacks and starts all timers
+ */
+function startDashboard() {
+    // Set carousel callback BEFORE starting (Story 3.2/3.4)
+    // This callback is triggered when the page changes (default 30s, extended on Blog/Changelog)
+    window.carouselInstance.onPageChange = (pageName) => {
+        console.log(`Page changed to: ${pageName}`);
+        
+        // CRITICAL: Reset item highlighting when page changes
+        // This clears the 8-second timer and removes all highlights
+        window.itemHighlighterInstance.reset();
+        
+        // Apply page-specific item timing (triple on blog/changelog)
+        applyItemIntervalForPage(pageName);
+        
+        // Get item count for new page
+        const itemCount = getItemCountForPage(pageName);
+        
+        // Start highlighting on new page if items exist
+        // Item timer begins fresh countdown using page-specific interval
+        if (itemCount > 0) {
+            window.itemHighlighterInstance.start(itemCount);
+            console.log(`ItemHighlighter started with ${itemCount} items on ${pageName}`);
+        }
+    };
     
-    // CRITICAL: Reset item highlighting when page changes
-    // This clears the 8-second timer and removes all highlights
-    window.itemHighlighterInstance.reset();
+    // Start carousel
+    window.carouselInstance.start();
     
-    // Apply page-specific item timing (triple on blog/changelog)
-    applyItemIntervalForPage(pageName);
+    // ItemHighlighter will be initialized in fetchAllData() after data is loaded
+    // This ensures the first item is highlighted immediately when data is ready
     
-    // Get item count for new page
-    const itemCount = getItemCountForPage(pageName);
-    
-    // Start highlighting on new page if items exist
-    // Item timer begins fresh countdown using page-specific interval
-    if (itemCount > 0) {
-        window.itemHighlighterInstance.start(itemCount);
-        console.log(`ItemHighlighter started with ${itemCount} items on ${pageName}`);
-    }
-};
+    // Auto-refresh using configured interval
+    refreshIntervalId = setInterval(fetchAllData, REFRESH_INTERVAL);
+}
 
-// Start carousel
-window.carouselInstance.start();
-
-// ItemHighlighter will be initialized in fetchAllData() after data is loaded
-// This ensures the first item is highlighted immediately when data is ready
-
-// Auto-refresh every 5 minutes
-refreshIntervalId = setInterval(fetchAllData, REFRESH_INTERVAL);
+// Initialize with config and start dashboard
+initializeWithConfig().then(() => {
+    startDashboard();
+    console.log('🚀 Dashboard started with configuration');
+}).catch((error) => {
+    console.error('Failed to initialize dashboard:', error);
+    // Fall back to defaults and start anyway
+    window.carouselInstance = new CarouselController({
+        interval: 30000,
+        pages: ['vscode', 'visualstudio', 'blog', 'changelog', 'status', 'anthropic'],
+        pageIntervals: { blog: 80000, changelog: 80000, vscode: 80000, visualstudio: 80000, anthropic: 80000 }
+    });
+    startDashboard();
+});
 
 // Pause button handler
 document.getElementById('pauseButton').addEventListener('click', togglePause);
