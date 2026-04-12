@@ -19,6 +19,11 @@ export class ItemHighlighter {
     this.lastHighlight = null;  // Timestamp of last highlight
     this.highlightCount = 0;    // Total highlights since start
     this.enableAccuracyLogging = false; // Enable via window.enableTimerLogging
+    
+    // Pause/resume state
+    this.isPaused = false;
+    this.elapsedBeforePause = 0; // Time elapsed in current interval before pause
+    this.intervalStartTime = null; // When current interval started
   }
   
   /**
@@ -46,8 +51,14 @@ export class ItemHighlighter {
     // Immediately highlight first item (don't wait 8 seconds)
     this.highlightItem(0);
     
+    // Track interval start time for pause/resume
+    this.intervalStartTime = Date.now();
+    
     // Start interval for subsequent items
-    this.timer = setInterval(() => this.highlightNext(), this.interval);
+    this.timer = setInterval(() => {
+      this.intervalStartTime = Date.now();
+      this.highlightNext();
+    }, this.interval);
   }
   
   /**
@@ -58,6 +69,46 @@ export class ItemHighlighter {
       clearInterval(this.timer);
       this.timer = null;
     }
+  }
+  
+  /**
+   * Pause highlighting - freezes at current item
+   */
+  pause() {
+    if (this.isPaused || !this.timer) return;
+    this.isPaused = true;
+    
+    // Store elapsed time in current interval
+    if (this.intervalStartTime) {
+      this.elapsedBeforePause = Date.now() - this.intervalStartTime;
+    }
+    
+    // Stop timer but preserve state (current item, count, etc.)
+    clearInterval(this.timer);
+    this.timer = null;
+  }
+  
+  /**
+   * Resume highlighting from paused position
+   */
+  resume() {
+    if (!this.isPaused) return;
+    this.isPaused = false;
+    
+    // Calculate remaining time in current interval
+    const remainingTime = Math.max(0, this.interval - this.elapsedBeforePause);
+    
+    // Use setTimeout for remaining time, then restart setInterval
+    this.timer = setTimeout(() => {
+      this.intervalStartTime = Date.now();
+      this.highlightNext();
+      
+      // Resume regular interval
+      this.timer = setInterval(() => {
+        this.intervalStartTime = Date.now();
+        this.highlightNext();
+      }, this.interval);
+    }, remainingTime);
   }
   
   /**

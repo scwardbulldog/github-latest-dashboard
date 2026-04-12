@@ -640,34 +640,58 @@ function togglePause() {
     const pauseText = document.getElementById('pauseText');
     
     if (isPaused) {
-        // Pause mode
+        // Pause mode - freeze everything at current position
         pauseIcon.textContent = '▶';
         pauseText.textContent = 'Resume';
         updateLiveIndicator();
         
-        // Clear refresh interval and progress animation (top bar)
+        // Pause data refresh (store elapsed for top progress bar)
         if (refreshIntervalId) {
             clearInterval(refreshIntervalId);
+            refreshIntervalId = null;
+        }
+        // Store elapsed time for top progress bar
+        if (progressStartTime) {
+            progressElapsedBeforePause = Date.now() - progressStartTime;
         }
         if (progressAnimationFrame) {
             cancelAnimationFrame(progressAnimationFrame);
             progressAnimationFrame = null;
         }
-        document.getElementById('progressBar').style.width = '0%';
-        // Note: Carousel continues during pause, so bottom bar + octocat keep animating
+        
+        // Pause carousel (preserves position)
+        if (window.carouselInstance) {
+            window.carouselInstance.pause();
+        }
+        
+        // Pause item highlighting (preserves current item)
+        if (window.itemHighlighterInstance) {
+            window.itemHighlighterInstance.pause();
+        }
     } else {
-        // Resume mode
+        // Resume mode - continue from where we left off
         pauseIcon.textContent = '⏸';
         pauseText.textContent = 'Pause';
-        
-        // Preserve network state across pause/resume - don't change isOffline
-        // Show current state immediately (Offline if it was offline, Live if it was online)
         updateLiveIndicator();
         
-        // Restart refresh interval and fetch immediately
-        // fetchAllData() will update isOffline state based on actual network status
-        fetchAllData();
+        // Resume top progress bar from where it was
+        if (progressElapsedBeforePause > 0) {
+            progressStartTime = Date.now() - progressElapsedBeforePause;
+            resumeProgressBar();
+        }
+        
+        // Resume data refresh interval (don't fetch immediately to avoid jarring)
         refreshIntervalId = setInterval(fetchAllData, REFRESH_INTERVAL);
+        
+        // Resume carousel rotation
+        if (window.carouselInstance) {
+            window.carouselInstance.resume();
+        }
+        
+        // Resume item highlighting
+        if (window.itemHighlighterInstance) {
+            window.itemHighlighterInstance.resume();
+        }
     }
 }
 
@@ -676,10 +700,12 @@ function togglePause() {
 // Octocat handled by CarouselController on bottom bar
 let progressAnimationFrame = null;
 let progressStartTime;
+let progressElapsedBeforePause = 0;
 
 function startProgressBar() {
     const progressBar = document.getElementById('progressBar');
     progressStartTime = Date.now();
+    progressElapsedBeforePause = 0;
     
     progressBar.style.width = '0%';
     
@@ -706,6 +732,35 @@ function startProgressBar() {
     }
     
     // Start animation loop
+    progressAnimationFrame = requestAnimationFrame(updateProgressBar);
+}
+
+function resumeProgressBar() {
+    const progressBar = document.getElementById('progressBar');
+    
+    // Cancel any existing animation
+    if (progressAnimationFrame) {
+        cancelAnimationFrame(progressAnimationFrame);
+    }
+    
+    function updateProgressBar() {
+        const elapsed = Date.now() - progressStartTime;
+        const progress = Math.min((elapsed / REFRESH_INTERVAL) * 100, 100);
+        
+        progressBar.style.width = progress + '%';
+        
+        // Continue animation until complete
+        if (progress < 100) {
+            progressAnimationFrame = requestAnimationFrame(updateProgressBar);
+        } else {
+            // Reset after brief hold at 100%
+            setTimeout(() => {
+                progressBar.style.width = '0%';
+            }, 500);
+        }
+    }
+    
+    // Resume animation loop
     progressAnimationFrame = requestAnimationFrame(updateProgressBar);
 }
 
