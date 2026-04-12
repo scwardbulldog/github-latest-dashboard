@@ -31,6 +31,7 @@ Master index for project documentation - the primary AI retrieval source.
 
 - [Project Overview](./project-overview.md) - Purpose, features, architecture summary
 - [Architecture](./architecture.md) - Component structure and design patterns
+- [Configuration Guide](./configuration.md) - Customize settings via config.json
 - [Source Tree Analysis](./source-tree-analysis.md) - Annotated directory structure
 - [Component Inventory](./component-inventory.md) - All JS and CSS components
 
@@ -55,6 +56,7 @@ Master index for project documentation - the primary AI retrieval source.
 | Module | Timer | Purpose |
 |--------|-------|---------|
 | `main.js` | - | Entry point, orchestration |
+| `config-loader.js` | - | User configuration (config.json) |
 | `carousel-controller.js` | 30s | Page rotation |
 | `item-highlighter.js` | 8s | Item cycling |
 | `detail-panel.js` | - | Content rendering |

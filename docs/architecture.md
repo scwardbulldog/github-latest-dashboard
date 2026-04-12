@@ -9,6 +9,7 @@ The dashboard is built with a **component-based architecture** using vanilla Jav
 ```
 /src/js/
   ├── main.js                     # Application entry point & orchestration
+  ├── config-loader.js            # User configuration loading (config.json)
   ├── carousel-controller.js      # Page rotation (30s timer)
   ├── item-highlighter.js         # Item highlighting (8s timer)
   ├── detail-panel.js            # Detail view rendering
@@ -18,6 +19,13 @@ The dashboard is built with a **component-based architecture** using vanilla Jav
 ```
 
 ## Component Responsibilities
+
+### ConfigLoader (`config-loader.js`)
+- Loads user configuration from `/config.json` on startup
+- Provides fallback defaults if config file not found
+- Validates configuration values
+- Exports helper functions for retrieving config values
+- Supports partial configuration (only specify what you want to change)
 
 ### CarouselController (`carousel-controller.js`)
 - Rotates between Blog/Changelog/Status pages every 30 seconds
@@ -61,6 +69,7 @@ github-latest-dashboard/
 │   ├── index.html               # HTML structure (source)
 │   ├── js/                      # JavaScript modules
 │   │   ├── main.js
+│   │   ├── config-loader.js
 │   │   ├── carousel-controller.js
 │   │   ├── item-highlighter.js
 │   │   ├── detail-panel.js
@@ -72,12 +81,16 @@ github-latest-dashboard/
 │       ├── layout.css           # Grid and split-view layout
 │       ├── components.css       # Item cards, detail panel
 │       └── reset.css            # CSS reset
+├── public/                       # Static assets (copied to dist/)
+│   ├── config.json              # User configuration (optional)
+│   └── img/                     # Images
 ├── index.html                    # Built artifact (DO NOT EDIT - but MUST be committed)
 ├── package.json                  # Dependencies and scripts
 ├── vite.config.js               # Vite build configuration
 ├── README.md                     # Project overview
 ├── docs/                         # Additional documentation
 │   ├── architecture.md          # This file
+│   ├── configuration.md         # Configuration guide
 │   ├── contributing.md          # Development patterns
 │   ├── deployment.md            # Deployment procedures
 │   ├── troubleshooting.md       # Common issues

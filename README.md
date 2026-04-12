@@ -11,12 +11,14 @@ A single-page web dashboard designed to run full-screen on a large office TV, di
 - **Auto-rotating pages** - Cycles through Blog → Changelog → Status every 30 seconds
 - **Item highlighting** - Highlights and showcases individual items every 8 seconds
 - **Detail panel** - Full content display for highlighted items
+- **Configurable** - Customize timing, pages, and item counts via `config.json`
 - **Optimized for viewing** - Large fonts and high contrast, readable from 10-15 feet
 
 ## Quick Links
 
 📚 **Documentation**
 - [Architecture](docs/architecture.md) - Component structure and design patterns
+- [Configuration Guide](docs/configuration.md) - Customize settings via config.json
 - [Contributing Guide](docs/contributing.md) - Development patterns and coding standards
 - [Deployment Guide](docs/deployment.md) - Build and deployment procedures
 - [Troubleshooting Guide](docs/troubleshooting.md) - Common issues and solutions
@@ -112,6 +114,34 @@ For 24/7 office display:
 - 16GB+ microSD card
 - 5V 3A power supply
 - HDMI cable and TV
+
+## Configuration
+
+Customize the dashboard without code changes by creating a `config.json` file:
+
+```json
+{
+  "refreshInterval": 300000,
+  "pages": ["blog", "changelog", "status"],
+  "pageIntervals": {
+    "default": 30000,
+    "blog": 60000
+  },
+  "itemsPerFeed": {
+    "default": 5,
+    "blog": 10
+  }
+}
+```
+
+**Configuration Options:**
+- `refreshInterval` - API refresh interval in milliseconds (default: 300000 / 5 minutes)
+- `pages` - Which pages to show and their order
+- `pageIntervals` - How long to display each page
+- `itemIntervals` - How long to highlight each item
+- `itemsPerFeed` - Number of items to display per feed
+
+See [Configuration Guide](docs/configuration.md) for full details.
 
 ## Browser Compatibility
 

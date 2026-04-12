@@ -1,0 +1,36 @@
+{
+  "$schema": "./config.schema.json",
+  "_comment": "Dashboard configuration - customize without code edits. See docs/configuration.md for details.",
+  
+  "refreshInterval": 300000,
+  
+  "pages": ["vscode", "visualstudio", "blog", "changelog", "status", "anthropic"],
+  
+  "pageIntervals": {
+    "default": 30000,
+    "blog": 80000,
+    "changelog": 80000,
+    "vscode": 80000,
+    "visualstudio": 80000,
+    "anthropic": 80000
+  },
+  
+  "itemIntervals": {
+    "default": 5333,
+    "blog": 16000,
+    "changelog": 16000,
+    "vscode": 16000,
+    "visualstudio": 16000,
+    "anthropic": 16000
+  },
+  
+  "itemsPerFeed": {
+    "default": 5,
+    "blog": 5,
+    "changelog": 5,
+    "status": 10,
+    "vscode": 5,
+    "visualstudio": 5,
+    "anthropic": 5
+  }
+}
