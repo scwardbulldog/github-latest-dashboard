@@ -13,6 +13,9 @@ import { PersistentAlert } from './persistent-alert.js';
 // Import time-based messages component (Easter Egg)
 import { TimeBasedMessages } from './time-based-messages.js';
 
+// Import Matrix rain easter egg for incident detection
+import { checkForNewIncidents } from './matrix-rain.js';
+
 // Import API client for data fetching (Story 3.5)
 import {
     fetchBlog as fetchBlogFromApiClient,
@@ -862,6 +865,14 @@ async function fetchAllData() {
                 if (window.persistentAlertInstance) {
                     window.persistentAlertInstance.hide();
                 }
+            }
+            
+            // Easter Egg: Check for new major/critical incidents and trigger Matrix rain
+            try {
+                checkForNewIncidents(statusData);
+            } catch (error) {
+                console.error('fetchAllData: Error checking for Matrix rain trigger:', error);
+                // Non-critical - don't affect dashboard operation
             }
         } else {
             renderErrorState('status-list', 'Unable to load status');
