@@ -10,6 +10,9 @@ import { DetailPanel } from './detail-panel.js';
 // Import persistent alert component (Story 4.3)
 import { PersistentAlert } from './persistent-alert.js';
 
+// Import Octocat cameo Easter egg
+import { OctocatCameo } from './octocat-cameo.js';
+
 // Import API client for data fetching (Story 3.5)
 import {
     fetchBlog as fetchBlogFromApiClient,
@@ -1004,6 +1007,18 @@ if (window.persistentAlertInstance) {
 }
 
 window.persistentAlertInstance = new PersistentAlert();
+
+// Initialize Octocat cameo Easter egg
+// Mona appears every 30 minutes and walks across the bottom of the screen
+if (window.octocatCameoInstance) {
+  // Clean up if exists (hot reload support)
+  window.octocatCameoInstance.stop();
+  window.octocatCameoInstance = null;
+}
+
+window.octocatCameoInstance = new OctocatCameo();
+// Start the Easter egg timer (will trigger every 30 minutes)
+window.octocatCameoInstance.start();
 
 /**
  * Extract item data from a list item DOM element

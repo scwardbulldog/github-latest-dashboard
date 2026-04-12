@@ -457,3 +457,66 @@
   user-select: none;                      /* Cannot be selected */
   -webkit-user-select: none;              /* Chromium 84 compatibility */
 }
+
+/* ============================================
+   Octocat Cameo - Easter Egg Animation
+   Mona walks across the bottom of the screen
+   every 30 minutes as a delightful surprise.
+   ============================================ */
+
+/* Animation keyframes for walking across screen */
+@keyframes mona-walk {
+  0% {
+    transform: translateX(100vw);
+  }
+  100% {
+    transform: translateX(-120px);        /* Exit fully off-screen left */
+  }
+}
+
+/* Optional: Subtle bounce while walking */
+@keyframes mona-bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);          /* Subtle bounce */
+  }
+}
+
+.mona-cameo {
+  /* Fixed positioning at bottom of viewport */
+  position: fixed;
+  bottom: 20px;                           /* FR-5: 20px from bottom */
+  left: 0;
+  
+  /* Size: 80-100px as per FR-7 */
+  width: 100px;
+  height: 100px;
+  
+  /* Apply walking animation */
+  animation: mona-walk var(--mona-duration, 18s) linear forwards;
+  
+  /* High z-index to overlay content safely (FR-5) */
+  z-index: 999;
+  
+  /* Non-interactive */
+  pointer-events: none;                   /* Don't block clicks */
+  user-select: none;
+  -webkit-user-select: none;              /* Chromium 84 compatibility */
+  
+  /* GPU acceleration for smooth animation on Pi 3B (FR-15) */
+  will-change: transform;
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+}
+
+/* SVG styling for Mona */
+.mona-cameo svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  
+  /* Add subtle bounce animation */
+  animation: mona-bounce 0.5s ease-in-out infinite;
+}
