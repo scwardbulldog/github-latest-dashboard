@@ -1237,6 +1237,25 @@ initializeWithConfig().then(() => {
 // Pause button handler
 document.getElementById('pauseButton').addEventListener('click', togglePause);
 
+// Spacebar keyboard shortcut for pause/resume
+// Provides quick keyboard access for kiosk/TV displays
+window.addEventListener('keydown', (event) => {
+    // Only trigger on spacebar, ignore if user is typing in an input field
+    if (event.code === 'Space' && event.target.tagName !== 'INPUT' && event.target.tagName !== 'TEXTAREA') {
+        event.preventDefault(); // Prevent page scroll
+        
+        // Toggle pause state
+        togglePause();
+        
+        // Visual feedback: briefly pulse the pause button
+        const pauseButton = document.getElementById('pauseButton');
+        pauseButton.classList.add('keyboard-activated');
+        setTimeout(() => {
+            pauseButton.classList.remove('keyboard-activated');
+        }, 300);
+    }
+});
+
 // Update timestamp every second
 setInterval(updateTimestamp, 1000);
 

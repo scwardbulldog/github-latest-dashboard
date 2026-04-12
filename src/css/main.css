@@ -207,6 +207,12 @@ body {
     border-color: var(--color-fg-subtle);
 }
 
+.pause-button.keyboard-activated {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: var(--color-accent-fg);
+    transform: scale(1.05);
+}
+
 .pause-icon {
     font-size: 1em;
 }
