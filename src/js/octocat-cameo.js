@@ -44,10 +44,6 @@ const MONA_SVG = `
 `;
 
 /**
- * OctocatCameo class manages the Easter egg animation
- * @class
- */
-/**
  * Buffer time (ms) added after animation to ensure clean removal
  * Accounts for any browser rendering delays
  * @constant {number}
