@@ -58,6 +58,13 @@ let exportController = null;
 // Share modal state
 let currentShareItem = null;
 
+// Track if dashboard was paused by share modal (to avoid resume if user had already paused)
+let pausedByShareModal = false;
+
+// QR code display timer
+let qrDisplayTimer = null;
+let qrCountdownInterval = null;
+
 /**
  * Get last update time for a source
  * @param {string} containerId - Container ID (e.g., 'blog-list')
@@ -1350,6 +1357,7 @@ function initializeExportFunctionality() {
     const shareModal = document.getElementById('shareModal');
     const closeBtn = document.getElementById('closeShareModal');
     const backdrop = shareModal?.querySelector('.share-modal-backdrop');
+    const closeQrBtn = document.getElementById('closeQrDisplay');
     
     // Close modal handlers
     if (closeBtn) {
@@ -1358,6 +1366,11 @@ function initializeExportFunctionality() {
     
     if (backdrop) {
         backdrop.addEventListener('click', closeShareModal);
+    }
+    
+    // Close QR display button
+    if (closeQrBtn) {
+        closeQrBtn.addEventListener('click', closeQrDisplay);
     }
     
     // Export format buttons
@@ -1385,12 +1398,19 @@ function initializeExportFunctionality() {
 
 /**
  * Open share modal with item data
+ * Automatically pauses the dashboard while modal is open
  * @param {Object} item - Item data
  */
 function openShareModal(item) {
     currentShareItem = item;
     const shareModal = document.getElementById('shareModal');
     const shareTitle = document.getElementById('share-item-title');
+    
+    // Pause dashboard if not already paused
+    if (!isPaused) {
+        pausedByShareModal = true;
+        togglePause();
+    }
     
     if (shareTitle) {
         shareTitle.textContent = item.title || 'Untitled';
@@ -1399,17 +1419,97 @@ function openShareModal(item) {
     if (shareModal) {
         shareModal.removeAttribute('hidden');
     }
+    
+    // Ensure share options are visible and QR display is hidden
+    const shareOptions = document.getElementById('shareOptions');
+    const qrDisplay = document.getElementById('qrDisplay');
+    if (shareOptions) shareOptions.removeAttribute('hidden');
+    if (qrDisplay) qrDisplay.setAttribute('hidden', '');
 }
 
 /**
  * Close share modal
+ * Resumes dashboard if it was paused by the modal
  */
 function closeShareModal() {
     const shareModal = document.getElementById('shareModal');
     if (shareModal) {
         shareModal.setAttribute('hidden', '');
     }
+    
+    // Clear any QR display timers
+    clearQrDisplayTimers();
+    
+    // Resume dashboard if we paused it
+    if (pausedByShareModal && isPaused) {
+        pausedByShareModal = false;
+        togglePause();
+    }
+    
     currentShareItem = null;
+}
+
+/**
+ * Clear QR display timers
+ */
+function clearQrDisplayTimers() {
+    if (qrDisplayTimer) {
+        clearTimeout(qrDisplayTimer);
+        qrDisplayTimer = null;
+    }
+    if (qrCountdownInterval) {
+        clearInterval(qrCountdownInterval);
+        qrCountdownInterval = null;
+    }
+}
+
+/**
+ * Show QR code display with 30-second timeout
+ * @param {string} qrDataUrl - Data URL of the QR code image
+ */
+function showQrDisplay(qrDataUrl) {
+    const shareOptions = document.getElementById('shareOptions');
+    const qrDisplay = document.getElementById('qrDisplay');
+    const qrImage = document.getElementById('qrCodeImage');
+    const qrTimer = document.getElementById('qrTimer');
+    
+    if (!qrDisplay || !qrImage) return;
+    
+    // Hide share options, show QR display
+    if (shareOptions) shareOptions.setAttribute('hidden', '');
+    qrDisplay.removeAttribute('hidden');
+    qrImage.src = qrDataUrl;
+    
+    // Start 30 second countdown
+    let secondsRemaining = 30;
+    qrTimer.textContent = `Displaying for ${secondsRemaining} seconds...`;
+    
+    qrCountdownInterval = setInterval(() => {
+        secondsRemaining--;
+        if (secondsRemaining > 0) {
+            qrTimer.textContent = `Displaying for ${secondsRemaining} second${secondsRemaining === 1 ? '' : 's'}...`;
+        } else {
+            qrTimer.textContent = 'Closing...';
+        }
+    }, 1000);
+    
+    // Auto-close after 30 seconds
+    qrDisplayTimer = setTimeout(() => {
+        closeShareModal();
+    }, 30000);
+}
+
+/**
+ * Close QR display and return to share options
+ */
+function closeQrDisplay() {
+    clearQrDisplayTimers();
+    
+    const shareOptions = document.getElementById('shareOptions');
+    const qrDisplay = document.getElementById('qrDisplay');
+    
+    if (qrDisplay) qrDisplay.setAttribute('hidden', '');
+    if (shareOptions) shareOptions.removeAttribute('hidden');
 }
 
 /**
@@ -1448,9 +1548,11 @@ async function handleExport(format) {
             case 'qr-png': {
                 try {
                     const qrDataUrl = await exportController.generateQRCode(currentShareItem, 'png');
-                    const filename = `${exportController.sanitizeFilename(currentShareItem.title)}-qr.png`;
-                    exportController.downloadDataURL(qrDataUrl, filename);
-                    exportController.showToast('QR code downloaded!');
+                    // Display QR code for 30 seconds instead of downloading
+                    showQrDisplay(qrDataUrl);
+                    exportController.showToast('QR code displayed for 30 seconds');
+                    // Don't close modal here - QR display will handle closing
+                    return;
                 } catch (error) {
                     exportController.showToast(error.message || 'Failed to generate QR code', 'error');
                 }

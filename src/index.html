@@ -248,7 +248,7 @@
           <strong id="share-item-title"></strong>
         </div>
         
-        <div class="share-options">
+        <div class="share-options" id="shareOptions">
           <button class="btn-export" data-format="markdown">
             📝 Export as Markdown
           </button>
@@ -259,8 +259,17 @@
             🔗 Copy Link
           </button>
           <button class="btn-export" data-format="qr-png">
-            📱 QR Code (PNG)
+            📱 Share as QR Code
           </button>
+        </div>
+        
+        <!-- QR Code Display (shown when QR is generated) -->
+        <div class="qr-display" id="qrDisplay" hidden>
+          <div class="qr-code-container">
+            <img id="qrCodeImage" alt="QR Code" />
+          </div>
+          <div class="qr-timer" id="qrTimer">Displaying for 30 seconds...</div>
+          <button class="btn-close-qr" id="closeQrDisplay">Close QR Code</button>
         </div>
       </div>
     </div>

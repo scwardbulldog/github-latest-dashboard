@@ -757,3 +757,52 @@
     transform: translateY(10px);
   }
 }
+
+/* QR Code Display */
+.qr-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4) 0;
+}
+
+.qr-display[hidden] {
+  display: none;
+}
+
+.qr-code-container {
+  background: #ffffff;
+  padding: var(--space-3);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.qr-code-container img {
+  width: 256px;
+  height: 256px;
+  display: block;
+}
+
+.qr-timer {
+  font-size: var(--fontsize-small);
+  color: var(--color-fg-muted);
+  text-align: center;
+}
+
+.btn-close-qr {
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-canvas-subtle);
+  border: 1px solid var(--color-border-default);
+  border-radius: 4px;
+  color: var(--color-fg-default);
+  cursor: pointer;
+  font-size: var(--fontsize-base);
+  transition: background 0.2s ease;
+}
+
+.btn-close-qr:hover {
+  background: var(--color-canvas-overlay);
+}
