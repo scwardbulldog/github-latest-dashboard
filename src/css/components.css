@@ -487,17 +487,17 @@
 .mona-cameo {
   /* Fixed positioning at bottom of viewport */
   position: fixed;
-  bottom: 20px;                           /* FR-5: 20px from bottom */
+  bottom: 20px;                           /* Per issue spec: 20px from bottom edge */
   left: 0;
   
-  /* Size: 80-100px as per FR-7 */
+  /* Size: 100px (per issue spec: 80-100px visible but not dominant) */
   width: 100px;
   height: 100px;
   
   /* Apply walking animation */
   animation: mona-walk var(--mona-duration, 18s) linear forwards;
   
-  /* High z-index to overlay content safely (FR-5) */
+  /* Overlay content safely without blocking critical elements */
   z-index: 999;
   
   /* Non-interactive */
@@ -505,7 +505,7 @@
   user-select: none;
   -webkit-user-select: none;              /* Chromium 84 compatibility */
   
-  /* GPU acceleration for smooth animation on Pi 3B (FR-15) */
+  /* GPU acceleration for smooth animation on Raspberry Pi 3B */
   will-change: transform;
   -webkit-transform: translateZ(0);
   transform: translateZ(0);
