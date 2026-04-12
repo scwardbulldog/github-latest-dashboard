@@ -430,3 +430,30 @@
   font-size: var(--fontsize-base);      /* 16px */
   color: var(--color-fg-muted);
 }
+
+/* ============================================
+   Commit Hash Ticker (Easter Egg)
+   Added for version transparency on TV display
+   Shows git commit hash + build date in bottom right corner
+   ============================================ */
+
+.commit-hash-ticker {
+  /* Fixed position - bottom right corner for subtle version display */
+  position: fixed;
+  bottom: var(--space-3);                 /* 16px from bottom */
+  right: var(--space-4);                  /* 24px from right */
+  
+  /* Typography - monospace for hash readability */
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+  font-size: 12px;                        /* Small but readable (per FR-6: 10-12px) */
+  
+  /* Subtle appearance */
+  color: var(--color-fg-subtle);          /* #8b949e - tertiary text */
+  opacity: 0.5;                           /* Semi-transparent to avoid prominence */
+  
+  /* Layer above content but non-interactive */
+  z-index: 1000;
+  pointer-events: none;                   /* Cannot be clicked */
+  user-select: none;                      /* Cannot be selected */
+  -webkit-user-select: none;              /* Chromium 84 compatibility */
+}
