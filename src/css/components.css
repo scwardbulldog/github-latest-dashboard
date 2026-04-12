@@ -585,8 +585,7 @@
 }
 
 .settings-button .settings-icon {
-  font-size: 1rem;
-  /* No spin animation - keep it subtle for a kiosk display */
+  line-height: 1;
 }
 
 /* Dropdown panel */

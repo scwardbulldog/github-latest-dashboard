@@ -161,7 +161,7 @@ function renderRSSList(data, containerId, sourceName, feedName) {
         // Store full content HTML for detail panel rendering (use 'content' field, fallback to 'description')
         itemEl.dataset.fullDescription = item.content || item.description || '';
         
-        const title = item.title || 'Untitled';
+        const title = stripHtml(item.title || 'Untitled');
         const timestamp = formatDate(item.pubDate);
         const description = truncate(stripHtml(item.description || ''), 120);
         
@@ -1394,5 +1394,5 @@ if (exportSettingsBtn) {
     });
 }
 
-// Initialise the storage indicator on load
+// Initialize the storage indicator on load
 updateStorageIndicator();
