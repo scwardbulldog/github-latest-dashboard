@@ -1115,6 +1115,8 @@ if (window.streakCounterInstance) {
   // Clean up if exists (hot reload support)
   window.streakCounterInstance.stop();
   window.streakCounterInstance = null;
+  // Reset initialization flag so new instance will be properly initialized
+  window.streakCounterInitialized = false;
 }
 
 window.streakCounterInstance = new GitHubStreakCounter();

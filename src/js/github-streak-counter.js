@@ -4,6 +4,9 @@
  * @module github-streak-counter
  */
 
+// Time constant for day calculations
+const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
+
 /**
  * GitHubStreakCounter class manages the uptime streak badge
  * Shows days since last critical incident with localStorage persistence
@@ -111,7 +114,7 @@ export class GitHubStreakCounter {
     if (this.lastIncidentDate) {
       const now = new Date();
       const diffTime = now.getTime() - this.lastIncidentDate.getTime();
-      this.currentStreak = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+      this.currentStreak = Math.floor(diffTime / MILLISECONDS_PER_DAY);
     }
     
     this.saveToStorage();
@@ -226,10 +229,19 @@ export class GitHubStreakCounter {
       dateText = `Last: ${this.formatDate(this.lastIncidentDate)}`;
     }
 
-    this.badgeElement.innerHTML = `
-      <span class="github-streak-badge__count">${streakText}</span>
-      <span class="github-streak-badge__date">${dateText}</span>
-    `;
+    // Clear and rebuild badge content using textContent for XSS safety
+    this.badgeElement.innerHTML = '';
+    
+    const countSpan = document.createElement('span');
+    countSpan.className = 'github-streak-badge__count';
+    countSpan.textContent = streakText;
+    
+    const dateSpan = document.createElement('span');
+    dateSpan.className = 'github-streak-badge__date';
+    dateSpan.textContent = dateText;
+    
+    this.badgeElement.appendChild(countSpan);
+    this.badgeElement.appendChild(dateSpan);
 
     // Handle milestone animation
     if (this.isMilestone()) {
@@ -305,7 +317,7 @@ export class GitHubStreakCounter {
       // Then update every 24 hours
       this.intervalId = setInterval(() => {
         this.incrementStreak();
-      }, 24 * 60 * 60 * 1000);
+      }, MILLISECONDS_PER_DAY);
     }, msUntilMidnight);
   }
 
