@@ -553,3 +553,207 @@
   /* Fade-out when animation completes */
   opacity: 0;
 }
+
+/* ============================================
+   Share Button & Modal
+   Added for Export/Share Functionality
+   ============================================ */
+
+/* Share button on item cards */
+.btn-share {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: var(--space-1);
+  opacity: 0.6;
+  transition: opacity 0.2s ease;
+  color: var(--color-fg-muted);
+  font-size: 16px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
+
+.btn-share:hover {
+  opacity: 1;
+  background: var(--color-canvas-subtle);
+}
+
+.btn-share:active {
+  background: var(--color-canvas-overlay);
+}
+
+/* Share icon SVG */
+.icon-share {
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
+}
+
+/* Share modal */
+.share-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.share-modal[hidden] {
+  display: none;
+}
+
+.share-modal-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+}
+
+.share-modal-content {
+  position: relative;
+  background: var(--color-canvas-default);
+  padding: var(--space-4);
+  border-radius: 6px;
+  max-width: 400px;
+  width: 90%;
+  border: 1px solid var(--color-border-default);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  z-index: 1;
+}
+
+.share-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-3);
+}
+
+.share-modal-header h3 {
+  margin: 0;
+  font-size: var(--fontsize-h3);
+  font-weight: var(--fontweight-semibold);
+  color: var(--color-fg-default);
+}
+
+.btn-close-modal {
+  background: transparent;
+  border: none;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--color-fg-muted);
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.btn-close-modal:hover {
+  background: var(--color-canvas-subtle);
+  color: var(--color-fg-default);
+}
+
+.share-item-preview {
+  padding: var(--space-3);
+  background: var(--color-canvas-subtle);
+  border-radius: 4px;
+  margin-bottom: var(--space-3);
+  font-size: var(--fontsize-small);
+  color: var(--color-fg-default);
+  max-height: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.share-item-preview strong {
+  display: block;
+  font-weight: var(--fontweight-semibold);
+}
+
+.share-options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: var(--space-3) 0;
+}
+
+.btn-export {
+  padding: var(--space-2) var(--space-3);
+  text-align: left;
+  border: 1px solid var(--color-border-default);
+  border-radius: 4px;
+  background: var(--color-canvas-subtle);
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+  font-size: var(--fontsize-base);
+  color: var(--color-fg-default);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.btn-export:hover {
+  background: var(--color-canvas-overlay);
+  border-color: var(--color-accent-fg);
+}
+
+.btn-export:active {
+  background: var(--color-accent-subtle);
+}
+
+/* Toast notifications */
+.toast {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  padding: var(--space-3);
+  background: var(--color-success-emphasis);
+  color: #ffffff;
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  z-index: 3000;
+  animation: toast-slide-in 0.3s ease;
+  font-size: var(--fontsize-base);
+  font-weight: var(--fontweight-semibold);
+  max-width: 300px;
+}
+
+.toast-error {
+  background: var(--color-danger-emphasis);
+}
+
+@keyframes toast-slide-in {
+  from {
+    transform: translateX(400px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.toast-fade-out {
+  animation: toast-fade-out 0.3s ease forwards;
+}
+
+@keyframes toast-fade-out {
+  to {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}

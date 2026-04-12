@@ -42,12 +42,21 @@ import {
     getItemInterval
 } from './config-loader.js';
 
+// Import ExportController for share/export functionality
+import { ExportController } from './export-controller.js';
+
 // Configuration - loaded from config.json with fallback defaults
 // These will be populated by initializeWithConfig()
 let REFRESH_INTERVAL = 5 * 60 * 1000; // 5 minutes (default, updated from config)
 
 // Network status state (Story 4.1)
 let isOffline = false;
+
+// Global ExportController instance
+let exportController = null;
+
+// Share modal state
+let currentShareItem = null;
 
 /**
  * Get last update time for a source
@@ -154,6 +163,8 @@ function renderRSSList(data, containerId, sourceName, feedName) {
         itemEl.className = 'list-item';
         itemEl.dataset.index = index;
         itemEl.dataset.link = item.link || '';
+        itemEl.dataset.source = sourceName;
+        itemEl.dataset.pubDate = item.pubDate || '';
         
         // Store full content HTML for detail panel rendering (use 'content' field, fallback to 'description')
         itemEl.dataset.fullDescription = item.content || item.description || '';
@@ -162,11 +173,42 @@ function renderRSSList(data, containerId, sourceName, feedName) {
         const timestamp = formatDate(item.pubDate);
         const description = truncate(stripHtml(item.description || ''), 120);
         
-        itemEl.innerHTML = `
-            <div class="list-item-title">${title}</div>
-            <div class="list-item-timestamp">${timestamp}</div>
-            <div class="list-item-description">${description}</div>
-        `;
+        // Create item header with title and share button
+        const headerEl = document.createElement('div');
+        headerEl.style.display = 'flex';
+        headerEl.style.justifyContent = 'space-between';
+        headerEl.style.alignItems = 'flex-start';
+        headerEl.style.gap = 'var(--space-2)';
+        
+        const titleEl = document.createElement('div');
+        titleEl.className = 'list-item-title';
+        titleEl.textContent = title;
+        titleEl.style.flex = '1';
+        headerEl.appendChild(titleEl);
+        
+        // Add share button
+        const shareBtn = createShareButton({
+            title,
+            link: item.link,
+            description: stripHtml(item.description || ''),
+            content: item.content || item.description,
+            pubDate: item.pubDate,
+            source: sourceName
+        }, index);
+        headerEl.appendChild(shareBtn);
+        
+        itemEl.appendChild(headerEl);
+        
+        // Add timestamp and description
+        const timestampEl = document.createElement('div');
+        timestampEl.className = 'list-item-timestamp';
+        timestampEl.textContent = timestamp;
+        itemEl.appendChild(timestampEl);
+        
+        const descEl = document.createElement('div');
+        descEl.className = 'list-item-description';
+        descEl.textContent = description;
+        itemEl.appendChild(descEl);
         
         // Append to fragment (no DOM reflow)
         fragment.appendChild(itemEl);
@@ -1267,6 +1309,146 @@ window.addEventListener('keydown', (event) => {
         }
     }
 });
+
+// ============================================================================
+// Export/Share Functionality
+// ============================================================================
+
+/**
+ * Initialize export controller and share modal
+ */
+function initializeExportFunctionality() {
+    exportController = new ExportController();
+    
+    const shareModal = document.getElementById('shareModal');
+    const closeBtn = document.getElementById('closeShareModal');
+    const backdrop = shareModal?.querySelector('.share-modal-backdrop');
+    
+    // Close modal handlers
+    if (closeBtn) {
+        closeBtn.addEventListener('click', closeShareModal);
+    }
+    
+    if (backdrop) {
+        backdrop.addEventListener('click', closeShareModal);
+    }
+    
+    // Export format buttons
+    const exportButtons = document.querySelectorAll('.btn-export');
+    exportButtons.forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const format = btn.dataset.format;
+            await handleExport(format);
+        });
+    });
+    
+    // Keyboard shortcut: Ctrl+Shift+S
+    document.addEventListener('keydown', (e) => {
+        if (e.ctrlKey && e.shiftKey && e.key === 'S') {
+            e.preventDefault();
+            // Get currently highlighted item
+            const highlightedItem = document.querySelector('.list-item--highlighted');
+            if (highlightedItem) {
+                const itemData = extractItemData(highlightedItem);
+                openShareModal(itemData);
+            }
+        }
+    });
+}
+
+/**
+ * Open share modal with item data
+ * @param {Object} item - Item data
+ */
+function openShareModal(item) {
+    currentShareItem = item;
+    const shareModal = document.getElementById('shareModal');
+    const shareTitle = document.getElementById('share-item-title');
+    
+    if (shareTitle) {
+        shareTitle.textContent = item.title || 'Untitled';
+    }
+    
+    if (shareModal) {
+        shareModal.removeAttribute('hidden');
+    }
+}
+
+/**
+ * Close share modal
+ */
+function closeShareModal() {
+    const shareModal = document.getElementById('shareModal');
+    if (shareModal) {
+        shareModal.setAttribute('hidden', '');
+    }
+    currentShareItem = null;
+}
+
+/**
+ * Handle export based on selected format
+ * @param {string} format - Export format ('markdown', 'html', 'link', 'qr-png')
+ */
+async function handleExport(format) {
+    if (!currentShareItem || !exportController) {
+        console.error('No item selected or export controller not initialized');
+        return;
+    }
+    
+    try {
+        switch (format) {
+            case 'markdown': {
+                const markdown = exportController.exportMarkdown(currentShareItem);
+                const filename = `${exportController.sanitizeFilename(currentShareItem.title)}.md`;
+                exportController.downloadFile(markdown, filename, 'text/markdown');
+                exportController.showToast('Markdown file downloaded!');
+                break;
+            }
+            
+            case 'html': {
+                const html = exportController.exportHTML(currentShareItem);
+                const filename = `${exportController.sanitizeFilename(currentShareItem.title)}.html`;
+                exportController.downloadFile(html, filename, 'text/html');
+                exportController.showToast('HTML file downloaded!');
+                break;
+            }
+            
+            case 'link': {
+                await exportController.copyLink(currentShareItem);
+                break;
+            }
+            
+            case 'qr-png': {
+                try {
+                    const qrDataUrl = await exportController.generateQRCode(currentShareItem, 'png');
+                    const filename = `${exportController.sanitizeFilename(currentShareItem.title)}-qr.png`;
+                    exportController.downloadDataURL(qrDataUrl, filename);
+                    exportController.showToast('QR code downloaded!');
+                } catch (error) {
+                    exportController.showToast(error.message || 'Failed to generate QR code', 'error');
+                }
+                break;
+            }
+            
+            default:
+                console.error('Unknown export format:', format);
+        }
+        
+        // Close modal after successful export
+        closeShareModal();
+    } catch (error) {
+        console.error('Export error:', error);
+        exportController.showToast('Export failed', 'error');
+    }
+}
+
+// Initialize export functionality after DOM is fully loaded
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeExportFunctionality);
+} else {
+    // DOM already loaded
+    initializeExportFunctionality();
+}
 
 // Update timestamp every second
 setInterval(updateTimestamp, 1000);

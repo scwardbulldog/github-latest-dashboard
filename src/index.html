@@ -236,6 +236,35 @@
         </div>
     </div>
 
+    <!-- Share Modal -->
+    <div class="share-modal" id="shareModal" hidden>
+      <div class="share-modal-backdrop"></div>
+      <div class="share-modal-content">
+        <div class="share-modal-header">
+          <h3>Share Item</h3>
+          <button class="btn-close-modal" id="closeShareModal" aria-label="Close">×</button>
+        </div>
+        <div class="share-item-preview">
+          <strong id="share-item-title"></strong>
+        </div>
+        
+        <div class="share-options">
+          <button class="btn-export" data-format="markdown">
+            📝 Export as Markdown
+          </button>
+          <button class="btn-export" data-format="html">
+            🌐 Export as HTML
+          </button>
+          <button class="btn-export" data-format="link">
+            🔗 Copy Link
+          </button>
+          <button class="btn-export" data-format="qr-png">
+            📱 QR Code (PNG)
+          </button>
+        </div>
+      </div>
+    </div>
+
     <script type="module" src="./js/main.js"></script>
 </body>
 </html>
