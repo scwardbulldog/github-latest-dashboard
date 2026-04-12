@@ -19,6 +19,9 @@ import { TimeBasedMessages } from './time-based-messages.js';
 // Import Matrix rain easter egg for incident detection
 import { checkForNewIncidents } from './matrix-rain.js';
 
+// Import configurable refresh interval controller
+import { RefreshIntervalController } from './refresh-interval-controller.js';
+
 // Import API client for data fetching (Story 3.5)
 import {
     fetchBlog as fetchBlogFromApiClient,
@@ -625,7 +628,6 @@ class FrameSequenceAnimator {
 // ============================================================================
 
 let isPaused = false;
-let refreshIntervalId = null;
 let skaterAnimator = null;
 
 // Update timestamp
@@ -652,9 +654,8 @@ function togglePause() {
         updateLiveIndicator();
         
         // Pause data refresh (store elapsed for top progress bar)
-        if (refreshIntervalId) {
-            clearInterval(refreshIntervalId);
-            refreshIntervalId = null;
+        if (window.refreshIntervalController) {
+            window.refreshIntervalController.pause();
         }
         // Store elapsed time for top progress bar
         if (progressStartTime) {
@@ -687,7 +688,9 @@ function togglePause() {
         }
         
         // Resume data refresh interval (don't fetch immediately to avoid jarring)
-        refreshIntervalId = setInterval(fetchAllData, REFRESH_INTERVAL);
+        if (window.refreshIntervalController) {
+            window.refreshIntervalController.resume();
+        }
         
         // Resume carousel rotation
         if (window.carouselInstance) {
@@ -935,6 +938,11 @@ async function fetchAllData() {
             // Subsequent refresh - DO NOT reset timers, just update data
             // The existing ItemHighlighter continues highlighting the updated DOM
             console.log('fetchAllData: Data refresh complete (timers preserved)');
+        }
+
+        // Update last-refreshed timestamp in the settings panel
+        if (window.refreshIntervalController) {
+            window.refreshIntervalController.markRefreshed();
         }
         
     } catch (error) {
@@ -1220,12 +1228,31 @@ function startDashboard() {
     // ItemHighlighter will be initialized in fetchAllData() after data is loaded
     // This ensures the first item is highlighted immediately when data is ready
     
-    // Auto-refresh using configured interval
-    refreshIntervalId = setInterval(fetchAllData, REFRESH_INTERVAL);
+    // Auto-refresh using the controller (honours user-configured interval from localStorage)
+    window.refreshIntervalController.start();
 }
 
 // Initialize with config and start dashboard
 initializeWithConfig().then(() => {
+    // Create refresh interval controller (reads interval from localStorage,
+    // fallback to 5 minutes; does NOT use the config-file refreshInterval so
+    // the user's UI selection always takes precedence).
+    if (window.refreshIntervalController) {
+        window.refreshIntervalController.destroy();
+    }
+    window.refreshIntervalController = new RefreshIntervalController({
+        onRefresh: fetchAllData,
+        onIntervalChange: (newIntervalMs) => {
+            // Keep module-level REFRESH_INTERVAL in sync so the progress bar
+            // uses the correct duration after an interval change.
+            REFRESH_INTERVAL = newIntervalMs;
+            startProgressBar();
+        }
+    });
+    // Sync the progress bar duration to the stored interval on startup
+    REFRESH_INTERVAL = window.refreshIntervalController.getInterval();
+    window.refreshIntervalController.init();
+
     startDashboard();
     console.log('🚀 Dashboard started with configuration');
 }).catch((error) => {
@@ -1238,6 +1265,18 @@ initializeWithConfig().then(() => {
         pages: defaults.pages,
         pageIntervals: defaultPageOverrides
     });
+    // Create controller with defaults even on config failure
+    if (!window.refreshIntervalController) {
+        window.refreshIntervalController = new RefreshIntervalController({
+            onRefresh: fetchAllData,
+            onIntervalChange: (newIntervalMs) => {
+                REFRESH_INTERVAL = newIntervalMs;
+                startProgressBar();
+            }
+        });
+        REFRESH_INTERVAL = window.refreshIntervalController.getInterval();
+        window.refreshIntervalController.init();
+    }
     startDashboard();
 });
 
