@@ -19,6 +19,9 @@ import { TimeBasedMessages } from './time-based-messages.js';
 // Import Matrix rain easter egg for incident detection
 import { checkForNewIncidents } from './matrix-rain.js';
 
+// Import GitHub Uptime Streak Counter (Easter Egg)
+import { GitHubStreakCounter } from './github-streak-counter.js';
+
 // Import API client for data fetching (Story 3.5)
 import {
     fetchBlog as fetchBlogFromApiClient,
@@ -877,6 +880,23 @@ async function fetchAllData() {
                 console.error('fetchAllData: Error checking for Matrix rain trigger:', error);
                 // Non-critical - don't affect dashboard operation
             }
+            
+            // Easter Egg: Update GitHub Uptime Streak Counter with latest status data
+            try {
+                if (window.streakCounterInstance) {
+                    if (!window.streakCounterInitialized) {
+                        // First initialization with status data
+                        window.streakCounterInstance.initialize(statusData);
+                        window.streakCounterInitialized = true;
+                    } else {
+                        // Update with new data on refresh
+                        window.streakCounterInstance.update(statusData);
+                    }
+                }
+            } catch (error) {
+                console.error('fetchAllData: Error updating streak counter:', error);
+                // Non-critical - don't affect dashboard operation
+            }
         } else {
             renderErrorState('status-list', 'Unable to load status');
             // Hide indicator if status fetch failed (no outage data available)
@@ -1089,6 +1109,15 @@ if (window.timeBasedMessagesInstance) {
 }
 
 window.timeBasedMessagesInstance = new TimeBasedMessages();
+
+// Initialize GitHub Uptime Streak Counter (Easter Egg)
+if (window.streakCounterInstance) {
+  // Clean up if exists (hot reload support)
+  window.streakCounterInstance.stop();
+  window.streakCounterInstance = null;
+}
+
+window.streakCounterInstance = new GitHubStreakCounter();
 
 /**
  * Extract item data from a list item DOM element
