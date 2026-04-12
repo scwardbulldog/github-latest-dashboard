@@ -133,6 +133,33 @@ function updateLiveIndicator() {
 }
 
 /**
+ * Create a share button element for an item
+ * @param {Object} item - The item data
+ * @param {number} index - The item index
+ * @returns {HTMLElement} Share button element
+ */
+function createShareButton(item, index) {
+    const shareBtn = document.createElement('button');
+    shareBtn.className = 'btn-share';
+    shareBtn.title = 'Share this item';
+    shareBtn.dataset.itemIndex = index;
+    shareBtn.innerHTML = `
+        <svg class="icon-share" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M13 7.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zm-11 6a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zm11 0a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z"></path>
+            <path d="M5.7 11.2L10.3 13.8M10.3 2.2L5.7 4.8" stroke="currentColor" stroke-width="1.5"></path>
+        </svg>
+    `;
+    
+    // Attach click handler
+    shareBtn.addEventListener('click', (e) => {
+        e.stopPropagation(); // Prevent item selection
+        openShareModal(item);
+    });
+    
+    return shareBtn;
+}
+
+/**
  * Shared RSS list renderer - DRY implementation for all RSS-based pages
  * @param {Object} data - RSS data from API with items array
  * @param {string} containerId - DOM element ID for the list container
