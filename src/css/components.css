@@ -434,14 +434,14 @@
 /* ============================================
    Commit Hash Ticker (Easter Egg)
    Added for version transparency on TV display
-   Shows git commit hash + build date below clock
+   Shows git commit hash + build date in bottom right corner
    ============================================ */
 
 .commit-hash-ticker {
-  /* Fixed position - always visible below the header clock */
+  /* Fixed position - bottom right corner for subtle version display */
   position: fixed;
-  top: 48px;                              /* Below header (header ~44px + 4px gap) */
-  right: var(--space-4);                  /* 24px - align with header right padding */
+  bottom: var(--space-3);                 /* 16px from bottom */
+  right: var(--space-4);                  /* 24px from right */
   
   /* Typography - monospace for hash readability */
   font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
