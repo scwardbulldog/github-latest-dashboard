@@ -47,6 +47,17 @@ const MONA_SVG = `
  * OctocatCameo class manages the Easter egg animation
  * @class
  */
+/**
+ * Buffer time (ms) added after animation to ensure clean removal
+ * Accounts for any browser rendering delays
+ * @constant {number}
+ */
+const CLEANUP_BUFFER_MS = 500;
+
+/**
+ * OctocatCameo class manages the Easter egg animation
+ * @class
+ */
 export class OctocatCameo {
   /**
    * Create an OctocatCameo instance
@@ -120,6 +131,7 @@ export class OctocatCameo {
     // Create the Mona element
     const mona = document.createElement('div');
     mona.className = 'mona-cameo';
+    // Safe: MONA_SVG is a constant defined in this module (not user input)
     mona.innerHTML = MONA_SVG;
     mona.setAttribute('aria-hidden', 'true'); // Accessibility: decorative element
     
@@ -130,8 +142,7 @@ export class OctocatCameo {
     document.body.appendChild(mona);
     this.currentElement = mona;
 
-    // Schedule cleanup after animation completes
-    // Add small buffer (500ms) to ensure animation finishes
+    // Schedule cleanup after animation completes with buffer for rendering
     this.animationTimeoutId = setTimeout(() => {
       if (mona.parentNode) {
         mona.remove();
@@ -139,7 +150,7 @@ export class OctocatCameo {
       this.currentElement = null;
       this.isAnimating = false;
       console.log('🐙 OctocatCameo: Mona has exited the screen');
-    }, this.duration + 500);
+    }, this.duration + CLEANUP_BUFFER_MS);
   }
 
   /**
