@@ -601,6 +601,111 @@
 }
 
 /* ============================================
+   Settings Panel
+   Added for localStorage persistence (Issue #40)
+   ============================================ */
+
+.settings-container {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.settings-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid var(--color-border-default);
+  border-radius: 6px;
+  padding: var(--space-1) var(--space-2);
+  cursor: pointer;
+  font-size: var(--fontsize-base);
+  color: var(--color-fg-default);
+  transition: background 150ms ease, border-color 150ms ease;
+  line-height: 1;
+}
+
+.settings-button:hover {
+  background: var(--color-canvas-subtle);
+  border-color: var(--color-border-muted);
+}
+
+.settings-button .settings-icon {
+  line-height: 1;
+}
+
+/* Dropdown panel */
+.settings-panel {
+  position: absolute;
+  top: calc(100% + var(--space-2));
+  right: 0;
+  min-width: 200px;
+  background: var(--color-canvas-overlay);
+  border: 1px solid var(--color-border-default);
+  border-radius: 6px;
+  z-index: 2000;
+  padding: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+/* Storage status indicator */
+.settings-storage-status {
+  font-size: var(--fontsize-small);
+  color: var(--color-fg-muted);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--color-border-muted);
+}
+
+.storage-indicator {
+  display: block;
+  white-space: nowrap;
+}
+
+/* Action buttons row */
+.settings-actions {
+  display: flex;
+  gap: var(--space-2);
+  justify-content: space-between;
+}
+
+.btn-settings {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-2);
+  border-radius: 6px;
+  border: 1px solid var(--color-border-default);
+  background: var(--color-canvas-subtle);
+  color: var(--color-fg-default);
+  font-size: var(--fontsize-small);
+  font-weight: var(--fontweight-semibold);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 150ms ease, border-color 150ms ease;
+}
+
+.btn-settings:hover {
+  background: var(--color-canvas-inset);
+  border-color: var(--color-border-muted);
+}
+
+.btn-reset-settings {
+  color: var(--color-danger-fg);
+  border-color: var(--color-danger-muted);
+}
+
+.btn-reset-settings:hover {
+  background: var(--color-danger-subtle);
+  border-color: var(--color-danger-fg);
+}
+
+/* ============================================
+>>>>>>> origin/copilot/persist-theme-and-settings-localstorage
    Share Button & Modal
    Added for Export/Share Functionality
    ============================================ */
