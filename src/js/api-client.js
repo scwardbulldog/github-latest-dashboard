@@ -385,17 +385,17 @@ const ARTICLE_CACHE_DURATION = 30 * 60 * 1000; // 30 minutes for article content
  */
 function cleanupArticleCache() {
   const now = Date.now();
-  let removedCount = 0;
+  let removed = 0;
   
   for (const [url, entry] of articleCache.entries()) {
     if (now - entry.timestamp > ARTICLE_CACHE_DURATION) {
       articleCache.delete(url);
-      removedCount++;
+      removed++;
     }
   }
   
-  if (removedCount > 0) {
-    console.log(`articleCache: Cleaned ${removedCount} expired entry/entries (${articleCache.size} remaining)`);
+  if (removed > 0) {
+    console.log(`articleCache: Cleaned ${removed} expired ${removed === 1 ? 'entry' : 'entries'} (${articleCache.size} remaining)`);
   }
 }
 
