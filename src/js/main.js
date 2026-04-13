@@ -22,6 +22,9 @@ import { checkForNewIncidents } from './matrix-rain.js';
 // Import settings manager for localStorage persistence
 import { SettingsManager } from './settings-manager.js';
 
+// Import configurable refresh interval controller
+import { RefreshIntervalController } from './refresh-interval-controller.js';
+
 // Import Octocat cameo Easter egg
 import { OctocatCameo } from './octocat-cameo.js';
 
@@ -707,7 +710,6 @@ class FrameSequenceAnimator {
 // ============================================================================
 
 let isPaused = false;
-let refreshIntervalId = null;
 let skaterAnimator = null;
 
 // Update timestamp
@@ -734,9 +736,8 @@ function togglePause() {
         updateLiveIndicator();
         
         // Pause data refresh (store elapsed for top progress bar)
-        if (refreshIntervalId) {
-            clearInterval(refreshIntervalId);
-            refreshIntervalId = null;
+        if (window.refreshIntervalController) {
+            window.refreshIntervalController.pause();
         }
         // Store elapsed time for top progress bar
         if (progressStartTime) {
@@ -769,7 +770,9 @@ function togglePause() {
         }
         
         // Resume data refresh interval (don't fetch immediately to avoid jarring)
-        refreshIntervalId = setInterval(fetchAllData, REFRESH_INTERVAL);
+        if (window.refreshIntervalController) {
+            window.refreshIntervalController.resume();
+        }
         
         // Resume carousel rotation
         if (window.carouselInstance) {
@@ -1017,6 +1020,11 @@ async function fetchAllData() {
             // Subsequent refresh - DO NOT reset timers, just update data
             // The existing ItemHighlighter continues highlighting the updated DOM
             console.log('fetchAllData: Data refresh complete (timers preserved)');
+        }
+
+        // Update last-refreshed timestamp in the settings panel
+        if (window.refreshIntervalController) {
+            window.refreshIntervalController.markRefreshed();
         }
         
     } catch (error) {
@@ -1334,12 +1342,52 @@ function startDashboard() {
     // ItemHighlighter will be initialized in fetchAllData() after data is loaded
     // This ensures the first item is highlighted immediately when data is ready
     
-    // Auto-refresh using configured interval
-    refreshIntervalId = setInterval(fetchAllData, REFRESH_INTERVAL);
+    // Auto-refresh using the controller (honours user-configured interval from localStorage)
+    window.refreshIntervalController.start();
 }
 
 // Initialize with config and start dashboard
 initializeWithConfig().then(() => {
+    // Create refresh interval controller (reads intervals from localStorage,
+    // fallback to defaults; user's UI selection takes precedence over config file).
+    if (window.refreshIntervalController) {
+        window.refreshIntervalController.destroy();
+    }
+    window.refreshIntervalController = new RefreshIntervalController({
+        onRefresh: fetchAllData,
+        onIntervalChange: (newIntervalMs) => {
+            // Keep module-level REFRESH_INTERVAL in sync so the progress bar
+            // uses the correct duration after an interval change.
+            REFRESH_INTERVAL = newIntervalMs;
+            startProgressBar();
+        },
+        onPageTimerChange: (newIntervalMs) => {
+            // Update carousel default interval and reinitialize
+            DEFAULT_PAGE_INTERVAL = newIntervalMs;
+            if (window.carouselInstance) {
+                window.carouselInstance.defaultInterval = newIntervalMs;
+                window.carouselInstance.interval = newIntervalMs;
+                // Reset timer with new interval if currently on a page without override
+                window.carouselInstance.applyIntervalForCurrentPage();
+            }
+        },
+        onCardTimerChange: (newIntervalMs) => {
+            // Update item highlighter default interval
+            DEFAULT_ITEM_INTERVAL = newIntervalMs;
+            if (window.itemHighlighterInstance) {
+                window.itemHighlighterInstance.setInterval(newIntervalMs);
+            }
+        }
+    });
+    // Sync the progress bar duration to the stored interval on startup
+    REFRESH_INTERVAL = window.refreshIntervalController.getInterval();
+    // Sync page timer to stored value on startup
+    DEFAULT_PAGE_INTERVAL = window.refreshIntervalController.getPageTimer();
+    // Sync card timer to stored value on startup
+    DEFAULT_ITEM_INTERVAL = window.refreshIntervalController.getCardTimer();
+    
+    window.refreshIntervalController.init();
+
     startDashboard();
     // Initial data load after dashboard is initialized
     fetchAllData();
@@ -1354,6 +1402,34 @@ initializeWithConfig().then(() => {
         pages: defaults.pages,
         pageIntervals: defaultPageOverrides
     });
+    // Create controller with defaults even on config failure
+    if (!window.refreshIntervalController) {
+        window.refreshIntervalController = new RefreshIntervalController({
+            onRefresh: fetchAllData,
+            onIntervalChange: (newIntervalMs) => {
+                REFRESH_INTERVAL = newIntervalMs;
+                startProgressBar();
+            },
+            onPageTimerChange: (newIntervalMs) => {
+                DEFAULT_PAGE_INTERVAL = newIntervalMs;
+                if (window.carouselInstance) {
+                    window.carouselInstance.defaultInterval = newIntervalMs;
+                    window.carouselInstance.interval = newIntervalMs;
+                    window.carouselInstance.applyIntervalForCurrentPage();
+                }
+            },
+            onCardTimerChange: (newIntervalMs) => {
+                DEFAULT_ITEM_INTERVAL = newIntervalMs;
+                if (window.itemHighlighterInstance) {
+                    window.itemHighlighterInstance.setInterval(newIntervalMs);
+                }
+            }
+        });
+        REFRESH_INTERVAL = window.refreshIntervalController.getInterval();
+        DEFAULT_PAGE_INTERVAL = window.refreshIntervalController.getPageTimer();
+        DEFAULT_ITEM_INTERVAL = window.refreshIntervalController.getCardTimer();
+        window.refreshIntervalController.init();
+    }
     startDashboard();
 });
 
