@@ -378,6 +378,27 @@ export function detectActiveOutages(statusData) {
 const articleCache = new Map();
 const ARTICLE_CACHE_DURATION = 30 * 60 * 1000; // 30 minutes for article content
 
+/**
+ * Clean up expired entries from the article cache
+ * Removes entries older than ARTICLE_CACHE_DURATION to prevent unbounded memory growth
+ * @private
+ */
+function cleanupArticleCache() {
+  const now = Date.now();
+  let removed = 0;
+  
+  for (const [url, entry] of articleCache.entries()) {
+    if (now - entry.timestamp > ARTICLE_CACHE_DURATION) {
+      articleCache.delete(url);
+      removed++;
+    }
+  }
+  
+  if (removed > 0) {
+    console.log(`articleCache: Cleaned ${removed} expired ${removed === 1 ? 'entry' : 'entries'} (${articleCache.size} remaining)`);
+  }
+}
+
 // CORS proxy for fetching external pages
 // Note: Using a public CORS proxy is necessary for this client-side only application.
 // The proxy (allorigins.win) acts as an intermediary to bypass CORS restrictions.
@@ -397,6 +418,9 @@ export async function fetchArticleContent(url) {
     console.warn('fetchArticleContent: No URL provided');
     return null;
   }
+
+  // Clean up expired cache entries (lazy cleanup on every fetch)
+  cleanupArticleCache();
 
   const now = Date.now();
   
