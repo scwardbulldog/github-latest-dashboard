@@ -10,6 +10,9 @@ import { DetailPanel } from './detail-panel.js';
 // Import persistent alert component (Story 4.3)
 import { PersistentAlert } from './persistent-alert.js';
 
+// Import status badge component (Enhanced Error UI)
+import { StatusBadge } from './status-badge.js';
+
 // Import theme toggle
 import { ThemeToggle } from './theme-toggle.js';
 
@@ -47,7 +50,8 @@ import {
     fetchAnthropic as fetchAnthropicFromApiClient,
     getCacheEntry,
     detectActiveOutages,
-    fetchArticleContent
+    fetchArticleContent,
+    onStatusChange
 } from './api-client.js';
 
 // Import config loader for user-configurable settings
@@ -1395,6 +1399,34 @@ if (window.persistentAlertInstance) {
 }
 
 window.persistentAlertInstance = new PersistentAlert();
+
+// Initialize status badges for all pages (Enhanced Error UI)
+// Badges are positioned in top-left corner as fixed overlay
+if (window.statusBadges) {
+  // Clean up existing badges if any
+  Object.values(window.statusBadges).forEach(badge => badge.destroy());
+}
+
+const statusBadgesContainer = document.getElementById('status-badges-overlay');
+
+window.statusBadges = {
+  blog: new StatusBadge('blog', statusBadgesContainer),
+  changelog: new StatusBadge('changelog', statusBadgesContainer),
+  status: new StatusBadge('status', statusBadgesContainer),
+  vscode: new StatusBadge('vscode', statusBadgesContainer),
+  visualstudio: new StatusBadge('visualstudio', statusBadgesContainer),
+  anthropic: new StatusBadge('anthropic', statusBadgesContainer)
+};
+
+// Register status change callback to update badges
+onStatusChange((sourceName, statusData) => {
+  if (window.statusBadges && window.statusBadges[sourceName]) {
+    window.statusBadges[sourceName].update();
+  }
+});
+
+// Start all status badges
+Object.values(window.statusBadges).forEach(badge => badge.start());
 
 // Initialize theme toggle
 window.themeToggleInstance = new ThemeToggle();

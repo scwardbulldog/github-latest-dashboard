@@ -16,15 +16,88 @@ const cache = {
 // Cache duration: 5 minutes (matches existing auto-refresh interval)
 const CACHE_DURATION = 5 * 60 * 1000;
 
+// Status tracking for each data source
+const sourceStatus = {
+  blog: { state: 'idle', lastFetch: 0, nextRetry: null, retryAttempt: 0, cacheAge: 0, error: null },
+  changelog: { state: 'idle', lastFetch: 0, nextRetry: null, retryAttempt: 0, cacheAge: 0, error: null },
+  status: { state: 'idle', lastFetch: 0, nextRetry: null, retryAttempt: 0, cacheAge: 0, error: null },
+  vscode: { state: 'idle', lastFetch: 0, nextRetry: null, retryAttempt: 0, cacheAge: 0, error: null },
+  visualstudio: { state: 'idle', lastFetch: 0, nextRetry: null, retryAttempt: 0, cacheAge: 0, error: null },
+  anthropic: { state: 'idle', lastFetch: 0, nextRetry: null, retryAttempt: 0, cacheAge: 0, error: null }
+};
+
+// Status change callbacks
+const statusChangeCallbacks = [];
+
+/**
+ * Register a callback to be notified of status changes
+ * @param {Function} callback - Function to call when status changes (sourceName, statusData)
+ */
+export function onStatusChange(callback) {
+  statusChangeCallbacks.push(callback);
+}
+
+/**
+ * Emit status change event to all registered callbacks
+ * @param {string} sourceName - Name of the data source
+ * @param {Object} statusData - Current status data
+ */
+function emitStatusChange(sourceName, statusData) {
+  statusChangeCallbacks.forEach(callback => {
+    try {
+      callback(sourceName, statusData);
+    } catch (error) {
+      console.error('Error in status change callback:', error);
+    }
+  });
+}
+
+/**
+ * Update status for a data source
+ * @param {string} sourceName - Name of the data source
+ * @param {Object} updates - Status updates to apply
+ */
+function updateStatus(sourceName, updates) {
+  if (!sourceStatus[sourceName]) return;
+  
+  Object.assign(sourceStatus[sourceName], updates);
+  
+  // Calculate cache age if we have cached data
+  if (cache[sourceName].timestamp > 0) {
+    sourceStatus[sourceName].cacheAge = Date.now() - cache[sourceName].timestamp;
+  }
+  
+  emitStatusChange(sourceName, sourceStatus[sourceName]);
+}
+
+/**
+ * Get current status for a data source
+ * @param {string} sourceName - Name of the data source
+ * @returns {Object} Current status data
+ */
+export function getSourceStatus(sourceName) {
+  if (!sourceStatus[sourceName]) {
+    return { state: 'unknown', lastFetch: 0, nextRetry: null, retryAttempt: 0, cacheAge: 0, error: null };
+  }
+  
+  // Update cache age before returning
+  if (cache[sourceName].timestamp > 0) {
+    sourceStatus[sourceName].cacheAge = Date.now() - cache[sourceName].timestamp;
+  }
+  
+  return { ...sourceStatus[sourceName] };
+}
+
 /**
  * Retry a fetch operation with exponential backoff
  * @param {Function} fetchFn - Async function to retry
  * @param {number} maxRetries - Maximum number of retry attempts (default: 3)
  * @param {number[]} delays - Delay in ms between retries (default: [1000, 2000, 4000])
+ * @param {string} sourceName - Name of the data source (for status tracking)
  * @returns {Promise<any>} Result from successful fetch
  * @throws {Error} Last error if all retries fail
  */
-async function retryFetch(fetchFn, maxRetries = 3, delays = [1000, 2000, 4000]) {
+async function retryFetch(fetchFn, maxRetries = 3, delays = [1000, 2000, 4000], sourceName = null) {
   let lastError;
   
   for (let i = 0; i <= maxRetries; i++) {
@@ -35,6 +108,17 @@ async function retryFetch(fetchFn, maxRetries = 3, delays = [1000, 2000, 4000]) 
       if (i < maxRetries) {
         const delay = delays[i] || delays[delays.length - 1];
         console.warn(`Retry attempt ${i + 1}/${maxRetries} failed, retrying in ${delay}ms...`, error.message);
+        
+        // Update status to retrying state
+        if (sourceName) {
+          updateStatus(sourceName, {
+            state: 'retrying',
+            retryAttempt: i + 1,
+            nextRetry: Date.now() + delay,
+            error: error.message
+          });
+        }
+        
         await new Promise(resolve => setTimeout(resolve, delay));
       }
     }
@@ -60,13 +144,29 @@ const ANTHROPIC_NEWS_RSS = 'https://raw.githubusercontent.com/Olshansk/rss-feeds
  * @throws {Error} If fetch fails and no cached data available
  */
 export async function fetchBlog() {
+  const sourceName = 'blog';
   const now = Date.now();
   
   // Return cached data if still fresh
   if (cache.blog.data && now - cache.blog.timestamp < CACHE_DURATION) {
     console.log('fetchBlog: Using cached data');
+    updateStatus(sourceName, {
+      state: 'success',
+      lastFetch: cache.blog.timestamp,
+      retryAttempt: 0,
+      nextRetry: null,
+      error: null
+    });
     return cache.blog.data;
   }
+  
+  // Update status to fetching
+  updateStatus(sourceName, {
+    state: 'fetching',
+    retryAttempt: 0,
+    nextRetry: null,
+    error: null
+  });
   
   // Fetch new data with retry logic
   try {
@@ -87,10 +187,20 @@ export async function fetchBlog() {
       }
       
       return jsonData;
-    });
+    }, 3, [1000, 2000, 4000], sourceName);
     
     cache.blog = { data, timestamp: now };
     console.log(`fetchBlog: Fetched ${data.items.length} items`);
+    
+    // Update status to success
+    updateStatus(sourceName, {
+      state: 'success',
+      lastFetch: now,
+      retryAttempt: 0,
+      nextRetry: null,
+      error: null
+    });
+    
     return data;
   } catch (error) {
     console.error('fetchBlog: Error fetching blog data after retries:', error);
@@ -98,8 +208,22 @@ export async function fetchBlog() {
     // Return stale cache if available (graceful degradation)
     if (cache.blog.data) {
       console.warn('fetchBlog: Using stale cached data due to fetch error');
+      updateStatus(sourceName, {
+        state: 'cached',
+        retryAttempt: 0,
+        nextRetry: null,
+        error: error.message
+      });
       return cache.blog.data;
     }
+    
+    // No cache available, update to failed state
+    updateStatus(sourceName, {
+      state: 'failed',
+      retryAttempt: 0,
+      nextRetry: null,
+      error: error.message
+    });
     
     // No cache available, propagate error
     throw error;
@@ -112,13 +236,29 @@ export async function fetchBlog() {
  * @throws {Error} If fetch fails and no cached data available
  */
 export async function fetchChangelog() {
+  const sourceName = 'changelog';
   const now = Date.now();
   
   // Return cached data if still fresh
   if (cache.changelog.data && now - cache.changelog.timestamp < CACHE_DURATION) {
     console.log('fetchChangelog: Using cached data');
+    updateStatus(sourceName, {
+      state: 'success',
+      lastFetch: cache.changelog.timestamp,
+      retryAttempt: 0,
+      nextRetry: null,
+      error: null
+    });
     return cache.changelog.data;
   }
+  
+  // Update status to fetching
+  updateStatus(sourceName, {
+    state: 'fetching',
+    retryAttempt: 0,
+    nextRetry: null,
+    error: null
+  });
   
   // Fetch new data with retry logic
   try {
@@ -139,10 +279,20 @@ export async function fetchChangelog() {
       }
       
       return jsonData;
-    });
+    }, 3, [1000, 2000, 4000], sourceName);
     
     cache.changelog = { data, timestamp: now };
     console.log(`fetchChangelog: Fetched ${data.items.length} items`);
+    
+    // Update status to success
+    updateStatus(sourceName, {
+      state: 'success',
+      lastFetch: now,
+      retryAttempt: 0,
+      nextRetry: null,
+      error: null
+    });
+    
     return data;
   } catch (error) {
     console.error('fetchChangelog: Error fetching changelog data after retries:', error);
@@ -150,8 +300,22 @@ export async function fetchChangelog() {
     // Return stale cache if available (graceful degradation)
     if (cache.changelog.data) {
       console.warn('fetchChangelog: Using stale cached data due to fetch error');
+      updateStatus(sourceName, {
+        state: 'cached',
+        retryAttempt: 0,
+        nextRetry: null,
+        error: error.message
+      });
       return cache.changelog.data;
     }
+    
+    // No cache available, update to failed state
+    updateStatus(sourceName, {
+      state: 'failed',
+      retryAttempt: 0,
+      nextRetry: null,
+      error: error.message
+    });
     
     // No cache available, propagate error
     throw error;
@@ -164,13 +328,29 @@ export async function fetchChangelog() {
  * @throws {Error} If fetch fails and no cached data available
  */
 export async function fetchStatus() {
+  const sourceName = 'status';
   const now = Date.now();
   
   // Return cached data if still fresh
   if (cache.status.data && now - cache.status.timestamp < CACHE_DURATION) {
     console.log('fetchStatus: Using cached data');
+    updateStatus(sourceName, {
+      state: 'success',
+      lastFetch: cache.status.timestamp,
+      retryAttempt: 0,
+      nextRetry: null,
+      error: null
+    });
     return cache.status.data;
   }
+  
+  // Update status to fetching
+  updateStatus(sourceName, {
+    state: 'fetching',
+    retryAttempt: 0,
+    nextRetry: null,
+    error: null
+  });
   
   // Fetch new data with retry logic
   try {
@@ -190,10 +370,20 @@ export async function fetchStatus() {
       }
       
       return jsonData;
-    });
+    }, 3, [1000, 2000, 4000], sourceName);
     
     cache.status = { data, timestamp: now };
     console.log(`fetchStatus: Fetched ${data.incidents.length} incidents (active + resolved)`);
+    
+    // Update status to success
+    updateStatus(sourceName, {
+      state: 'success',
+      lastFetch: now,
+      retryAttempt: 0,
+      nextRetry: null,
+      error: null
+    });
+    
     return data;
   } catch (error) {
     console.error('fetchStatus: Error fetching status data after retries:', error);
@@ -201,8 +391,22 @@ export async function fetchStatus() {
     // Return stale cache if available (graceful degradation)
     if (cache.status.data) {
       console.warn('fetchStatus: Using stale cached data due to fetch error');
+      updateStatus(sourceName, {
+        state: 'cached',
+        retryAttempt: 0,
+        nextRetry: null,
+        error: error.message
+      });
       return cache.status.data;
     }
+    
+    // No cache available, update to failed state
+    updateStatus(sourceName, {
+      state: 'failed',
+      retryAttempt: 0,
+      nextRetry: null,
+      error: error.message
+    });
     
     // No cache available, propagate error
     throw error;
@@ -224,13 +428,29 @@ export function getCacheEntry(source) {
  * @throws {Error} If fetch fails and no cached data available
  */
 export async function fetchVSCode() {
+  const sourceName = 'vscode';
   const now = Date.now();
 
   // Return cached data if still fresh
   if (cache.vscode.data && now - cache.vscode.timestamp < CACHE_DURATION) {
     console.log('fetchVSCode: Using cached data');
+    updateStatus(sourceName, {
+      state: 'success',
+      lastFetch: cache.vscode.timestamp,
+      retryAttempt: 0,
+      nextRetry: null,
+      error: null
+    });
     return cache.vscode.data;
   }
+
+  // Update status to fetching
+  updateStatus(sourceName, {
+    state: 'fetching',
+    retryAttempt: 0,
+    nextRetry: null,
+    error: null
+  });
 
   // Fetch new data with retry logic
   try {
@@ -251,10 +471,20 @@ export async function fetchVSCode() {
       }
 
       return jsonData;
-    });
+    }, 3, [1000, 2000, 4000], sourceName);
 
     cache.vscode = { data, timestamp: now };
     console.log(`fetchVSCode: Fetched ${data.items.length} items`);
+    
+    // Update status to success
+    updateStatus(sourceName, {
+      state: 'success',
+      lastFetch: now,
+      retryAttempt: 0,
+      nextRetry: null,
+      error: null
+    });
+    
     return data;
   } catch (error) {
     console.error('fetchVSCode: Error fetching VS Code updates after retries:', error);
@@ -262,8 +492,22 @@ export async function fetchVSCode() {
     // Return stale cache if available (graceful degradation)
     if (cache.vscode.data) {
       console.warn('fetchVSCode: Using stale cached data due to fetch error');
+      updateStatus(sourceName, {
+        state: 'cached',
+        retryAttempt: 0,
+        nextRetry: null,
+        error: error.message
+      });
       return cache.vscode.data;
     }
+
+    // No cache available, update to failed state
+    updateStatus(sourceName, {
+      state: 'failed',
+      retryAttempt: 0,
+      nextRetry: null,
+      error: error.message
+    });
 
     // No cache available, propagate error
     throw error;
@@ -276,13 +520,29 @@ export async function fetchVSCode() {
  * @throws {Error} If fetch fails and no cached data available
  */
 export async function fetchVisualStudio() {
+  const sourceName = 'visualstudio';
   const now = Date.now();
 
   // Return cached data if still fresh
   if (cache.visualstudio.data && now - cache.visualstudio.timestamp < CACHE_DURATION) {
     console.log('fetchVisualStudio: Using cached data');
+    updateStatus(sourceName, {
+      state: 'success',
+      lastFetch: cache.visualstudio.timestamp,
+      retryAttempt: 0,
+      nextRetry: null,
+      error: null
+    });
     return cache.visualstudio.data;
   }
+
+  // Update status to fetching
+  updateStatus(sourceName, {
+    state: 'fetching',
+    retryAttempt: 0,
+    nextRetry: null,
+    error: null
+  });
 
   // Fetch new data with retry logic
   try {
@@ -303,10 +563,20 @@ export async function fetchVisualStudio() {
       }
 
       return jsonData;
-    });
+    }, 3, [1000, 2000, 4000], sourceName);
 
     cache.visualstudio = { data, timestamp: now };
     console.log(`fetchVisualStudio: Fetched ${data.items.length} items`);
+    
+    // Update status to success
+    updateStatus(sourceName, {
+      state: 'success',
+      lastFetch: now,
+      retryAttempt: 0,
+      nextRetry: null,
+      error: null
+    });
+    
     return data;
   } catch (error) {
     console.error('fetchVisualStudio: Error fetching Visual Studio updates after retries:', error);
@@ -314,8 +584,22 @@ export async function fetchVisualStudio() {
     // Return stale cache if available (graceful degradation)
     if (cache.visualstudio.data) {
       console.warn('fetchVisualStudio: Using stale cached data due to fetch error');
+      updateStatus(sourceName, {
+        state: 'cached',
+        retryAttempt: 0,
+        nextRetry: null,
+        error: error.message
+      });
       return cache.visualstudio.data;
     }
+
+    // No cache available, update to failed state
+    updateStatus(sourceName, {
+      state: 'failed',
+      retryAttempt: 0,
+      nextRetry: null,
+      error: error.message
+    });
 
     // No cache available, propagate error
     throw error;
@@ -560,13 +844,29 @@ export function clearArticleCache() {
  * @throws {Error} If fetch fails and no cached data available
  */
 export async function fetchAnthropic() {
+  const sourceName = 'anthropic';
   const now = Date.now();
 
   // Return cached data if still fresh
   if (cache.anthropic.data && now - cache.anthropic.timestamp < CACHE_DURATION) {
     console.log('fetchAnthropic: Using cached data');
+    updateStatus(sourceName, {
+      state: 'success',
+      lastFetch: cache.anthropic.timestamp,
+      retryAttempt: 0,
+      nextRetry: null,
+      error: null
+    });
     return cache.anthropic.data;
   }
+
+  // Update status to fetching
+  updateStatus(sourceName, {
+    state: 'fetching',
+    retryAttempt: 0,
+    nextRetry: null,
+    error: null
+  });
 
   // Fetch new data with retry logic
   try {
@@ -587,10 +887,20 @@ export async function fetchAnthropic() {
       }
 
       return jsonData;
-    });
+    }, 3, [1000, 2000, 4000], sourceName);
 
     cache.anthropic = { data, timestamp: now };
     console.log(`fetchAnthropic: Fetched ${data.items.length} items`);
+    
+    // Update status to success
+    updateStatus(sourceName, {
+      state: 'success',
+      lastFetch: now,
+      retryAttempt: 0,
+      nextRetry: null,
+      error: null
+    });
+    
     return data;
   } catch (error) {
     console.error('fetchAnthropic: Error fetching Anthropic news after retries:', error);
@@ -598,8 +908,22 @@ export async function fetchAnthropic() {
     // Return stale cache if available (graceful degradation)
     if (cache.anthropic.data) {
       console.warn('fetchAnthropic: Using stale cached data due to fetch error');
+      updateStatus(sourceName, {
+        state: 'cached',
+        retryAttempt: 0,
+        nextRetry: null,
+        error: error.message
+      });
       return cache.anthropic.data;
     }
+
+    // No cache available, update to failed state
+    updateStatus(sourceName, {
+      state: 'failed',
+      retryAttempt: 0,
+      nextRetry: null,
+      error: error.message
+    });
 
     // No cache available, propagate error
     throw error;
