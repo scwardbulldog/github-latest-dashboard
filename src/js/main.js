@@ -1533,8 +1533,8 @@ window.statusBadges = {
   anthropic: new StatusBadge('anthropic', statusBadgesContainer)
 };
 
-// Register status change callback to update badges
-window._unsubscribeStatusChange = onStatusChange((sourceName, statusData) => {
+// Register status change callback to update badges; store unsubscribe for future cleanup
+window.statusChangeUnsubscribe = onStatusChange((sourceName, statusData) => {
   if (window.statusBadges && window.statusBadges[sourceName]) {
     window.statusBadges[sourceName].update();
   }
