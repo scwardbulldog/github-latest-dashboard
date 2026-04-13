@@ -19,6 +19,9 @@ import { TimeBasedMessages } from './time-based-messages.js';
 // Import Matrix rain easter egg for incident detection
 import { checkForNewIncidents } from './matrix-rain.js';
 
+// Import Octocat cameo Easter egg
+import { OctocatCameo } from './octocat-cameo.js';
+
 // Import API client for data fetching (Story 3.5)
 import {
     fetchBlog as fetchBlogFromApiClient,
@@ -1073,7 +1076,7 @@ function getItemCountForPage(pageName) {
 
 // Initialize dashboard
 updateTimestamp();
-fetchAllData();
+// NOTE: fetchAllData() is now called after config initialization in startDashboard()
 
 // Initialize and start carousel rotation
 // Store globally to prevent memory leaks during hot reload
@@ -1165,6 +1168,18 @@ if (window.timeBasedMessagesInstance) {
 }
 
 window.timeBasedMessagesInstance = new TimeBasedMessages();
+
+// Initialize Octocat cameo Easter egg
+// Mona appears every 30 minutes and walks across the bottom of the screen
+if (window.octocatCameoInstance) {
+  // Clean up if exists (hot reload support)
+  window.octocatCameoInstance.stop();
+  window.octocatCameoInstance = null;
+}
+
+window.octocatCameoInstance = new OctocatCameo();
+// Start the Easter egg timer (will trigger every 30 minutes)
+window.octocatCameoInstance.start();
 
 /**
  * Extract item data from a list item DOM element
@@ -1303,6 +1318,8 @@ function startDashboard() {
 // Initialize with config and start dashboard
 initializeWithConfig().then(() => {
     startDashboard();
+    // Initial data load after dashboard is initialized
+    fetchAllData();
     console.log('🚀 Dashboard started with configuration');
 }).catch((error) => {
     console.error('Failed to initialize dashboard:', error);

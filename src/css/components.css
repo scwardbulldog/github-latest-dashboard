@@ -459,6 +459,52 @@
 }
 
 /* ============================================
+   Octocat Cameo - Easter Egg Animation
+   Jetpacktocat flies chaotically around the
+   screen with out-of-control jetpack physics.
+   Official art from GitHub Octodex (#116)
+   by tonyjaramillo.
+   ============================================ */
+
+.jetpacktocat-cameo {
+  /* Fixed positioning for absolute placement */
+  position: fixed;
+  top: 0;
+  left: 0;
+  
+  /* Size: 100px for visibility */
+  width: 100px;
+  height: 100px;
+  
+  /* High z-index but non-blocking */
+  z-index: 999;
+  
+  /* Non-interactive */
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+  
+  /* GPU acceleration for smooth physics animation */
+  will-change: transform;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  
+  /* Transform origin at center for rotation */
+  transform-origin: center center;
+}
+
+/* Image styling for Jetpacktocat */
+.jetpacktocat-cameo img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+  
+  /* Prevent image drag/selection */
+  -webkit-user-drag: none;
+}
+
+/* ============================================
    Time-Based Messages (Easter Egg)
    Added for contextual messages at specific times
    ============================================ */
