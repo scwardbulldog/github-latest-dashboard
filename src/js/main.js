@@ -1,5 +1,5 @@
 // Import utility functions
-import { formatDate, stripHtml, truncate } from './utils.js';
+import { formatDate, stripHtml, truncate, formatDuration } from './utils.js';
 
 // Component skeletons imported for Epic 2+ implementation
 // Current MVP functionality remains using existing code below
@@ -406,22 +406,22 @@ function renderAnthropicList(anthropicData) {
 }
 
 /**
- * Render Status page data (split-view with active incidents + resolved grid)
+ * Render Status page data (split-view with active incidents + incident history timeline)
  * @param {Object} statusData - GitHub Status API incidents data
  * @returns {number} Number of items rendered
  */
 function renderStatusList(statusData) {
     const statusListEl = document.getElementById('status-list');
-    const resolvedGridEl = document.getElementById('status-resolved-grid');
+    const historyTimelineEl = document.getElementById('status-incident-history');
     
-    if (!statusListEl || !resolvedGridEl) {
+    if (!statusListEl || !historyTimelineEl) {
         console.error('renderStatusList: Required elements not found');
         return 0;
     }
     
     // Clear existing content
     statusListEl.innerHTML = '';
-    resolvedGridEl.innerHTML = '';
+    historyTimelineEl.innerHTML = '';
     
     const incidents = statusData.incidents || [];
     
@@ -495,63 +495,166 @@ function renderStatusList(statusData) {
         statusListEl.appendChild(fragment);
     }
     
-    // Render resolved incidents in multi-column grid (show more history, up to 12)
-    if (resolvedIncidents.length > 0) {
-        // Performance optimization: Build resolved grid using DocumentFragment
+    // Render incident history timeline (past 7 days, up to 10 resolved incidents)
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    
+    // Filter resolved incidents from past 7 days
+    const recentResolvedIncidents = resolvedIncidents
+        .filter(inc => {
+            const createdAt = new Date(inc.created_at);
+            return createdAt > sevenDaysAgo;
+        })
+        .slice(0, 10); // Limit to 10 most recent
+    
+    if (recentResolvedIncidents.length > 0) {
+        // Performance optimization: Build timeline using DocumentFragment
         const fragment = document.createDocumentFragment();
         
         // Add header
         const headerEl = document.createElement('div');
-        headerEl.className = 'status-resolved-grid-header';
-        headerEl.textContent = 'Recently Resolved Incidents';
+        headerEl.className = 'incident-history-header';
+        headerEl.textContent = 'Incident History (Past 7 Days)';
         fragment.appendChild(headerEl);
         
-        // Create grid container
+        // Create grid container for timeline cards
         const gridContainer = document.createElement('div');
-        gridContainer.className = 'status-resolved-items';
+        gridContainer.className = 'incident-history-items';
         
-        // Render up to 6 resolved incidents in grid (3 cols x 2 rows)
-        resolvedIncidents.slice(0, 6).forEach(incident => {
+        // Render timeline cards
+        recentResolvedIncidents.forEach(incident => {
             const impact = incident.impact || 'none';
             
-            const symbol = (impact === 'critical' || impact === 'major')
-                ? '■' 
-                : impact === 'minor' 
-                    ? '▲' 
-                    : '●';
+            // Determine severity class and icon
+            const severityClass = getSeverityClass(impact);
+            const severityIcon = getSeverityIcon(impact);
             
-            const symbolClass = (impact === 'critical' || impact === 'major')
-                ? 'status-symbol-major'
-                : impact === 'minor'
-                    ? 'status-symbol-minor'
-                    : 'status-symbol-operational';
+            // Calculate incident duration
+            const duration = formatDuration(incident.created_at, incident.resolved_at || incident.updated_at);
+            
+            // Extract affected services from components (if available)
+            const affectedServices = getAffectedServices(incident);
             
             const cardEl = document.createElement('div');
-            cardEl.className = 'status-resolved-card';
+            cardEl.className = `incident-history-card ${severityClass}`;
             
-            cardEl.innerHTML = `
-                <div class="status-resolved-title">
-                    <span class="status-symbol ${symbolClass}">${symbol}</span>
-                    ${truncate(incident.name || 'Incident', 60)}
+            // Build card HTML
+            let cardHtml = `
+                <div class="incident-history-card-header">
+                    <span class="incident-severity-icon">${severityIcon}</span>
+                    <span class="incident-history-title">${truncate(incident.name || 'Incident', 80)}</span>
                 </div>
-                <div class="status-resolved-meta">
-                    <span class="status-resolved-status">Resolved</span>
-                    <span>${formatDate(incident.resolved_at || incident.updated_at)}</span>
-                </div>
-            `;
+                <div class="incident-history-meta">
+                    <span class="incident-meta-item">
+                        <span class="incident-meta-label">Resolved:</span>
+                        <span class="incident-meta-value">${formatDate(incident.resolved_at || incident.updated_at)}</span>
+                    </span>
+                    <span class="incident-meta-item">
+                        <span class="incident-meta-label">Duration:</span>
+                        <span class="incident-meta-value">${duration}</span>
+                    </span>
+                </div>`;
             
+            // Add affected services if available
+            if (affectedServices.length > 0) {
+                cardHtml += `
+                <div class="incident-services">
+                    ${affectedServices.slice(0, 3).map(service => 
+                        `<span class="incident-service-tag">${service}</span>`
+                    ).join('')}
+                    ${affectedServices.length > 3 ? `<span class="incident-service-tag">+${affectedServices.length - 3} more</span>` : ''}
+                </div>`;
+            }
+            
+            // Add resolution indicator
+            cardHtml += `
+                <div class="incident-resolution">Resolved</div>`;
+            
+            cardEl.innerHTML = cardHtml;
             gridContainer.appendChild(cardEl);
         });
         
         fragment.appendChild(gridContainer);
         
-        // Single DOM write for entire resolved section
-        resolvedGridEl.appendChild(fragment);
+        // Single DOM write for entire timeline section
+        historyTimelineEl.appendChild(fragment);
     }
     
     const totalItems = Math.max(activeIncidents.length, 1); // Count active incidents for highlighting
-    console.log(`renderStatusList: Rendered ${activeIncidents.length} active incidents and ${Math.min(resolvedIncidents.length, 6)} resolved in grid`);
+    console.log(`renderStatusList: Rendered ${activeIncidents.length} active incidents and ${recentResolvedIncidents.length} in incident history`);
     return totalItems;
+}
+
+/**
+ * Get CSS class for incident severity
+ * @param {string} impact - Impact level from GitHub Status API
+ * @returns {string} CSS class for severity styling
+ */
+function getSeverityClass(impact) {
+    switch (impact) {
+        case 'critical':
+        case 'major':
+            return 'severity-major';
+        case 'minor':
+            return 'severity-minor';
+        case 'maintenance':
+            return 'severity-maintenance';
+        default:
+            return 'severity-none';
+    }
+}
+
+/**
+ * Get emoji icon for incident severity
+ * @param {string} impact - Impact level from GitHub Status API
+ * @returns {string} Emoji icon for severity
+ */
+function getSeverityIcon(impact) {
+    switch (impact) {
+        case 'critical':
+        case 'major':
+            return '🔴';
+        case 'minor':
+            return '🟡';
+        case 'maintenance':
+            return '🔵';
+        default:
+            return '🟢';
+    }
+}
+
+/**
+ * Extract affected service names from incident components
+ * @param {Object} incident - Incident object from GitHub Status API
+ * @returns {string[]} Array of affected service names
+ */
+function getAffectedServices(incident) {
+    const services = [];
+    
+    // Try to extract from components array
+    if (incident.components && Array.isArray(incident.components)) {
+        incident.components.forEach(component => {
+            if (component.name) {
+                services.push(component.name);
+            }
+        });
+    }
+    
+    // If no components, try to extract from incident_updates
+    if (services.length === 0 && incident.incident_updates && incident.incident_updates.length > 0) {
+        // Check for affected_components in updates
+        incident.incident_updates.forEach(update => {
+            if (update.affected_components && Array.isArray(update.affected_components)) {
+                update.affected_components.forEach(comp => {
+                    if (comp.name && !services.includes(comp.name)) {
+                        services.push(comp.name);
+                    }
+                });
+            }
+        });
+    }
+    
+    return services;
 }
 
 // Remove old placeholder functions - replaced by API integration above
