@@ -619,7 +619,7 @@
   
   /* Subtle border for definition */
   border: 1px solid var(--color-border-muted);
-  border-radius: var(--borderradius-small);
+  border-radius: 6px;
   
   /* Typography - smaller, subtle */
   font-size: var(--fontsize-small);
