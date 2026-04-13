@@ -34,10 +34,6 @@
                 <span class="live-dot" id="liveDot"></span>
                 <span id="liveText">Live</span>
             </div>
-            <button class="theme-toggle" id="themeToggle" aria-label="Switch to light mode" title="Toggle dark/light theme">
-                <span class="theme-toggle__icon" id="themeToggleIcon">☀️</span>
-                <span class="theme-toggle__label" id="themeToggleLabel">Light</span>
-            </button>
             <button class="pause-button" id="pauseButton">
                 <span class="pause-icon" id="pauseIcon">⏸</span>
                 <span id="pauseText">Pause</span>
@@ -52,6 +48,17 @@
     <!-- Settings Panel (shown via gear icon) -->
     <div class="settings-panel" id="settingsPanel" hidden>
         <h3 class="settings-panel__title">Dashboard Settings</h3>
+
+        <!-- Theme Toggle -->
+        <div class="setting-group">
+            <label class="setting-group__label">Theme</label>
+            <div class="setting-group__toggle-row">
+                <button class="theme-toggle-setting" id="themeToggle" aria-label="Toggle theme" title="Toggle dark/light theme">
+                    <span class="theme-toggle-setting__icon" id="themeToggleIcon">☀️</span>
+                    <span class="theme-toggle-setting__label" id="themeToggleLabel">Light Mode</span>
+                </button>
+            </div>
+        </div>
 
         <div class="setting-group">
             <label for="refreshIntervalSlider" class="setting-group__label">Data Refresh Interval</label>

@@ -66,7 +66,7 @@ function applyTheme(theme, button) {
             const icon = button.querySelector('#themeToggleIcon');
             const label = button.querySelector('#themeToggleLabel');
             if (icon) icon.textContent = '🌙';
-            if (label) label.textContent = 'Dark';
+            if (label) label.textContent = 'Dark Mode';
         }
     } else {
         document.documentElement.removeAttribute('data-theme');
@@ -76,7 +76,7 @@ function applyTheme(theme, button) {
             const icon = button.querySelector('#themeToggleIcon');
             const label = button.querySelector('#themeToggleLabel');
             if (icon) icon.textContent = '☀️';
-            if (label) label.textContent = 'Light';
+            if (label) label.textContent = 'Light Mode';
         }
     }
 }

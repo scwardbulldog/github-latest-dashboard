@@ -25,6 +25,9 @@ import { SettingsManager } from './settings-manager.js';
 // Import configurable refresh interval controller
 import { RefreshIntervalController } from './refresh-interval-controller.js';
 
+// Import GitHub Uptime Streak Counter (Easter Egg)
+import { GitHubStreakCounter } from './github-streak-counter.js';
+
 // Import Octocat cameo Easter egg
 import { OctocatCameo } from './octocat-cameo.js';
 
@@ -962,6 +965,23 @@ async function fetchAllData() {
                 console.error('fetchAllData: Error checking for Matrix rain trigger:', error);
                 // Non-critical - don't affect dashboard operation
             }
+            
+            // Easter Egg: Update GitHub Uptime Streak Counter with latest status data
+            try {
+                if (window.streakCounterInstance) {
+                    if (!window.streakCounterInitialized) {
+                        // First initialization with status data
+                        window.streakCounterInstance.initialize(statusData);
+                        window.streakCounterInitialized = true;
+                    } else {
+                        // Update with new data on refresh
+                        window.streakCounterInstance.update(statusData);
+                    }
+                }
+            } catch (error) {
+                console.error('fetchAllData: Error updating streak counter:', error);
+                // Non-critical - don't affect dashboard operation
+            }
         } else {
             renderErrorState('status-list', 'Unable to load status');
             // Hide indicator if status fetch failed (no outage data available)
@@ -1188,6 +1208,17 @@ if (window.timeBasedMessagesInstance) {
 }
 
 window.timeBasedMessagesInstance = new TimeBasedMessages();
+
+// Initialize GitHub Uptime Streak Counter (Easter Egg)
+if (window.streakCounterInstance) {
+  // Clean up if exists (hot reload support)
+  window.streakCounterInstance.stop();
+  window.streakCounterInstance = null;
+  // Reset initialization flag so new instance will be properly initialized
+  window.streakCounterInitialized = false;
+}
+
+window.streakCounterInstance = new GitHubStreakCounter();
 
 // Initialize Octocat cameo Easter egg
 // Mona appears every 30 minutes and walks across the bottom of the screen
