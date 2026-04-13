@@ -1534,7 +1534,7 @@ window.statusBadges = {
 };
 
 // Register status change callback to update badges
-onStatusChange((sourceName, statusData) => {
+window._unsubscribeStatusChange = onStatusChange((sourceName, statusData) => {
   if (window.statusBadges && window.statusBadges[sourceName]) {
     window.statusBadges[sourceName].update();
   }
