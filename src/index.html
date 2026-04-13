@@ -351,6 +351,25 @@
         <!-- Individual badges for each source will be inserted here by JS -->
     </div>
 
+    <!-- Pause QR Widget (floating, non-intrusive overlay when paused) -->
+    <div class="pause-qr-widget" id="pauseQrWidget" hidden>
+        <div class="pause-qr-widget__header">
+            <span class="pause-qr-widget__title">📲 Share Dashboard</span>
+            <button class="pause-qr-widget__close" id="closePauseQr" aria-label="Close QR code">×</button>
+        </div>
+        <div class="pause-qr-widget__body">
+            <div class="pause-qr-widget__qr-container">
+                <img id="pauseQrImage" alt="Scan to open dashboard on your device" />
+            </div>
+            <p class="pause-qr-widget__hint">Scan to view on your device</p>
+        </div>
+        <div class="pause-qr-widget__footer">
+            <button class="btn-export pause-qr-widget__share-btn" id="openFullShareBtn">
+                🔗 Share Current Item
+            </button>
+        </div>
+    </div>
+
     <!-- Share Modal -->
     <div class="share-modal" id="shareModal" hidden>
       <div class="share-modal-backdrop"></div>

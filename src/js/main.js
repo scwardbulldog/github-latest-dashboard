@@ -88,6 +88,9 @@ let pausedByShareModal = false;
 let qrDisplayTimer = null;
 let qrCountdownInterval = null;
 
+// Track if pause QR widget is dismissed by user
+let pauseQrWidgetDismissed = false;
+
 /**
  * Get last update time for a source
  * @param {string} containerId - Container ID (e.g., 'blog-list')
@@ -889,6 +892,11 @@ function togglePause() {
         if (window.itemHighlighterInstance) {
             window.itemHighlighterInstance.pause();
         }
+        
+        // Show pause QR widget (unless user dismissed it or share modal triggered pause)
+        if (!pausedByShareModal && !pauseQrWidgetDismissed) {
+            showPauseQrWidget();
+        }
     } else {
         // Resume mode - continue from where we left off
         pauseIcon.textContent = '⏸';
@@ -915,6 +923,10 @@ function togglePause() {
         if (window.itemHighlighterInstance) {
             window.itemHighlighterInstance.resume();
         }
+        
+        // Hide pause QR widget and reset dismissed state for next pause
+        hidePauseQrWidget();
+        pauseQrWidgetDismissed = false;
     }
 }
 
@@ -2048,11 +2060,103 @@ async function handleExport(format) {
     }
 }
 
-// Initialize export functionality after DOM is fully loaded
+// ============================================================================
+// Pause QR Widget Functionality
+// ============================================================================
+
+/**
+ * Show the pause QR widget with dashboard URL QR code
+ * Generates a QR code for the current dashboard URL for easy sharing
+ */
+function showPauseQrWidget() {
+    const widget = document.getElementById('pauseQrWidget');
+    const qrImage = document.getElementById('pauseQrImage');
+    
+    if (!widget || !qrImage) return;
+    
+    // Generate QR code for current dashboard URL
+    const dashboardUrl = window.location.href;
+    
+    // Use the public QR API (same approach as ExportController for Pi 3B optimization)
+    const qrSize = 160;
+    const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=${qrSize}x${qrSize}&data=${encodeURIComponent(dashboardUrl)}`;
+    
+    // Set QR code image
+    qrImage.src = qrApiUrl;
+    qrImage.alt = 'Scan to open dashboard on your device';
+    
+    // Show the widget with animation
+    widget.classList.remove('pause-qr-widget--hiding');
+    widget.removeAttribute('hidden');
+}
+
+/**
+ * Hide the pause QR widget with animation
+ */
+function hidePauseQrWidget() {
+    const widget = document.getElementById('pauseQrWidget');
+    if (!widget || widget.hasAttribute('hidden')) return;
+    
+    // Add hiding animation class
+    widget.classList.add('pause-qr-widget--hiding');
+    
+    // Hide after animation completes
+    setTimeout(() => {
+        widget.setAttribute('hidden', '');
+        widget.classList.remove('pause-qr-widget--hiding');
+    }, 200);
+}
+
+/**
+ * Dismiss the pause QR widget (user closed it)
+ * Sets the dismissed flag so it won't reappear until next resume
+ */
+function dismissPauseQrWidget() {
+    pauseQrWidgetDismissed = true;
+    hidePauseQrWidget();
+}
+
+/**
+ * Initialize pause QR widget event handlers
+ */
+function initializePauseQrWidget() {
+    const closeBtn = document.getElementById('closePauseQr');
+    const shareBtn = document.getElementById('openFullShareBtn');
+    
+    // Close button handler
+    if (closeBtn) {
+        closeBtn.addEventListener('click', dismissPauseQrWidget);
+    }
+    
+    // "Share Current Item" button - opens full share modal for highlighted item
+    if (shareBtn) {
+        shareBtn.addEventListener('click', () => {
+            // Get currently highlighted item
+            const highlightedItem = document.querySelector('.list-item--highlighted');
+            if (highlightedItem) {
+                const itemData = extractItemData(highlightedItem);
+                // Hide the widget first, then open full share modal
+                hidePauseQrWidget();
+                openShareModal(itemData);
+            } else {
+                // No item highlighted - show toast message
+                if (exportController) {
+                    exportController.showToast('No item selected to share', 'error');
+                }
+            }
+        });
+    }
+}
+
+// Initialize export functionality and pause QR widget after DOM is fully loaded
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initializeExportFunctionality);
+    document.addEventListener('DOMContentLoaded', () => {
+        initializePauseQrWidget();
+        initializeExportFunctionality();
+    });
 } else {
     // DOM already loaded
+    initializePauseQrWidget();
     initializeExportFunctionality();
 }
 

@@ -1068,6 +1068,130 @@
 }
 
 /* ============================================
+   Pause QR Widget (Floating overlay when paused)
+   Non-intrusive floating widget in bottom-left corner
+   ============================================ */
+
+.pause-qr-widget {
+  position: fixed;
+  bottom: var(--space-4);
+  left: var(--space-4);
+  z-index: 1500;
+  background: var(--color-canvas-default);
+  border: 1px solid var(--color-border-default);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  padding: var(--space-3);
+  min-width: 200px;
+  max-width: 280px;
+  animation: pause-qr-slide-in 0.3s ease;
+}
+
+.pause-qr-widget[hidden] {
+  display: none;
+}
+
+@keyframes pause-qr-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.pause-qr-widget--hiding {
+  animation: pause-qr-slide-out 0.2s ease forwards;
+}
+
+@keyframes pause-qr-slide-out {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+}
+
+.pause-qr-widget__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-2);
+}
+
+.pause-qr-widget__title {
+  font-size: var(--fontsize-base);
+  font-weight: var(--fontweight-semibold);
+  color: var(--color-fg-default);
+}
+
+.pause-qr-widget__close {
+  background: transparent;
+  border: none;
+  font-size: var(--fontsize-large);
+  line-height: 1;
+  cursor: pointer;
+  color: var(--color-fg-muted);
+  padding: 0;
+  width: var(--space-4);
+  height: var(--space-4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--space-1);
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.pause-qr-widget__close:hover {
+  background: var(--color-canvas-subtle);
+  color: var(--color-fg-default);
+}
+
+.pause-qr-widget__body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.pause-qr-widget__qr-container {
+  background: #ffffff;
+  padding: var(--space-2);
+  border-radius: var(--space-1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pause-qr-widget__qr-container img {
+  width: 160px;
+  height: 160px;
+  display: block;
+}
+
+.pause-qr-widget__hint {
+  font-size: var(--fontsize-small);
+  color: var(--color-fg-muted);
+  text-align: center;
+  margin: 0;
+}
+
+.pause-qr-widget__footer {
+  margin-top: var(--space-3);
+}
+
+.pause-qr-widget__share-btn {
+  width: 100%;
+  justify-content: center;
+  font-size: var(--fontsize-small);
+}
+
+/* ============================================
    Settings Panel (Gear Icon)
    Added for configurable refresh interval feature
    ============================================ */
