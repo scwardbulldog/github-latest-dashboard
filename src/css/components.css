@@ -556,67 +556,58 @@
 
 /* ============================================
    GitHub Uptime Streak Counter (Easter Egg)
-   Shows days since last critical GitHub incident
+   Shows days since last major GitHub incident
    ============================================ */
 
 .github-streak-badge {
-  /* Flex container for badge content */
-  display: flex;
-  flex-direction: column;
+  /* Inline display for single-line appearance */
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
+  gap: var(--space-2);
   
-  /* Touch-friendly size (44px minimum per Material Design) */
-  min-width: 44px;
-  min-height: 44px;
-  padding: var(--space-2) var(--space-3);
+  /* Subtle padding */
+  padding: var(--space-1) var(--space-2);
   
-  /* Success state background (green for healthy streak) */
-  background: var(--color-success-fg);
-  color: var(--color-fg-on-accent);
+  /* Subtle muted background (not prominent green) */
+  background: var(--color-canvas-subtle);
+  color: var(--color-fg-muted);
   
-  /* GitHub Primer border radius */
-  border-radius: 6px;
+  /* Subtle border for definition */
+  border: 1px solid var(--color-border-muted);
+  border-radius: var(--borderradius-small);
   
-  /* Typography */
+  /* Typography - smaller, subtle */
   font-size: var(--fontsize-small);
-  font-weight: var(--fontweight-semibold);
-  text-align: center;
+  font-weight: var(--fontweight-normal);
+  text-align: left;
   line-height: var(--lineheight-condensed);
+  white-space: nowrap;
+  text-decoration: none;
   
-  /* Subtle shadow for depth */
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-  
-  /* No interaction effects (TV display) */
-  cursor: default;
+  /* Clickable cursor */
+  cursor: pointer;
   user-select: none;
   -webkit-user-select: none;
+  
+  /* Subtle hover effect */
+  transition: background 150ms ease-in-out, border-color 150ms ease-in-out;
 }
 
-.github-streak-badge__count {
-  /* Main streak text */
-  display: block;
-  font-weight: var(--fontweight-semibold);
-  white-space: nowrap;
+.github-streak-badge:hover {
+  background: var(--color-canvas-inset);
+  border-color: var(--color-border-default);
+  text-decoration: none;
 }
 
-.github-streak-badge__date {
-  /* Secondary date text */
-  display: block;
-  font-size: var(--fontsize-small);
-  opacity: 0.9;
-  margin-top: 2px;
-  white-space: nowrap;
-}
-
-/* Warning state (incident today) */
+/* Warning state (incident today) - slightly more prominent */
 .github-streak-badge--warning {
-  background: var(--color-danger-fg);
+  color: var(--color-danger-fg);
+  border-color: var(--color-danger-muted);
 }
 
 /* Unknown state (no incidents on record) */
 .github-streak-badge--unknown {
-  background: var(--color-accent-fg);
+  color: var(--color-fg-muted);
 }
 
 /* Milestone celebration animation (400ms pulse per spec) */
@@ -626,7 +617,7 @@
     opacity: 1;
   }
   50% {
-    transform: scale(1.1);
+    transform: scale(1.05);
     opacity: 0.9;
   }
   100% {
@@ -641,5 +632,5 @@
 
 /* Light theme adjustments */
 [data-theme="light"] .github-streak-badge {
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background: var(--color-canvas-subtle);
 }

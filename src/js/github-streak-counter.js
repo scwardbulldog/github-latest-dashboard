@@ -194,10 +194,14 @@ export class GitHubStreakCounter {
       this.badgeElement = document.getElementById('github-streak-badge');
       
       if (!this.badgeElement) {
-        // Create badge element
-        this.badgeElement = document.createElement('div');
+        // Create badge element as anchor for clickable navigation
+        this.badgeElement = document.createElement('a');
         this.badgeElement.id = 'github-streak-badge';
         this.badgeElement.className = 'github-streak-badge';
+        this.badgeElement.href = 'https://www.githubstatus.com/';
+        this.badgeElement.target = '_blank';
+        this.badgeElement.rel = 'noopener noreferrer';
+        this.badgeElement.title = 'View GitHub Status';
         
         // Insert in header-right, before the live indicator
         const headerRight = document.querySelector('.header-right');
@@ -214,37 +218,23 @@ export class GitHubStreakCounter {
       }
     }
 
-    // Determine badge content based on streak
-    let streakText, dateText;
+    // Determine badge content based on streak (single line format)
+    let badgeText;
     
     if (this.currentStreak === -1) {
       // No significant incidents on record (unlikely)
-      streakText = '✓ No Major Incidents';
-      dateText = 'on record';
+      badgeText = '✓ No major incidents on record';
     } else if (this.currentStreak === 0) {
       // Incident today
-      streakText = '⚠️ Major Incident Today';
-      dateText = this.formatDate(this.lastIncidentDate);
+      badgeText = `⚠️ Major incident today`;
     } else {
-      // Normal streak display
-      const dayText = this.currentStreak === 1 ? 'Day' : 'Days';
-      streakText = `✓ ${this.currentStreak} ${dayText} Incident-Free`;
-      dateText = `Last: ${this.formatDate(this.lastIncidentDate)}`;
+      // Normal streak display - single line with day count and last date
+      const dayText = this.currentStreak === 1 ? 'day' : 'days';
+      badgeText = `✓ ${this.currentStreak} ${dayText} since last major incident`;
     }
 
-    // Clear and rebuild badge content using textContent for XSS safety
-    this.badgeElement.innerHTML = '';
-    
-    const countSpan = document.createElement('span');
-    countSpan.className = 'github-streak-badge__count';
-    countSpan.textContent = streakText;
-    
-    const dateSpan = document.createElement('span');
-    dateSpan.className = 'github-streak-badge__date';
-    dateSpan.textContent = dateText;
-    
-    this.badgeElement.appendChild(countSpan);
-    this.badgeElement.appendChild(dateSpan);
+    // Set badge content using textContent for XSS safety
+    this.badgeElement.textContent = badgeText;
 
     // Handle milestone animation
     if (this.isMilestone()) {
