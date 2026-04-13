@@ -601,6 +601,87 @@
 }
 
 /* ============================================
+   GitHub Uptime Streak Counter (Easter Egg)
+   Shows days since last major GitHub incident
+   ============================================ */
+
+.github-streak-badge {
+  /* Inline display for single-line appearance */
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  
+  /* Subtle padding */
+  padding: var(--space-1) var(--space-2);
+  
+  /* Subtle muted background (not prominent green) */
+  background: var(--color-canvas-subtle);
+  color: var(--color-fg-muted);
+  
+  /* Subtle border for definition */
+  border: 1px solid var(--color-border-muted);
+  border-radius: var(--borderradius-small);
+  
+  /* Typography - smaller, subtle */
+  font-size: var(--fontsize-small);
+  font-weight: var(--fontweight-normal);
+  text-align: left;
+  line-height: var(--lineheight-condensed);
+  white-space: nowrap;
+  text-decoration: none;
+  
+  /* Clickable cursor */
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  
+  /* Subtle hover effect */
+  transition: background 150ms ease-in-out, border-color 150ms ease-in-out;
+}
+
+.github-streak-badge:hover {
+  background: var(--color-canvas-inset);
+  border-color: var(--color-border-default);
+  text-decoration: none;
+}
+
+/* Warning state (incident today) - slightly more prominent */
+.github-streak-badge--warning {
+  color: var(--color-danger-fg);
+  border-color: var(--color-danger-muted);
+}
+
+/* Unknown state (no incidents on record) */
+.github-streak-badge--unknown {
+  color: var(--color-fg-muted);
+}
+
+/* Milestone celebration animation (400ms pulse per spec) */
+@keyframes milestone-pulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.github-streak-badge--milestone {
+  animation: milestone-pulse 400ms ease-out;
+}
+
+/* Light theme adjustments */
+[data-theme="light"] .github-streak-badge {
+  background: var(--color-canvas-subtle);
+}
+
+/* ============================================
    Share Button & Modal
    Added for Export/Share Functionality
    ============================================ */
