@@ -1719,6 +1719,12 @@ function startDashboard() {
         // This clears the 8-second timer and removes all highlights
         window.itemHighlighterInstance.reset();
         
+        // Invalidate DetailPanel's cached DOM references so they will be
+        // refreshed when the active page changes on the next render call
+        if (window.detailPanelInstance) {
+          window.detailPanelInstance.invalidateCache();
+        }
+        
         // Apply page-specific item timing (triple on blog/changelog)
         applyItemIntervalForPage(pageName);
         

@@ -14,8 +14,18 @@ export class DetailPanel {
   constructor({ containerId = 'detail-panel' } = {}) {
     this.containerId = containerId;
     this.container = null;
+    this.activePage = null; // Cache active page reference to avoid re-querying on every update
     this.isTransitioning = false; // Prevent overlapping transitions
     this.currentItemId = null; // Track current item to prevent stale updates
+  }
+  
+  /**
+   * Invalidate cached DOM references (call when page rotation occurs)
+   * Forces render() / renderWithAsyncContent() to re-query the new active page
+   */
+  invalidateCache() {
+    this.container = null;
+    this.activePage = null;
   }
   
   /**
@@ -26,14 +36,18 @@ export class DetailPanel {
    */
   async render(item, options = {}) {
     const { preserveHtml = false } = options;
-    // Get active page's detail panel
-    const activePage = document.querySelector('.carousel-page.active');
-    if (!activePage) {
+    // Get active page's detail panel - re-query only when cache is stale
+    const currentActivePage = document.querySelector('.carousel-page.active');
+    if (!currentActivePage) {
       console.warn('DetailPanel: No active page found');
       return;
     }
     
-    this.container = activePage.querySelector('.detail-panel');
+    if (this.activePage !== currentActivePage || !this.container) {
+      this.activePage = currentActivePage;
+      this.container = currentActivePage.querySelector('.detail-panel');
+    }
+    
     if (!this.container) {
       console.error('DetailPanel: No .detail-panel found on active page');
       return;
@@ -82,14 +96,18 @@ export class DetailPanel {
     const itemId = `${item.link || ''}-${Date.now()}-${++DetailPanel.itemIdCounter}`;
     this.currentItemId = itemId;
     
-    // Get active page's detail panel
-    const activePage = document.querySelector('.carousel-page.active');
-    if (!activePage) {
+    // Get active page's detail panel - re-query only when cache is stale
+    const currentActivePage = document.querySelector('.carousel-page.active');
+    if (!currentActivePage) {
       console.warn('DetailPanel: No active page found');
       return;
     }
     
-    this.container = activePage.querySelector('.detail-panel');
+    if (this.activePage !== currentActivePage || !this.container) {
+      this.activePage = currentActivePage;
+      this.container = currentActivePage.querySelector('.detail-panel');
+    }
+    
     if (!this.container) {
       console.error('DetailPanel: No .detail-panel found on active page');
       return;
@@ -208,19 +226,6 @@ export class DetailPanel {
   updateContent(content, item) {
     if (!this.container) {
       console.warn('DetailPanel.updateContent: No container reference');
-      return;
-    }
-    
-    // Re-query container to ensure it's still valid (in case DOM changed)
-    const activePage = document.querySelector('.carousel-page.active');
-    if (!activePage) {
-      console.warn('DetailPanel.updateContent: No active page found');
-      return;
-    }
-    
-    this.container = activePage.querySelector('.detail-panel');
-    if (!this.container) {
-      console.error('DetailPanel.updateContent: No .detail-panel found on active page');
       return;
     }
     
