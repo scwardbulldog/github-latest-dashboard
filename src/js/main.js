@@ -1581,9 +1581,9 @@ function startDashboard() {
         window.multiSourceRefreshController.startAll();
     }
     
-    // Keep the global refresh interval controller for UI controls ("Refresh Now" button)
-    // But don't start its timer since we're using per-source timers now
-    // window.refreshIntervalController.start(); // Commented out - using per-source timers instead
+    // Note: Global refresh interval controller is initialized for UI controls only
+    // (provides "Refresh Now" button functionality). Per-source timers are used for
+    // actual automatic refresh, allowing each source to refresh at its own optimal rate.
 }
 
 // Initialize with config and start dashboard
@@ -1619,6 +1619,8 @@ initializeWithConfig().then(() => {
         onRefresh: fetchAllData,
         onIntervalChange: (newIntervalMs) => {
             // Update default interval for multi-source controller
+            // This keeps per-source timers in sync when the user changes the global
+            // refresh interval via UI controls (for sources without specific intervals)
             if (window.multiSourceRefreshController) {
                 window.multiSourceRefreshController.updateDefaultInterval(newIntervalMs);
             }
