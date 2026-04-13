@@ -618,95 +618,6 @@ body {
     min-height: 0; /* Allow flex item to shrink below content size */
 }
 
-.status-resolved-section {
-    flex: 0 0 40%;
-    overflow-y: auto;
-    overflow-x: hidden;
-    background: var(--color-canvas-default);
-    border-top: 2px solid var(--color-border-strong);
-    padding: var(--space-4);
-}
-
-/* Hide resolved section if grid is empty */
-.status-resolved-section:has(.status-resolved-grid:empty) {
-    display: none;
-}
-
-/* When resolved section is hidden, active section takes full height */
-.status-page-layout:has(.status-resolved-grid:empty) .status-active-section {
-    flex: 1 1 100%;
-}
-
-/* Resolved Incidents Grid - Multi-column compact layout */
-.status-resolved-grid {
-    height: 100%;
-}
-
-.status-resolved-grid:empty {
-    display: none;
-}
-
-.status-resolved-grid-header {
-    font-size: var(--fontsize-small);
-    font-weight: var(--fontweight-semibold);
-    color: var(--color-fg-muted);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: var(--space-4);
-}
-
-.status-resolved-items {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    grid-template-rows: repeat(2, auto);
-    gap: var(--space-4);
-}
-
-.status-resolved-card {
-    background: var(--color-resolved-card-bg);
-    border: 1px solid var(--color-border-default);
-    border-left: 3px solid var(--color-success-fg);
-    border-radius: 6px;
-    padding: var(--space-3);
-    opacity: 0.7;
-    transition: opacity 0.2s;
-}
-
-.status-resolved-card:hover {
-    opacity: 0.9;
-}
-
-.status-resolved-title {
-    font-size: var(--fontsize-small);
-    font-weight: var(--fontweight-semibold);
-    color: var(--color-fg-default);
-    margin-bottom: var(--space-2);
-    display: flex;
-    align-items: center;
-    gap: var(--space-1);
-    /* Truncate to single line */
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.status-resolved-title .status-symbol {
-    font-size: 0.875rem;
-    flex-shrink: 0; /* Prevent symbol from shrinking */
-}
-
-.status-resolved-meta {
-    font-size: var(--fontsize-small);
-    color: var(--color-fg-muted);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.status-resolved-status {
-    text-transform: capitalize;
-}
-
 /* Item preview - visible 1-line truncated descriptions */
 .item-preview {
     display: -webkit-box;
@@ -878,4 +789,176 @@ body {
 .theme-toggle__icon {
     font-size: 1em;
     line-height: 1;
+}
+
+/* ============================================================================
+   Incident History Timeline Styles
+   Timeline view of recent resolved incidents from past 7 days
+   ============================================================================ */
+
+/* History section container - replaces old resolved grid */
+.status-history-section {
+    flex: 0 0 40%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    background: var(--color-canvas-default);
+    border-top: 2px solid var(--color-border-strong);
+    padding: var(--space-4);
+}
+
+/* Hide history section if timeline is empty */
+.status-history-section:has(.incident-history-timeline:empty) {
+    display: none;
+}
+
+/* When history section is hidden, active section takes full height */
+.status-page-layout:has(.incident-history-timeline:empty) .status-active-section {
+    flex: 1 1 100%;
+}
+
+/* Incident history timeline container */
+.incident-history-timeline {
+    height: 100%;
+}
+
+.incident-history-timeline:empty {
+    display: none;
+}
+
+/* Timeline header */
+.incident-history-header {
+    font-size: var(--fontsize-small);
+    font-weight: var(--fontweight-semibold);
+    color: var(--color-fg-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: var(--space-4);
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.incident-history-header::before {
+    content: '📅';
+    font-size: var(--fontsize-base);
+}
+
+/* Timeline items grid - 2 columns for TV viewing */
+.incident-history-items {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-3);
+}
+
+/* Individual incident timeline card */
+.incident-history-card {
+    background: var(--color-resolved-card-bg);
+    border: 1px solid var(--color-border-default);
+    border-radius: 6px;
+    padding: var(--space-3);
+    transition: opacity 0.2s, border-color 0.2s;
+}
+
+.incident-history-card:hover {
+    opacity: 1;
+    border-color: var(--color-border-strong);
+}
+
+/* Severity-based left border colors */
+.incident-history-card.severity-major {
+    border-left: 4px solid var(--color-danger-fg);
+}
+
+.incident-history-card.severity-minor {
+    border-left: 4px solid var(--color-attention-fg);
+}
+
+.incident-history-card.severity-maintenance {
+    border-left: 4px solid var(--color-accent-fg);
+}
+
+.incident-history-card.severity-none {
+    border-left: 4px solid var(--color-success-fg);
+}
+
+/* Card header with severity icon and title */
+.incident-history-card-header {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-2);
+    margin-bottom: var(--space-2);
+}
+
+.incident-severity-icon {
+    font-size: var(--fontsize-base);
+    flex-shrink: 0;
+    line-height: 1.3;
+}
+
+.incident-history-title {
+    font-size: var(--fontsize-small);
+    font-weight: var(--fontweight-semibold);
+    color: var(--color-fg-default);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    line-height: var(--lineheight-condensed);
+}
+
+/* Metadata row: resolution time + duration */
+.incident-history-meta {
+    font-size: var(--fontsize-small);
+    color: var(--color-fg-muted);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-bottom: var(--space-2);
+}
+
+.incident-meta-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+}
+
+.incident-meta-label {
+    color: var(--color-fg-muted);
+}
+
+.incident-meta-value {
+    color: var(--color-fg-default);
+    font-weight: var(--fontweight-semibold);
+}
+
+/* Affected services list */
+.incident-services {
+    font-size: var(--fontsize-small);
+    color: var(--color-fg-muted);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+}
+
+.incident-service-tag {
+    background: var(--color-overlay-subtle);
+    padding: 2px var(--space-2);
+    border-radius: 3px;
+    font-size: 12px;
+    color: var(--color-fg-subtle);
+}
+
+/* Resolution status indicator */
+.incident-resolution {
+    font-size: 12px;
+    color: var(--color-success-fg);
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    margin-top: var(--space-2);
+}
+
+.incident-resolution::before {
+    content: '✓';
+    font-weight: var(--fontweight-semibold);
 }

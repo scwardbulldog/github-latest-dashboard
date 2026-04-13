@@ -66,3 +66,44 @@ export function truncate(text, maxLength) {
     if (text.length <= maxLength) return text;
     return text.substring(0, maxLength) + '...';
 }
+
+/**
+ * Format duration between two dates as human-readable string
+ * @param {string} startDateString - ISO date string for start time
+ * @param {string} endDateString - ISO date string for end time
+ * @returns {string} Formatted duration string (e.g., "3h 24m", "2d 5h", "45m")
+ */
+export function formatDuration(startDateString, endDateString) {
+    // Handle null, undefined, or invalid date strings
+    if (!startDateString || !endDateString) {
+        return 'Unknown';
+    }
+    
+    const startDate = new Date(startDateString);
+    const endDate = new Date(endDateString);
+    
+    // Check if dates are valid
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+        return 'Unknown';
+    }
+    
+    // Calculate duration in milliseconds
+    const durationMs = Math.abs(endDate - startDate);
+    
+    // Convert to minutes, hours, days
+    const minutes = Math.floor(durationMs / (1000 * 60));
+    const hours = Math.floor(minutes / 60);
+    const days = Math.floor(hours / 24);
+    
+    if (days > 0) {
+        const remainingHours = hours % 24;
+        return remainingHours > 0 ? `${days}d ${remainingHours}h` : `${days}d`;
+    } else if (hours > 0) {
+        const remainingMinutes = minutes % 60;
+        return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}m` : `${hours}h`;
+    } else if (minutes > 0) {
+        return `${minutes}m`;
+    } else {
+        return '< 1m';
+    }
+}
