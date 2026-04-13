@@ -10,6 +10,15 @@ import { DetailPanel } from './detail-panel.js';
 // Import persistent alert component (Story 4.3)
 import { PersistentAlert } from './persistent-alert.js';
 
+// Import theme toggle
+import { ThemeToggle } from './theme-toggle.js';
+
+// Import time-based messages component (Easter Egg)
+import { TimeBasedMessages } from './time-based-messages.js';
+
+// Import Matrix rain easter egg for incident detection
+import { checkForNewIncidents } from './matrix-rain.js';
+
 // Import Octocat cameo Easter egg
 import { OctocatCameo } from './octocat-cameo.js';
 
@@ -36,12 +45,28 @@ import {
     getItemInterval
 } from './config-loader.js';
 
+// Import ExportController for share/export functionality
+import { ExportController } from './export-controller.js';
+
 // Configuration - loaded from config.json with fallback defaults
 // These will be populated by initializeWithConfig()
 let REFRESH_INTERVAL = 5 * 60 * 1000; // 5 minutes (default, updated from config)
 
 // Network status state (Story 4.1)
 let isOffline = false;
+
+// Global ExportController instance
+let exportController = null;
+
+// Share modal state
+let currentShareItem = null;
+
+// Track if dashboard was paused by share modal (to avoid resume if user had already paused)
+let pausedByShareModal = false;
+
+// QR code display timer
+let qrDisplayTimer = null;
+let qrCountdownInterval = null;
 
 /**
  * Get last update time for a source
@@ -118,6 +143,33 @@ function updateLiveIndicator() {
 }
 
 /**
+ * Create a share button element for an item
+ * @param {Object} item - The item data
+ * @param {number} index - The item index
+ * @returns {HTMLElement} Share button element
+ */
+function createShareButton(item, index) {
+    const shareBtn = document.createElement('button');
+    shareBtn.className = 'btn-share';
+    shareBtn.title = 'Share this item';
+    shareBtn.dataset.itemIndex = index;
+    shareBtn.innerHTML = `
+        <svg class="icon-share" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M13 7.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zm-11 6a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zm11 0a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z"></path>
+            <path d="M5.7 11.2L10.3 13.8M10.3 2.2L5.7 4.8" stroke="currentColor" stroke-width="1.5"></path>
+        </svg>
+    `;
+    
+    // Attach click handler
+    shareBtn.addEventListener('click', (e) => {
+        e.stopPropagation(); // Prevent item selection
+        openShareModal(item);
+    });
+    
+    return shareBtn;
+}
+
+/**
  * Shared RSS list renderer - DRY implementation for all RSS-based pages
  * @param {Object} data - RSS data from API with items array
  * @param {string} containerId - DOM element ID for the list container
@@ -148,6 +200,8 @@ function renderRSSList(data, containerId, sourceName, feedName) {
         itemEl.className = 'list-item';
         itemEl.dataset.index = index;
         itemEl.dataset.link = item.link || '';
+        itemEl.dataset.source = sourceName;
+        itemEl.dataset.pubDate = item.pubDate || '';
         
         // Store full content HTML for detail panel rendering (use 'content' field, fallback to 'description')
         itemEl.dataset.fullDescription = item.content || item.description || '';
@@ -156,11 +210,42 @@ function renderRSSList(data, containerId, sourceName, feedName) {
         const timestamp = formatDate(item.pubDate);
         const description = truncate(stripHtml(item.description || ''), 120);
         
-        itemEl.innerHTML = `
-            <div class="list-item-title">${title}</div>
-            <div class="list-item-timestamp">${timestamp}</div>
-            <div class="list-item-description">${description}</div>
-        `;
+        // Create item header with title and share button
+        const headerEl = document.createElement('div');
+        headerEl.style.display = 'flex';
+        headerEl.style.justifyContent = 'space-between';
+        headerEl.style.alignItems = 'flex-start';
+        headerEl.style.gap = 'var(--space-2)';
+        
+        const titleEl = document.createElement('div');
+        titleEl.className = 'list-item-title';
+        titleEl.textContent = title;
+        titleEl.style.flex = '1';
+        headerEl.appendChild(titleEl);
+        
+        // Add share button
+        const shareBtn = createShareButton({
+            title,
+            link: item.link,
+            description: stripHtml(item.description || ''),
+            content: stripHtml(item.content || item.description || ''),
+            pubDate: item.pubDate,
+            source: sourceName
+        }, index);
+        headerEl.appendChild(shareBtn);
+        
+        itemEl.appendChild(headerEl);
+        
+        // Add timestamp and description
+        const timestampEl = document.createElement('div');
+        timestampEl.className = 'list-item-timestamp';
+        timestampEl.textContent = timestamp;
+        itemEl.appendChild(timestampEl);
+        
+        const descEl = document.createElement('div');
+        descEl.className = 'list-item-description';
+        descEl.textContent = description;
+        itemEl.appendChild(descEl);
         
         // Append to fragment (no DOM reflow)
         fragment.appendChild(itemEl);
@@ -640,34 +725,58 @@ function togglePause() {
     const pauseText = document.getElementById('pauseText');
     
     if (isPaused) {
-        // Pause mode
+        // Pause mode - freeze everything at current position
         pauseIcon.textContent = '▶';
         pauseText.textContent = 'Resume';
         updateLiveIndicator();
         
-        // Clear refresh interval and progress animation (top bar)
+        // Pause data refresh (store elapsed for top progress bar)
         if (refreshIntervalId) {
             clearInterval(refreshIntervalId);
+            refreshIntervalId = null;
+        }
+        // Store elapsed time for top progress bar
+        if (progressStartTime) {
+            progressElapsedBeforePause = Date.now() - progressStartTime;
         }
         if (progressAnimationFrame) {
             cancelAnimationFrame(progressAnimationFrame);
             progressAnimationFrame = null;
         }
-        document.getElementById('progressBar').style.width = '0%';
-        // Note: Carousel continues during pause, so bottom bar + octocat keep animating
+        
+        // Pause carousel (preserves position)
+        if (window.carouselInstance) {
+            window.carouselInstance.pause();
+        }
+        
+        // Pause item highlighting (preserves current item)
+        if (window.itemHighlighterInstance) {
+            window.itemHighlighterInstance.pause();
+        }
     } else {
-        // Resume mode
+        // Resume mode - continue from where we left off
         pauseIcon.textContent = '⏸';
         pauseText.textContent = 'Pause';
-        
-        // Preserve network state across pause/resume - don't change isOffline
-        // Show current state immediately (Offline if it was offline, Live if it was online)
         updateLiveIndicator();
         
-        // Restart refresh interval and fetch immediately
-        // fetchAllData() will update isOffline state based on actual network status
-        fetchAllData();
+        // Resume top progress bar from where it was
+        if (progressElapsedBeforePause > 0) {
+            progressStartTime = Date.now() - progressElapsedBeforePause;
+            resumeProgressBar();
+        }
+        
+        // Resume data refresh interval (don't fetch immediately to avoid jarring)
         refreshIntervalId = setInterval(fetchAllData, REFRESH_INTERVAL);
+        
+        // Resume carousel rotation
+        if (window.carouselInstance) {
+            window.carouselInstance.resume();
+        }
+        
+        // Resume item highlighting
+        if (window.itemHighlighterInstance) {
+            window.itemHighlighterInstance.resume();
+        }
     }
 }
 
@@ -676,10 +785,12 @@ function togglePause() {
 // Octocat handled by CarouselController on bottom bar
 let progressAnimationFrame = null;
 let progressStartTime;
+let progressElapsedBeforePause = 0;
 
 function startProgressBar() {
     const progressBar = document.getElementById('progressBar');
     progressStartTime = Date.now();
+    progressElapsedBeforePause = 0;
     
     progressBar.style.width = '0%';
     
@@ -706,6 +817,35 @@ function startProgressBar() {
     }
     
     // Start animation loop
+    progressAnimationFrame = requestAnimationFrame(updateProgressBar);
+}
+
+function resumeProgressBar() {
+    const progressBar = document.getElementById('progressBar');
+    
+    // Cancel any existing animation
+    if (progressAnimationFrame) {
+        cancelAnimationFrame(progressAnimationFrame);
+    }
+    
+    function updateProgressBar() {
+        const elapsed = Date.now() - progressStartTime;
+        const progress = Math.min((elapsed / REFRESH_INTERVAL) * 100, 100);
+        
+        progressBar.style.width = progress + '%';
+        
+        // Continue animation until complete
+        if (progress < 100) {
+            progressAnimationFrame = requestAnimationFrame(updateProgressBar);
+        } else {
+            // Reset after brief hold at 100%
+            setTimeout(() => {
+                progressBar.style.width = '0%';
+            }, 500);
+        }
+    }
+    
+    // Resume animation loop
     progressAnimationFrame = requestAnimationFrame(updateProgressBar);
 }
 
@@ -807,6 +947,14 @@ async function fetchAllData() {
                 if (window.persistentAlertInstance) {
                     window.persistentAlertInstance.hide();
                 }
+            }
+            
+            // Easter Egg: Check for new major/critical incidents and trigger Matrix rain
+            try {
+                checkForNewIncidents(statusData);
+            } catch (error) {
+                console.error('fetchAllData: Error checking for Matrix rain trigger:', error);
+                // Non-critical - don't affect dashboard operation
             }
         } else {
             renderErrorState('status-list', 'Unable to load status');
@@ -1008,6 +1156,19 @@ if (window.persistentAlertInstance) {
 
 window.persistentAlertInstance = new PersistentAlert();
 
+// Initialize theme toggle
+window.themeToggleInstance = new ThemeToggle();
+window.themeToggleInstance.init();
+
+// Initialize time-based messages (Easter Egg)
+if (window.timeBasedMessagesInstance) {
+  // Clean up if exists (hot reload support)
+  window.timeBasedMessagesInstance.stop();
+  window.timeBasedMessagesInstance = null;
+}
+
+window.timeBasedMessagesInstance = new TimeBasedMessages();
+
 // Initialize Octocat cameo Easter egg
 // Mona appears every 30 minutes and walks across the bottom of the screen
 if (window.octocatCameoInstance) {
@@ -1143,6 +1304,10 @@ function startDashboard() {
     // Start carousel
     window.carouselInstance.start();
     
+    // Start time-based messages (Easter Egg)
+    // Independent of carousel and item highlighting (FR-16)
+    window.timeBasedMessagesInstance.start();
+    
     // ItemHighlighter will be initialized in fetchAllData() after data is loaded
     // This ensures the first item is highlighted immediately when data is ready
     
@@ -1171,6 +1336,208 @@ initializeWithConfig().then(() => {
 
 // Pause button handler
 document.getElementById('pauseButton').addEventListener('click', togglePause);
+
+// Spacebar keyboard shortcut for pause/resume
+// Provides quick keyboard access for kiosk/TV displays
+window.addEventListener('keydown', (event) => {
+    // Only trigger on spacebar, ignore if user is typing in an input field or contenteditable element
+    if (event.code === 'Space' && 
+        event.target.tagName !== 'INPUT' && 
+        event.target.tagName !== 'TEXTAREA' &&
+        event.target.contentEditable !== 'true') {
+        event.preventDefault(); // Prevent page scroll
+        
+        // Toggle pause state
+        togglePause();
+        
+        // Visual feedback: briefly pulse the pause button
+        const pauseButton = document.getElementById('pauseButton');
+        if (pauseButton) {
+            pauseButton.classList.add('keyboard-activated');
+            setTimeout(() => {
+                pauseButton.classList.remove('keyboard-activated');
+            }, 300);
+        }
+    }
+});
+
+// ============================================================================
+// Export/Share Functionality
+// ============================================================================
+
+/**
+ * Initialize export controller and share modal
+ */
+function initializeExportFunctionality() {
+    exportController = new ExportController();
+    
+    const shareModal = document.getElementById('shareModal');
+    const closeBtn = document.getElementById('closeShareModal');
+    const backdrop = shareModal?.querySelector('.share-modal-backdrop');
+    
+    // Close modal handlers
+    if (closeBtn) {
+        closeBtn.addEventListener('click', closeShareModal);
+    }
+    
+    if (backdrop) {
+        backdrop.addEventListener('click', closeShareModal);
+    }
+    
+    // Export format buttons (now only handles 'link' button)
+    const exportButtons = document.querySelectorAll('.btn-export');
+    exportButtons.forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const format = btn.dataset.format;
+            await handleExport(format);
+        });
+    });
+    
+    // Keyboard shortcut: Ctrl+Shift+S
+    document.addEventListener('keydown', (e) => {
+        if (e.ctrlKey && e.shiftKey && e.key === 'S') {
+            e.preventDefault();
+            // Get currently highlighted item
+            const highlightedItem = document.querySelector('.list-item--highlighted');
+            if (highlightedItem) {
+                const itemData = extractItemData(highlightedItem);
+                openShareModal(itemData);
+            }
+        }
+    });
+}
+
+/**
+ * Open share modal with item data
+ * Automatically pauses the dashboard while modal is open
+ * Shows QR code immediately and starts 30-second auto-close timer
+ * @param {Object} item - Item data
+ */
+async function openShareModal(item) {
+    currentShareItem = item;
+    const shareModal = document.getElementById('shareModal');
+    const shareTitle = document.getElementById('share-item-title');
+    const qrImage = document.getElementById('qrCodeImage');
+    const qrTimer = document.getElementById('qrTimer');
+    
+    // Pause dashboard if not already paused
+    if (!isPaused) {
+        pausedByShareModal = true;
+        togglePause();
+    }
+    
+    if (shareTitle) {
+        shareTitle.textContent = item.title || 'Untitled';
+    }
+    
+    // Clear any existing timers
+    clearQrDisplayTimers();
+    
+    // Generate QR code immediately
+    if (qrImage && exportController && item.link) {
+        try {
+            const qrDataUrl = await exportController.generateQRCode(item, 'png');
+            qrImage.src = qrDataUrl;
+        } catch (error) {
+            console.error('Failed to generate QR code:', error);
+            // Set a placeholder or error image
+            qrImage.alt = 'Failed to load QR code';
+        }
+    }
+    
+    if (shareModal) {
+        shareModal.removeAttribute('hidden');
+    }
+    
+    // Start 30 second countdown timer
+    let secondsRemaining = 30;
+    if (qrTimer) {
+        qrTimer.textContent = `Auto-closing in ${secondsRemaining} seconds...`;
+    }
+    
+    qrCountdownInterval = setInterval(() => {
+        secondsRemaining--;
+        if (qrTimer) {
+            if (secondsRemaining > 0) {
+                qrTimer.textContent = `Auto-closing in ${secondsRemaining} second${secondsRemaining === 1 ? '' : 's'}...`;
+            } else {
+                qrTimer.textContent = 'Closing...';
+            }
+        }
+    }, 1000);
+    
+    // Auto-close after 30 seconds
+    qrDisplayTimer = setTimeout(() => {
+        closeShareModal();
+    }, 30000);
+}
+
+/**
+ * Close share modal
+ * Resumes dashboard if it was paused by the modal
+ */
+function closeShareModal() {
+    const shareModal = document.getElementById('shareModal');
+    if (shareModal) {
+        shareModal.setAttribute('hidden', '');
+    }
+    
+    // Clear any QR display timers
+    clearQrDisplayTimers();
+    
+    // Resume dashboard if we paused it
+    if (pausedByShareModal && isPaused) {
+        pausedByShareModal = false;
+        togglePause();
+    }
+    
+    currentShareItem = null;
+}
+
+/**
+ * Clear QR display timers
+ */
+function clearQrDisplayTimers() {
+    if (qrDisplayTimer) {
+        clearTimeout(qrDisplayTimer);
+        qrDisplayTimer = null;
+    }
+    if (qrCountdownInterval) {
+        clearInterval(qrCountdownInterval);
+        qrCountdownInterval = null;
+    }
+}
+
+/**
+ * Handle export based on selected format
+ * Now only handles 'link' format since QR is shown automatically
+ * @param {string} format - Export format ('link')
+ */
+async function handleExport(format) {
+    if (!currentShareItem || !exportController) {
+        console.error('No item selected or export controller not initialized');
+        return;
+    }
+    
+    try {
+        if (format === 'link') {
+            await exportController.copyLink(currentShareItem);
+            // Don't close modal - let user see the QR code still
+            // Timer will auto-close
+        }
+    } catch (error) {
+        console.error('Export error:', error);
+        exportController.showToast('Failed to copy link', 'error');
+    }
+}
+
+// Initialize export functionality after DOM is fully loaded
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeExportFunctionality);
+} else {
+    // DOM already loaded
+    initializeExportFunctionality();
+}
 
 // Update timestamp every second
 setInterval(updateTimestamp, 1000);

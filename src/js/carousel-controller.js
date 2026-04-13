@@ -29,6 +29,10 @@ export class CarouselController {
     this.startTime = null;      // Timestamp when current page started
     this.animationFrame = null; // requestAnimationFrame handle
     
+    // Pause/resume state
+    this.isPaused = false;
+    this.elapsedBeforePause = 0; // Time elapsed before pause
+    
     // Timer accuracy tracking (for burn-in testing)
     this.lastRotation = null;   // Timestamp of last rotation
     this.rotationCount = 0;     // Total rotations since start
@@ -77,6 +81,61 @@ export class CarouselController {
       cancelAnimationFrame(this.animationFrame);
       this.animationFrame = null;
     }
+  }
+  
+  /**
+   * Pause rotation - freezes at current position
+   */
+  pause() {
+    if (this.isPaused) return;
+    this.isPaused = true;
+    
+    // Store elapsed time before stopping
+    if (this.startTime) {
+      this.elapsedBeforePause = Date.now() - this.startTime;
+    }
+    
+    // Stop timer but preserve state
+    if (this.timer) {
+      clearTimeout(this.timer);
+      this.timer = null;
+    }
+    
+    // Stop progress animation but preserve position
+    if (this.animationFrame) {
+      cancelAnimationFrame(this.animationFrame);
+      this.animationFrame = null;
+    }
+  }
+  
+  /**
+   * Resume rotation from paused position
+   */
+  resume() {
+    if (!this.isPaused) return;
+    this.isPaused = false;
+    
+    // Initialize DOM refs if needed
+    this.initProgressBar();
+    
+    // Calculate remaining time
+    const remainingTime = Math.max(0, this.interval - this.elapsedBeforePause);
+    
+    // Adjust startTime so progress calculation continues correctly
+    this.startTime = Date.now() - this.elapsedBeforePause;
+    
+    // Restart progress animation
+    this.updateProgress();
+    
+    // Schedule next rotation with remaining time
+    this.timer = setTimeout(() => {
+      try {
+        this.rotatePage();
+      } catch (error) {
+        console.error('CarouselController: rotatePage failed', error);
+        this.stop();
+      }
+    }, remainingTime);
   }
   
   /**

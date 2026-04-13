@@ -29,7 +29,14 @@
     --color-danger-alt: #f85149;          /* Alternate danger */
     --color-success-badge: #238636;       /* Badge success */
     --color-fg-on-accent: #ffffff;        /* Text on colored badges */
-    
+
+    /* Overlay Tints - Transparent layering over canvas */
+    --color-overlay-subtle: rgba(255, 255, 255, 0.03);   /* Card backgrounds */
+    --color-overlay-mild: rgba(255, 255, 255, 0.05);      /* Hover backgrounds */
+    --color-overlay-strong: rgba(255, 255, 255, 0.15);    /* Active/keyboard states */
+    --color-resolved-card-bg: rgba(255, 255, 255, 0.02);  /* Resolved incident card bg */
+    --color-status-text-bg: rgba(255, 255, 255, 0.05);    /* Status text badge */
+
     /* Spacing Scale - 8px base unit */
     --space-1: 4px;    /* Micro spacing (tight gaps, icon margins) */
     --space-2: 8px;    /* Compact spacing (list items, small gaps) */
@@ -53,6 +60,46 @@
     /* Typography - Line Heights */
     --lineheight-condensed: 1.25;   /* Tight spacing for headers */
     --lineheight-default: 1.5;      /* Comfortable reading for body text */
+}
+
+/* ============================================================================
+   Light Theme Overrides
+   Applied when [data-theme="light"] is set on <html>
+   ============================================================================ */
+
+[data-theme="light"] {
+    /* Foundation Colors - Light Palette */
+    --color-canvas-default: #ffffff;      /* Main background */
+    --color-canvas-subtle: #f6f8fa;       /* Elevated surfaces (cards, panels) */
+    --color-fg-default: #1f2328;          /* Primary text color */
+    --color-fg-muted: #636c76;            /* Secondary text, timestamps, metadata */
+    --color-border-default: #d0d7de;      /* Subtle borders and dividers */
+
+    /* Semantic Colors - Light Contextual */
+    --color-accent-fg: #0969da;           /* Links, primary actions */
+    --color-accent-emphasis: #0550ae;     /* Link hover, active states */
+    --color-success-fg: #1a7f37;          /* Operational status, success states */
+    --color-attention-fg: #9a6700;        /* Degraded status, warnings */
+    --color-danger-fg: #cf222e;           /* Critical status, errors */
+    --color-sponsor-fg: #8250df;          /* Special emphasis, featured content */
+    --color-fg-subtle: #6e7781;           /* Subtle/tertiary text */
+    --color-fg-muted-alt: #57606a;        /* Alternate muted text */
+    --color-border-strong: #afb8c1;       /* Stronger borders/dividers */
+    --color-attention-alt: #bf8700;       /* Alternate warning */
+    --color-success-alt: #2da44e;         /* Alternate success */
+    --color-success-deep: #116329;        /* Deep success */
+    --color-attention-deep: #953800;      /* Deep warning */
+    --color-accent-alt: #0969da;          /* Alternate accent */
+    --color-danger-alt: #a40e26;          /* Alternate danger */
+    --color-success-badge: #1a7f37;       /* Badge success */
+    --color-fg-on-accent: #ffffff;        /* Text on colored badges */
+
+    /* Overlay Tints - Transparent layering over canvas */
+    --color-overlay-subtle: rgba(0, 0, 0, 0.03);          /* Card backgrounds */
+    --color-overlay-mild: rgba(0, 0, 0, 0.04);            /* Hover backgrounds */
+    --color-overlay-strong: rgba(0, 0, 0, 0.1);           /* Active/keyboard states */
+    --color-resolved-card-bg: rgba(0, 0, 0, 0.02);        /* Resolved incident card bg */
+    --color-status-text-bg: rgba(0, 0, 0, 0.04);          /* Status text badge */
 }
 
 /* ============================================================================
@@ -203,8 +250,14 @@ body {
 }
 
 .pause-button:hover {
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--color-overlay-mild);
     border-color: var(--color-fg-subtle);
+}
+
+.pause-button.keyboard-activated {
+    background: var(--color-overlay-strong);
+    border-color: var(--color-accent-fg);
+    transform: scale(1.05);
 }
 
 .pause-icon {
@@ -326,7 +379,7 @@ body {
 }
 
 .item {
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--color-overlay-subtle);
     border: 1px solid var(--color-border-strong);
     border-radius: 6px;
     padding: var(--space-3);
@@ -610,7 +663,7 @@ body {
 }
 
 .status-resolved-card {
-    background: rgba(255, 255, 255, 0.02);
+    background: var(--color-resolved-card-bg);
     border: 1px solid var(--color-border-default);
     border-left: 3px solid var(--color-success-fg);
     border-radius: 6px;
@@ -684,7 +737,7 @@ body {
     letter-spacing: 0.5px;
     padding: 3px var(--space-2);
     border-radius: 3px;
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--color-status-text-bg);
     margin-right: 6px;
 }
 
@@ -796,4 +849,33 @@ body {
 /* Hide placeholder content during initial load */
 .dashboard-container.loading .list-item {
     display: none;
+}
+
+/* ============================================================================
+   Theme Toggle Button
+   ============================================================================ */
+
+.theme-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: transparent;
+    border: 1px solid var(--color-border-strong);
+    color: var(--color-fg-default);
+    padding: 6px calc(var(--space-2) + var(--space-1));
+    border-radius: 6px;
+    font-size: var(--fontsize-small);
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+    font-family: inherit;
+}
+
+.theme-toggle:hover {
+    background: var(--color-overlay-mild);
+    border-color: var(--color-fg-subtle);
+}
+
+.theme-toggle__icon {
+    font-size: 1em;
+    line-height: 1;
 }
