@@ -103,9 +103,9 @@ export class ThemeToggle {
     init() {
         this._button = document.getElementById('themeToggle');
 
-        // Resolve initial theme: stored preference > system preference
+        // Resolve initial theme: stored preference > dark mode (kiosk default)
         const stored = getStoredTheme();
-        this._currentTheme = stored !== null ? stored : getSystemPreference();
+        this._currentTheme = stored !== null ? stored : DARK;
 
         applyTheme(this._currentTheme, this._button);
 
