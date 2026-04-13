@@ -25,6 +25,9 @@ import { SettingsManager } from './settings-manager.js';
 // Import configurable refresh interval controller
 import { RefreshIntervalController } from './refresh-interval-controller.js';
 
+// Import multi-source refresh controller for per-source refresh intervals
+import { MultiSourceRefreshController } from './multi-source-refresh-controller.js';
+
 // Import GitHub Uptime Streak Counter (Easter Egg)
 import { GitHubStreakCounter } from './github-streak-counter.js';
 
@@ -54,7 +57,8 @@ import {
     getDefaultConfig,
     getItemsPerFeed,
     getPageInterval,
-    getItemInterval
+    getItemInterval,
+    getRefreshInterval
 } from './config-loader.js';
 
 // Import ExportController for share/export functionality
@@ -1096,6 +1100,170 @@ async function fetchAllData() {
     }
 }
 
+// Individual fetch functions for per-source refresh intervals
+/**
+ * Fetch and render blog data
+ */
+async function fetchBlog() {
+    if (isPaused) return;
+    
+    try {
+        const blogData = await fetchBlogFromApiClient();
+        if (blogData) {
+            renderBlogList(blogData);
+            console.log('✅ Blog data refreshed');
+        } else {
+            renderErrorState('blog-list', 'Unable to load blog posts');
+        }
+    } catch (err) {
+        console.error('fetchBlog: Error:', err);
+        renderErrorState('blog-list', 'Unable to load blog posts');
+    }
+}
+
+/**
+ * Fetch and render changelog data
+ */
+async function fetchChangelog() {
+    if (isPaused) return;
+    
+    try {
+        const changelogData = await fetchChangelogFromApiClient();
+        if (changelogData) {
+            renderChangelogList(changelogData);
+            console.log('✅ Changelog data refreshed');
+        } else {
+            renderErrorState('changelog-list', 'Unable to load changelog');
+        }
+    } catch (err) {
+        console.error('fetchChangelog: Error:', err);
+        renderErrorState('changelog-list', 'Unable to load changelog');
+    }
+}
+
+/**
+ * Fetch and render status data (also handles outage detection and streak counter)
+ */
+async function fetchStatus() {
+    if (isPaused) return;
+    
+    try {
+        const statusData = await fetchStatusFromApiClient();
+        if (statusData) {
+            renderStatusList(statusData);
+            
+            // Check for active outages and update persistent indicator
+            try {
+                const outageData = detectActiveOutages(statusData);
+                if (outageData && window.persistentAlertInstance) {
+                    window.persistentAlertInstance.show(outageData);
+                } else if (window.persistentAlertInstance) {
+                    window.persistentAlertInstance.hide();
+                }
+            } catch (error) {
+                console.error('fetchStatus: Error detecting outages:', error);
+                if (window.persistentAlertInstance) {
+                    window.persistentAlertInstance.hide();
+                }
+            }
+            
+            // Easter Egg: Check for new major/critical incidents
+            try {
+                checkForNewIncidents(statusData);
+            } catch (error) {
+                console.error('fetchStatus: Error checking for Matrix rain trigger:', error);
+            }
+            
+            // Easter Egg: Update GitHub Uptime Streak Counter
+            try {
+                if (window.streakCounterInstance) {
+                    if (!window.streakCounterInitialized) {
+                        window.streakCounterInstance.initialize(statusData);
+                        window.streakCounterInitialized = true;
+                    } else {
+                        window.streakCounterInstance.update(statusData);
+                    }
+                }
+            } catch (error) {
+                console.error('fetchStatus: Error updating streak counter:', error);
+            }
+            
+            console.log('✅ Status data refreshed');
+        } else {
+            renderErrorState('status-list', 'Unable to load status');
+            if (window.persistentAlertInstance) {
+                window.persistentAlertInstance.hide();
+            }
+        }
+    } catch (err) {
+        console.error('fetchStatus: Error:', err);
+        renderErrorState('status-list', 'Unable to load status');
+        if (window.persistentAlertInstance) {
+            window.persistentAlertInstance.hide();
+        }
+    }
+}
+
+/**
+ * Fetch and render VS Code updates data
+ */
+async function fetchVSCode() {
+    if (isPaused) return;
+    
+    try {
+        const vscodeData = await fetchVSCodeFromApiClient();
+        if (vscodeData) {
+            renderVSCodeList(vscodeData);
+            console.log('✅ VS Code data refreshed');
+        } else {
+            renderErrorState('vscode-list', 'Unable to load VS Code updates');
+        }
+    } catch (err) {
+        console.error('fetchVSCode: Error:', err);
+        renderErrorState('vscode-list', 'Unable to load VS Code updates');
+    }
+}
+
+/**
+ * Fetch and render Visual Studio updates data
+ */
+async function fetchVisualStudio() {
+    if (isPaused) return;
+    
+    try {
+        const visualstudioData = await fetchVisualStudioFromApiClient();
+        if (visualstudioData) {
+            renderVisualStudioList(visualstudioData);
+            console.log('✅ Visual Studio data refreshed');
+        } else {
+            renderErrorState('visualstudio-list', 'Unable to load Visual Studio updates');
+        }
+    } catch (err) {
+        console.error('fetchVisualStudio: Error:', err);
+        renderErrorState('visualstudio-list', 'Unable to load Visual Studio updates');
+    }
+}
+
+/**
+ * Fetch and render Anthropic (Claude Code) changelog data
+ */
+async function fetchAnthropic() {
+    if (isPaused) return;
+    
+    try {
+        const anthropicData = await fetchAnthropicFromApiClient();
+        if (anthropicData) {
+            renderAnthropicList(anthropicData);
+            console.log('✅ Anthropic data refreshed');
+        } else {
+            renderErrorState('anthropic-list', 'Unable to load Claude Code changelog');
+        }
+    } catch (err) {
+        console.error('fetchAnthropic: Error:', err);
+        renderErrorState('anthropic-list', 'Unable to load Claude Code changelog');
+    }
+}
+
 // Initialize frame sequence animator with individual cut images
 const canvas = document.getElementById('spriteCanvas');
 const framePaths = Array.from({length: 15}, (_, i) => 
@@ -1408,20 +1576,54 @@ function startDashboard() {
     // ItemHighlighter will be initialized in fetchAllData() after data is loaded
     // This ensures the first item is highlighted immediately when data is ready
     
-    // Auto-refresh using the controller (honours user-configured interval from localStorage)
-    window.refreshIntervalController.start();
+    // Start per-source auto-refresh timers with configured intervals
+    if (window.multiSourceRefreshController) {
+        window.multiSourceRefreshController.startAll();
+    }
+    
+    // Note: Global refresh interval controller is initialized for UI controls only
+    // (provides "Refresh Now" button functionality). Per-source timers are used for
+    // actual automatic refresh, allowing each source to refresh at its own optimal rate.
 }
 
 // Initialize with config and start dashboard
 initializeWithConfig().then(() => {
+    // Get configuration for per-source refresh intervals
+    const config = getConfig();
+    
+    // Create multi-source refresh controller for per-source intervals
+    if (window.multiSourceRefreshController) {
+        window.multiSourceRefreshController.destroy();
+    }
+    window.multiSourceRefreshController = new MultiSourceRefreshController({
+        refreshIntervals: config.refreshIntervals || {},
+        defaultInterval: config.refreshInterval
+    });
+    
+    // Register all data sources with their fetch functions
+    window.multiSourceRefreshController.registerSource('blog', fetchBlog);
+    window.multiSourceRefreshController.registerSource('changelog', fetchChangelog);
+    window.multiSourceRefreshController.registerSource('status', fetchStatus);
+    window.multiSourceRefreshController.registerSource('vscode', fetchVSCode);
+    window.multiSourceRefreshController.registerSource('visualstudio', fetchVisualStudio);
+    window.multiSourceRefreshController.registerSource('anthropic', fetchAnthropic);
+    
     // Create refresh interval controller (reads intervals from localStorage,
     // fallback to defaults; user's UI selection takes precedence over config file).
+    // This controller manages the UI "Refresh Now" button and global refresh interval
+    // The multi-source controller handles actual per-source refresh timers
     if (window.refreshIntervalController) {
         window.refreshIntervalController.destroy();
     }
     window.refreshIntervalController = new RefreshIntervalController({
         onRefresh: fetchAllData,
         onIntervalChange: (newIntervalMs) => {
+            // Update default interval for multi-source controller
+            // This keeps per-source timers in sync when the user changes the global
+            // refresh interval via UI controls (for sources without specific intervals)
+            if (window.multiSourceRefreshController) {
+                window.multiSourceRefreshController.updateDefaultInterval(newIntervalMs);
+            }
             // Keep module-level REFRESH_INTERVAL in sync so the progress bar
             // uses the correct duration after an interval change.
             REFRESH_INTERVAL = newIntervalMs;
