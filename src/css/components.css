@@ -600,12 +600,28 @@
   opacity: 0;
 }
 /* ============================================
-   GitHub Uptime Streak Counter (Easter Egg)
-   Shows days since last major GitHub incident
+   Uptime Streak Badges Container
+   Positioned top-right above detail cards
    ============================================ */
 
-.github-streak-badge {
-  /* Inline display for single-line appearance */
+.uptime-badges-container {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-3);
+  display: flex;
+  flex-direction: row;
+  gap: var(--space-2);
+  z-index: 10;
+}
+
+/* ============================================
+   Shared Uptime Streak Badge Styles
+   Used by both GitHub and Claude streak counters
+   ============================================ */
+
+.github-streak-badge,
+.claude-streak-badge {
+  /* Inline flex container for badge content alignment */
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
@@ -613,7 +629,7 @@
   /* Subtle padding */
   padding: var(--space-1) var(--space-2);
   
-  /* Subtle muted background (not prominent green) */
+  /* Subtle muted background */
   background: var(--color-canvas-subtle);
   color: var(--color-fg-muted);
   
@@ -638,20 +654,23 @@
   transition: background 150ms ease-in-out, border-color 150ms ease-in-out;
 }
 
-.github-streak-badge:hover {
+.github-streak-badge:hover,
+.claude-streak-badge:hover {
   background: var(--color-canvas-inset);
   border-color: var(--color-border-default);
   text-decoration: none;
 }
 
 /* Warning state (incident today) - slightly more prominent */
-.github-streak-badge--warning {
+.github-streak-badge--warning,
+.claude-streak-badge--warning {
   color: var(--color-danger-fg);
   border-color: var(--color-danger-muted);
 }
 
 /* Unknown state (no incidents on record) */
-.github-streak-badge--unknown {
+.github-streak-badge--unknown,
+.claude-streak-badge--unknown {
   color: var(--color-fg-muted);
 }
 
@@ -671,12 +690,14 @@
   }
 }
 
-.github-streak-badge--milestone {
+.github-streak-badge--milestone,
+.claude-streak-badge--milestone {
   animation: milestone-pulse 400ms ease-out;
 }
 
 /* Light theme adjustments */
-[data-theme="light"] .github-streak-badge {
+[data-theme="light"] .github-streak-badge,
+[data-theme="light"] .claude-streak-badge {
   background: var(--color-canvas-subtle);
 }
 
