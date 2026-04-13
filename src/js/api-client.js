@@ -235,11 +235,6 @@ export async function fetchBlog() {
  * @returns {Promise<Object>} Changelog RSS data
  * @throws {Error} If fetch fails and no cached data available
  */
-/**
- * Fetch GitHub Changelog data with caching and retry logic
- * @returns {Promise<Object>} Changelog RSS data
- * @throws {Error} If fetch fails and no cached data available
- */
 export async function fetchChangelog() {
   const sourceName = 'changelog';
   const now = Date.now();

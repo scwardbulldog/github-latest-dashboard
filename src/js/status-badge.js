@@ -148,14 +148,35 @@ export class StatusBadge {
     // Update badge classes
     this.element.className = `status-badge ${stateClass}`;
     
-    // Update badge content
-    this.element.innerHTML = `
-      <span class="status-badge__icon">${stateIcon}</span>
-      <span class="status-badge__text">
-        <span class="status-badge__state">${stateText}</span>
-        ${detailText ? `<span class="status-badge__detail">(${detailText})</span>` : ''}
-      </span>
-    `;
+    // Update badge content using DOM manipulation (safer than innerHTML)
+    // Clear existing content
+    this.element.textContent = '';
+    
+    // Create icon span
+    const iconSpan = document.createElement('span');
+    iconSpan.className = 'status-badge__icon';
+    iconSpan.textContent = stateIcon;
+    this.element.appendChild(iconSpan);
+    
+    // Create text container
+    const textSpan = document.createElement('span');
+    textSpan.className = 'status-badge__text';
+    
+    // Create state span
+    const stateSpan = document.createElement('span');
+    stateSpan.className = 'status-badge__state';
+    stateSpan.textContent = stateText;
+    textSpan.appendChild(stateSpan);
+    
+    // Add detail span if needed
+    if (detailText) {
+      const detailSpan = document.createElement('span');
+      detailSpan.className = 'status-badge__detail';
+      detailSpan.textContent = `(${detailText})`;
+      textSpan.appendChild(detailSpan);
+    }
+    
+    this.element.appendChild(textSpan);
   }
   
   /**
