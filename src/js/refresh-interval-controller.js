@@ -506,6 +506,10 @@ export class RefreshIntervalController {
   }
 
   _handleResetDefaults() {
+    // FR-16: Confirmation before resetting all settings
+    if (!confirm('Reset all settings to defaults? This cannot be undone.')) {
+      return;
+    }
     // Reset all timers to defaults
     this.setRefreshInterval(this.defaultInterval);
     this.setPageTimer(this.defaultPageTimer);
