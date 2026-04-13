@@ -65,6 +65,9 @@
   color: #ffffff;                      /* White text for contrast */
   line-height: 24px;                   /* Vertically center in 32px container */
   
+  /* GPU acceleration hint for smooth scrolling */
+  will-change: transform;
+  
   /* Animation applied when scrolling needed */
   animation: none;                     /* Default: no animation */
 }
