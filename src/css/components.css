@@ -106,98 +106,122 @@
 /* ============================================
    Per-Source Status Badge
    Added for Enhanced Error UI with Per-Source Status Indicators
+   Relocated to top-left corner with minimal styling
    ============================================ */
 
+.status-badge-container {
+  /* Fixed position in top-left corner, below header */
+  position: fixed;
+  top: 54px;
+  left: 12px;
+  z-index: 999; /* Below persistent-alert but above main content */
+  
+  /* Stack multiple badges horizontally */
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  flex-wrap: wrap;
+  max-width: calc(100% - 24px);
+  
+  /* Pointer events for accessibility */
+  pointer-events: auto;
+}
+
 .status-badge {
-  /* Positioning in page header */
+  /* Minimal inline styling */
   display: inline-flex;
   align-items: center;
-  gap: var(--space-1);                /* 4px between icon and text */
+  gap: 2px;
   
-  /* Typography - distance optimized for 10-15 feet viewing */
-  font-size: var(--fontsize-small);   /* 14px */
-  font-weight: var(--fontweight-semibold); /* 600 */
-  line-height: 1;
+  /* Small text - barely noticeable when OK */
+  font-size: 11px;
+  font-weight: normal;
+  font-family: monospace;
+  line-height: 1.2;
   
-  /* Compact padding */
-  padding: var(--space-1) var(--space-2); /* 4px 8px */
-  border-radius: 4px;
+  /* Minimal padding */
+  padding: 2px 4px;
+  border-radius: 2px;
   
-  /* Default background */
-  background: var(--color-canvas-subtle);
-  color: var(--color-fg-default);
+  /* Default: very subtle gray */
+  background: transparent;
+  color: var(--color-fg-muted);
+  border: none;
+  opacity: 0.5;
   
-  /* Subtle border */
-  border: 1px solid var(--color-border-default);
-  
-  /* GPU-optimized transitions */
-  transition: background-color 200ms ease, border-color 200ms ease;
+  /* Smooth transitions for state changes */
+  transition: opacity 200ms ease, color 200ms ease, background-color 200ms ease;
 }
 
 .status-badge__icon {
-  /* Icon size */
-  font-size: 12px;
+  /* Text indicator instead of emoji */
+  font-size: 8px;
   line-height: 1;
   flex-shrink: 0;
+  font-weight: bold;
 }
 
 .status-badge__text {
   display: flex;
   align-items: baseline;
-  gap: var(--space-1);  /* 4px between state and detail */
+  gap: 2px;
   white-space: nowrap;
 }
 
 .status-badge__state {
-  font-weight: var(--fontweight-semibold);
+  font-weight: normal;
+  font-size: 10px;
 }
 
 .status-badge__detail {
-  font-size: var(--fontsize-small);
+  font-size: 9px;
+  opacity: 0.75;
+}
+
+/* Success state - Nearly invisible when OK */
+.status-badge--success {
+  background: transparent;
+  color: var(--color-success-fg);
+  opacity: 0.3; /* Very subtle */
+}
+
+/* Retrying state - Slightly more visible */
+.status-badge--retrying {
+  background: rgba(191, 135, 0, 0.1); /* Slight yellow tint */
+  border: 1px solid var(--color-attention-muted);
+  color: var(--color-attention-fg);
   opacity: 0.8;
 }
 
-/* Success state - Green */
-.status-badge--success {
-  background: var(--color-success-subtle);
-  border-color: var(--color-success-emphasis);
-  color: var(--color-success-fg);
-}
-
-/* Retrying state - Yellow/Amber */
-.status-badge--retrying {
-  background: var(--color-attention-subtle);
-  border-color: var(--color-attention-emphasis);
-  color: var(--color-attention-fg);
-}
-
-/* Cached state - Yellow (lighter than retrying) */
+/* Cached state - Medium visibility */
 .status-badge--cached {
-  background: var(--color-attention-subtle);
-  border-color: var(--color-attention-muted);
+  background: rgba(191, 135, 0, 0.08);
+  border: 1px solid var(--color-attention-muted);
   color: var(--color-attention-fg);
-}
-
-/* Stale cache state - Orange */
-.status-badge--stale {
-  background: var(--color-severe-subtle);
-  border-color: var(--color-severe-emphasis);
-  color: var(--color-severe-fg);
-}
-
-/* Failed state - Red */
-.status-badge--failed {
-  background: var(--color-danger-subtle);
-  border-color: var(--color-danger-emphasis);
-  color: var(--color-danger-fg);
-}
-
-/* Idle state - Gray */
-.status-badge--idle {
-  background: var(--color-canvas-subtle);
-  border-color: var(--color-border-default);
-  color: var(--color-fg-muted);
   opacity: 0.7;
+}
+
+/* Stale cache state - More visible */
+.status-badge--stale {
+  background: rgba(191, 135, 0, 0.15);
+  border: 1px solid var(--color-severe-emphasis);
+  color: var(--color-severe-fg);
+  opacity: 0.9;
+}
+
+/* Failed state - Most visible (error state) */
+.status-badge--failed {
+  background: rgba(207, 34, 46, 0.2); /* Red with transparency */
+  border: 1px solid var(--color-danger-emphasis);
+  color: var(--color-danger-fg);
+  opacity: 1;
+}
+
+/* Idle state - Almost invisible */
+.status-badge--idle {
+  background: transparent;
+  color: var(--color-fg-muted);
+  opacity: 0.2;
 }
 
 /* ============================================

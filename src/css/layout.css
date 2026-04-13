@@ -23,11 +23,6 @@
 }
 
 .page-header {
-  /* Flex layout to position title and badge */
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  
   font-size: var(--fontsize-h1);
   font-weight: var(--fontweight-semibold);
   text-transform: uppercase;
@@ -37,11 +32,7 @@
   border-bottom: 1px solid var(--color-border-default);
 }
 
-.status-badge-container {
-  /* Container for status badge - positioned on the right */
-  display: flex;
-  align-items: center;
-}
+/* Status badge containers removed from page headers - now positioned as fixed overlay */
 
 /* Page-specific header colors */
 #page-blog .page-header {

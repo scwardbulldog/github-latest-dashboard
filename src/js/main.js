@@ -1401,18 +1401,21 @@ if (window.persistentAlertInstance) {
 window.persistentAlertInstance = new PersistentAlert();
 
 // Initialize status badges for all pages (Enhanced Error UI)
+// Badges are positioned in top-left corner as fixed overlay
 if (window.statusBadges) {
   // Clean up existing badges if any
   Object.values(window.statusBadges).forEach(badge => badge.destroy());
 }
 
+const statusBadgesContainer = document.getElementById('status-badges-overlay');
+
 window.statusBadges = {
-  blog: new StatusBadge('blog', document.getElementById('badge-blog')),
-  changelog: new StatusBadge('changelog', document.getElementById('badge-changelog')),
-  status: new StatusBadge('status', document.getElementById('badge-status')),
-  vscode: new StatusBadge('vscode', document.getElementById('badge-vscode')),
-  visualstudio: new StatusBadge('visualstudio', document.getElementById('badge-visualstudio')),
-  anthropic: new StatusBadge('anthropic', document.getElementById('badge-anthropic'))
+  blog: new StatusBadge('blog', statusBadgesContainer),
+  changelog: new StatusBadge('changelog', statusBadgesContainer),
+  status: new StatusBadge('status', statusBadgesContainer),
+  vscode: new StatusBadge('vscode', statusBadgesContainer),
+  visualstudio: new StatusBadge('visualstudio', statusBadgesContainer),
+  anthropic: new StatusBadge('anthropic', statusBadgesContainer)
 };
 
 // Register status change callback to update badges

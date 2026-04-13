@@ -80,34 +80,20 @@ export class StatusBadge {
       case 'success':
       case 'fetching':
         stateClass = 'status-badge--success';
-        stateIcon = '🟢';
-        stateText = 'Fresh';
-        
-        if (status.lastFetch > 0) {
-          const ageMinutes = Math.floor((now - status.lastFetch) / 60000);
-          if (ageMinutes === 0) {
-            detailText = 'just now';
-          } else if (ageMinutes === 1) {
-            detailText = '1 min ago';
-          } else if (ageMinutes < 60) {
-            detailText = `${ageMinutes} min ago`;
-          } else {
-            const ageHours = Math.floor(ageMinutes / 60);
-            detailText = ageHours === 1 ? '1 hr ago' : `${ageHours} hrs ago`;
-          }
-        }
+        stateIcon = '✓';
+        stateText = 'OK';
         break;
         
       case 'retrying':
         stateClass = 'status-badge--retrying';
-        stateIcon = '🟡';
+        stateIcon = '!';
         stateText = 'Retrying';
         
         if (status.nextRetry && status.nextRetry > now) {
           const secondsToRetry = Math.ceil((status.nextRetry - now) / 1000);
-          detailText = `attempt ${status.retryAttempt}/3, next in ${secondsToRetry}s`;
+          detailText = `${secondsToRetry}s`;
         } else {
-          detailText = `attempt ${status.retryAttempt}/3`;
+          detailText = `${status.retryAttempt}/3`;
         }
         break;
         
@@ -117,31 +103,29 @@ export class StatusBadge {
         
         if (cacheAgeHours > 1) {
           stateClass = 'status-badge--stale';
-          stateIcon = '🟠';
+          stateIcon = '⚠';
           stateText = 'Stale';
-          detailText = `${Math.floor(cacheAgeHours)}+ hrs old`;
+          detailText = `${Math.floor(cacheAgeHours)}h`;
         } else {
           stateClass = 'status-badge--cached';
-          stateIcon = '🟡';
+          stateIcon = '⟳';
           stateText = 'Cached';
           const ageMinutes = Math.floor(status.cacheAge / 60000);
-          detailText = ageMinutes === 1 ? '1 min old' : `${ageMinutes} min old`;
+          detailText = `${ageMinutes}m`;
         }
         break;
         
       case 'failed':
         stateClass = 'status-badge--failed';
-        stateIcon = '🔴';
+        stateIcon = '✕';
         stateText = 'Failed';
-        detailText = 'no data';
         break;
         
       case 'idle':
       default:
         stateClass = 'status-badge--idle';
-        stateIcon = '⚪';
+        stateIcon = '—';
         stateText = 'Idle';
-        detailText = '';
         break;
     }
     
@@ -162,6 +146,12 @@ export class StatusBadge {
     const textSpan = document.createElement('span');
     textSpan.className = 'status-badge__text';
     
+    // Create source name prefix
+    const sourcePrefixSpan = document.createElement('span');
+    sourcePrefixSpan.className = 'status-badge__source';
+    sourcePrefixSpan.textContent = this.sourceName.substring(0, 3).toUpperCase();
+    textSpan.appendChild(sourcePrefixSpan);
+    
     // Create state span
     const stateSpan = document.createElement('span');
     stateSpan.className = 'status-badge__state';
@@ -172,7 +162,7 @@ export class StatusBadge {
     if (detailText) {
       const detailSpan = document.createElement('span');
       detailSpan.className = 'status-badge__detail';
-      detailSpan.textContent = `(${detailText})`;
+      detailSpan.textContent = detailText;
       textSpan.appendChild(detailSpan);
     }
     
