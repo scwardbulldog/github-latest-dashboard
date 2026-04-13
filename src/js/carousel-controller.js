@@ -303,4 +303,47 @@ export class CarouselController {
       }
     }, this.interval);
   }
+
+  /**
+   * Jump directly to a named page without triggering the onPageChange callback.
+   * Intended for restoring the last-viewed page from persisted settings.
+   * Must be called before start() to take effect.
+   *
+   * @param {string} pageName - Page name to navigate to (must be in this.pages)
+   * @returns {boolean} True if the page was found and activated, false otherwise
+   */
+  goToPage(pageName) {
+    if (this.timer !== null) {
+      console.warn('CarouselController: goToPage() called after start() – call it before starting the carousel for predictable behavior.');
+    }
+
+    const pageIndex = this.pages.indexOf(pageName);
+    if (pageIndex === -1) {
+      console.warn(`CarouselController: goToPage('${pageName}') – page not found in pages:`, this.pages);
+      return false;
+    }
+
+    // Update all page DOM elements: hide all, then show the target
+    this.pages.forEach(page => {
+      const el = document.getElementById(`page-${page}`);
+      if (el) {
+        el.classList.remove('active');
+        el.style.display = 'none';
+      }
+    });
+
+    const targetEl = document.getElementById(`page-${pageName}`);
+    if (targetEl) {
+      targetEl.style.display = 'flex';
+      // Use requestAnimationFrame so the display change settles before adding
+      // the .active class, allowing CSS transitions to fire correctly.
+      requestAnimationFrame(() => {
+        targetEl.classList.add('active');
+      });
+    }
+
+    this.currentPage = pageIndex;
+    console.info(`CarouselController: Restored to page '${pageName}' (index ${pageIndex})`);
+    return true;
+  }
 }
