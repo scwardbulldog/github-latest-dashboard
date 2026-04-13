@@ -159,12 +159,12 @@ function updateLiveIndicator() {
 }
 
 /**
- * Create a share button element for an item
- * @param {Object} item - The item data
+ * Create a share button element for an item.
+ * No click listener is attached here; event delegation in renderRSSList handles clicks.
  * @param {number} index - The item index
  * @returns {HTMLElement} Share button element
  */
-function createShareButton(item, index) {
+function createShareButton(index) {
     const shareBtn = document.createElement('button');
     shareBtn.className = 'btn-share';
     shareBtn.title = 'Share this item';
@@ -175,14 +175,33 @@ function createShareButton(item, index) {
             <path d="M5.7 11.2L10.3 13.8M10.3 2.2L5.7 4.8" stroke="currentColor" stroke-width="1.5"></path>
         </svg>
     `;
-    
-    // Attach click handler
-    shareBtn.addEventListener('click', (e) => {
-        e.stopPropagation(); // Prevent item selection
-        openShareModal(item);
-    });
-    
     return shareBtn;
+}
+
+/**
+ * Delegated click handler for share buttons inside list containers.
+ * Reconstructs item data from the DOM so no closures over item objects are held.
+ * @param {MouseEvent} event
+ */
+function handleShareButtonClick(event) {
+    const shareBtn = event.target.closest('.btn-share');
+    if (!shareBtn) return; // Click was not on a share button
+
+    event.stopPropagation(); // Prevent item selection / document-level listeners
+
+    const itemEl = shareBtn.closest('.list-item');
+    if (!itemEl) return;
+
+    const item = {
+        title: itemEl.querySelector('.list-item-title')?.textContent || '',
+        link: itemEl.dataset.link || '',
+        description: itemEl.querySelector('.list-item-description')?.textContent || '',
+        content: itemEl.dataset.fullDescription || '',
+        pubDate: itemEl.dataset.pubDate || '',
+        source: itemEl.dataset.source || ''
+    };
+
+    openShareModal(item);
 }
 
 /**
@@ -240,14 +259,7 @@ function renderRSSList(data, containerId, sourceName, feedName) {
         headerEl.appendChild(titleEl);
         
         // Add share button
-        const shareBtn = createShareButton({
-            title,
-            link: item.link,
-            description: stripHtml(item.description || ''),
-            content: stripHtml(item.content || item.description || ''),
-            pubDate: item.pubDate,
-            source: sourceName
-        }, index);
+        const shareBtn = createShareButton(index);
         headerEl.appendChild(shareBtn);
         
         itemEl.appendChild(headerEl);
@@ -269,7 +281,12 @@ function renderRSSList(data, containerId, sourceName, feedName) {
     
     // Single DOM write (one reflow)
     listEl.appendChild(fragment);
-    
+
+    // Attach a single delegated click listener for all share buttons in this list.
+    // Remove before re-adding to prevent duplicates on every data refresh.
+    listEl.removeEventListener('click', handleShareButtonClick);
+    listEl.addEventListener('click', handleShareButtonClick);
+
     console.log(`renderRSSList: Rendered ${items.length} ${sourceName} items`);
     return items.length;
 }
