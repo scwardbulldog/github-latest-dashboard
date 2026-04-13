@@ -1,15 +1,14 @@
 /**
  * Refresh Interval Controller
  *
- * Manages configurable data refresh intervals with:
- * - Slider UI in settings panel (accessible via gear icon in header)
+ * Manages configurable dashboard timers with:
+ * - Data Refresh slider (1–60 minutes, default: 5 minutes)
+ * - Page Timer slider (10–180 seconds, default: 30 seconds)
+ * - Card Timer slider (3–30 seconds, default: 5 seconds)
  * - localStorage persistence across sessions
  * - Visual toast confirmation when interval changes
  * - "Last refreshed X minutes ago" indicator
  * - "Refresh Now" button for immediate fetch
- *
- * Configurable range: 1 – 60 minutes (default: 5 minutes)
- * Does NOT affect carousel rotation (stays 30 s).
  *
  * @module refresh-interval-controller
  */
@@ -17,16 +16,33 @@ export class RefreshIntervalController {
   /**
    * @param {Object} options
    * @param {Function} options.onRefresh - Callback to trigger an immediate data refresh
-   * @param {Function} [options.onIntervalChange] - Callback fired when the interval changes (ms)
+   * @param {Function} [options.onIntervalChange] - Callback fired when the data refresh interval changes (ms)
+   * @param {Function} [options.onPageTimerChange] - Callback fired when the page timer changes (ms)
+   * @param {Function} [options.onCardTimerChange] - Callback fired when the card timer changes (ms)
    */
-  constructor({ onRefresh, onIntervalChange } = {}) {
+  constructor({ onRefresh, onIntervalChange, onPageTimerChange, onCardTimerChange } = {}) {
     this.onRefresh = onRefresh || (() => {});
     this.onIntervalChange = onIntervalChange || (() => {});
+    this.onPageTimerChange = onPageTimerChange || (() => {});
+    this.onCardTimerChange = onCardTimerChange || (() => {});
 
+    // Data Refresh Interval settings
     this.storageKey = 'dashboard-refresh-interval';
     this.defaultInterval = 5 * 60 * 1000;  // 5 minutes
     this.minInterval = 1 * 60 * 1000;      // 1 minute
     this.maxInterval = 60 * 60 * 1000;     // 60 minutes
+
+    // Page Timer settings
+    this.pageTimerStorageKey = 'dashboard-page-timer';
+    this.defaultPageTimer = 30 * 1000;     // 30 seconds
+    this.minPageTimer = 10 * 1000;         // 10 seconds
+    this.maxPageTimer = 180 * 1000;        // 180 seconds (3 minutes)
+
+    // Card Timer settings
+    this.cardTimerStorageKey = 'dashboard-card-timer';
+    this.defaultCardTimer = 5 * 1000;      // 5 seconds
+    this.minCardTimer = 3 * 1000;          // 3 seconds
+    this.maxCardTimer = 30 * 1000;         // 30 seconds
 
     this.intervalId = null;
     this._isPaused = false;
@@ -37,12 +53,18 @@ export class RefreshIntervalController {
     this._refreshBtnTimeout = null; // timeout to re-enable the Refresh Now button
 
     this.currentInterval = this._loadInterval();
+    this.currentPageTimer = this._loadPageTimer();
+    this.currentCardTimer = this._loadCardTimer();
 
     // Pre-bind handlers for consistent add/removeEventListener references
     this._handleTogglePanel = this._handleTogglePanel.bind(this);
     this._handleOutsideClick = this._handleOutsideClick.bind(this);
     this._handleSliderInput = this._handleSliderInput.bind(this);
     this._handleSliderChange = this._handleSliderChange.bind(this);
+    this._handlePageTimerSliderInput = this._handlePageTimerSliderInput.bind(this);
+    this._handlePageTimerSliderChange = this._handlePageTimerSliderChange.bind(this);
+    this._handleCardTimerSliderInput = this._handleCardTimerSliderInput.bind(this);
+    this._handleCardTimerSliderChange = this._handleCardTimerSliderChange.bind(this);
     this._handleRefreshNow = this._handleRefreshNow.bind(this);
     this._handleResetDefaults = this._handleResetDefaults.bind(this);
   }
@@ -58,6 +80,8 @@ export class RefreshIntervalController {
   init() {
     this._bindUI();
     this._updateSlider();
+    this._updatePageTimerSlider();
+    this._updateCardTimerSlider();
     this._startLastRefreshDisplay();
   }
 
@@ -118,6 +142,8 @@ export class RefreshIntervalController {
 
     const toggle = document.getElementById('settingsToggle');
     const slider = document.getElementById('refreshIntervalSlider');
+    const pageTimerSlider = document.getElementById('pageTimerSlider');
+    const cardTimerSlider = document.getElementById('cardTimerSlider');
     const refreshNowBtn = document.getElementById('refreshNowBtn');
     const resetBtn = document.getElementById('resetDefaultsBtn');
 
@@ -125,6 +151,14 @@ export class RefreshIntervalController {
     if (slider) {
       slider.removeEventListener('input', this._handleSliderInput);
       slider.removeEventListener('change', this._handleSliderChange);
+    }
+    if (pageTimerSlider) {
+      pageTimerSlider.removeEventListener('input', this._handlePageTimerSliderInput);
+      pageTimerSlider.removeEventListener('change', this._handlePageTimerSliderChange);
+    }
+    if (cardTimerSlider) {
+      cardTimerSlider.removeEventListener('input', this._handleCardTimerSliderInput);
+      cardTimerSlider.removeEventListener('change', this._handleCardTimerSliderChange);
     }
     if (refreshNowBtn) refreshNowBtn.removeEventListener('click', this._handleRefreshNow);
     if (resetBtn) resetBtn.removeEventListener('click', this._handleResetDefaults);
@@ -137,10 +171,24 @@ export class RefreshIntervalController {
   // ============================================================================
 
   /**
-   * @returns {number} Current interval in ms
+   * @returns {number} Current data refresh interval in ms
    */
   getInterval() {
     return this.currentInterval;
+  }
+
+  /**
+   * @returns {number} Current page timer in ms
+   */
+  getPageTimer() {
+    return this.currentPageTimer;
+  }
+
+  /**
+   * @returns {number} Current card timer in ms
+   */
+  getCardTimer() {
+    return this.currentCardTimer;
   }
 
   /**
@@ -177,7 +225,53 @@ export class RefreshIntervalController {
     }
 
     const minutes = intervalMs / 60000;
-    this._showToast(`Refresh interval updated to ${minutes === 1 ? '1 minute' : `${minutes} minutes`}`);
+    this._showToast(`Data refresh: ${minutes === 1 ? '1 minute' : `${minutes} minutes`}`);
+  }
+
+  /**
+   * Change the page timer (carousel rotation).
+   * @param {number} intervalMs - New interval in ms (must be within bounds)
+   */
+  setPageTimer(intervalMs) {
+    if (intervalMs < this.minPageTimer || intervalMs > this.maxPageTimer) {
+      console.error(
+        `RefreshIntervalController: Page timer ${intervalMs}ms is outside the ` +
+        `allowed range [${this.minPageTimer}, ${this.maxPageTimer}]`
+      );
+      return;
+    }
+
+    this.currentPageTimer = intervalMs;
+    this._savePageTimer(intervalMs);
+
+    // Notify main.js to update carousel timer
+    this.onPageTimerChange(intervalMs);
+
+    const seconds = intervalMs / 1000;
+    this._showToast(`Page timer: ${seconds} seconds`);
+  }
+
+  /**
+   * Change the card timer (item highlighting).
+   * @param {number} intervalMs - New interval in ms (must be within bounds)
+   */
+  setCardTimer(intervalMs) {
+    if (intervalMs < this.minCardTimer || intervalMs > this.maxCardTimer) {
+      console.error(
+        `RefreshIntervalController: Card timer ${intervalMs}ms is outside the ` +
+        `allowed range [${this.minCardTimer}, ${this.maxCardTimer}]`
+      );
+      return;
+    }
+
+    this.currentCardTimer = intervalMs;
+    this._saveCardTimer(intervalMs);
+
+    // Notify main.js to update item highlighter timer
+    this.onCardTimerChange(intervalMs);
+
+    const seconds = intervalMs / 1000;
+    this._showToast(`Card timer: ${seconds} seconds`);
   }
 
   /**
@@ -236,6 +330,56 @@ export class RefreshIntervalController {
     }
   }
 
+  _loadPageTimer() {
+    try {
+      const stored = localStorage.getItem(this.pageTimerStorageKey);
+      if (stored === null) return this.defaultPageTimer;
+
+      const parsed = parseInt(stored, 10);
+      if (isNaN(parsed) || parsed < this.minPageTimer || parsed > this.maxPageTimer) {
+        console.warn('RefreshIntervalController: Invalid stored page timer, using default');
+        return this.defaultPageTimer;
+      }
+      return parsed;
+    } catch (error) {
+      console.warn('RefreshIntervalController: localStorage unavailable, using default', error);
+      return this.defaultPageTimer;
+    }
+  }
+
+  _savePageTimer(intervalMs) {
+    try {
+      localStorage.setItem(this.pageTimerStorageKey, intervalMs.toString());
+    } catch (error) {
+      console.error('RefreshIntervalController: Failed to persist page timer', error);
+    }
+  }
+
+  _loadCardTimer() {
+    try {
+      const stored = localStorage.getItem(this.cardTimerStorageKey);
+      if (stored === null) return this.defaultCardTimer;
+
+      const parsed = parseInt(stored, 10);
+      if (isNaN(parsed) || parsed < this.minCardTimer || parsed > this.maxCardTimer) {
+        console.warn('RefreshIntervalController: Invalid stored card timer, using default');
+        return this.defaultCardTimer;
+      }
+      return parsed;
+    } catch (error) {
+      console.warn('RefreshIntervalController: localStorage unavailable, using default', error);
+      return this.defaultCardTimer;
+    }
+  }
+
+  _saveCardTimer(intervalMs) {
+    try {
+      localStorage.setItem(this.cardTimerStorageKey, intervalMs.toString());
+    } catch (error) {
+      console.error('RefreshIntervalController: Failed to persist card timer', error);
+    }
+  }
+
   // ============================================================================
   // UI Binding
   // ============================================================================
@@ -243,6 +387,8 @@ export class RefreshIntervalController {
   _bindUI() {
     const toggle = document.getElementById('settingsToggle');
     const slider = document.getElementById('refreshIntervalSlider');
+    const pageTimerSlider = document.getElementById('pageTimerSlider');
+    const cardTimerSlider = document.getElementById('cardTimerSlider');
     const refreshNowBtn = document.getElementById('refreshNowBtn');
     const resetBtn = document.getElementById('resetDefaultsBtn');
 
@@ -253,6 +399,16 @@ export class RefreshIntervalController {
       slider.addEventListener('input', this._handleSliderInput);
       // change → apply interval when drag ends
       slider.addEventListener('change', this._handleSliderChange);
+    }
+
+    if (pageTimerSlider) {
+      pageTimerSlider.addEventListener('input', this._handlePageTimerSliderInput);
+      pageTimerSlider.addEventListener('change', this._handlePageTimerSliderChange);
+    }
+
+    if (cardTimerSlider) {
+      cardTimerSlider.addEventListener('input', this._handleCardTimerSliderInput);
+      cardTimerSlider.addEventListener('change', this._handleCardTimerSliderChange);
     }
 
     if (refreshNowBtn) refreshNowBtn.addEventListener('click', this._handleRefreshNow);
@@ -272,6 +428,8 @@ export class RefreshIntervalController {
     if (!panel.hidden) {
       // Refresh display values every time panel opens
       this._updateSlider();
+      this._updatePageTimerSlider();
+      this._updateCardTimerSlider();
       this._updateLastRefreshDisplay();
     }
   }
@@ -296,6 +454,26 @@ export class RefreshIntervalController {
     this.setRefreshInterval(parseInt(event.target.value, 10));
   }
 
+  _handlePageTimerSliderInput(event) {
+    // Live label update while dragging
+    this._updatePageTimerValueDisplay(parseInt(event.target.value, 10));
+  }
+
+  _handlePageTimerSliderChange(event) {
+    // Apply timer when drag ends
+    this.setPageTimer(parseInt(event.target.value, 10));
+  }
+
+  _handleCardTimerSliderInput(event) {
+    // Live label update while dragging
+    this._updateCardTimerValueDisplay(parseInt(event.target.value, 10));
+  }
+
+  _handleCardTimerSliderChange(event) {
+    // Apply timer when drag ends
+    this.setCardTimer(parseInt(event.target.value, 10));
+  }
+
   _handleRefreshNow() {
     this.refreshNow();
 
@@ -314,8 +492,14 @@ export class RefreshIntervalController {
   }
 
   _handleResetDefaults() {
+    // Reset all timers to defaults
     this.setRefreshInterval(this.defaultInterval);
+    this.setPageTimer(this.defaultPageTimer);
+    this.setCardTimer(this.defaultCardTimer);
     this._updateSlider();
+    this._updatePageTimerSlider();
+    this._updateCardTimerSlider();
+    this._showToast('All timers reset to defaults');
   }
 
   // ============================================================================
@@ -328,11 +512,37 @@ export class RefreshIntervalController {
     this._updateIntervalValueDisplay(this.currentInterval);
   }
 
+  _updatePageTimerSlider() {
+    const slider = document.getElementById('pageTimerSlider');
+    if (slider) slider.value = this.currentPageTimer;
+    this._updatePageTimerValueDisplay(this.currentPageTimer);
+  }
+
+  _updateCardTimerSlider() {
+    const slider = document.getElementById('cardTimerSlider');
+    if (slider) slider.value = this.currentCardTimer;
+    this._updateCardTimerValueDisplay(this.currentCardTimer);
+  }
+
   _updateIntervalValueDisplay(intervalMs) {
     const label = document.getElementById('intervalValueLabel');
     if (!label) return;
     const minutes = intervalMs / 60000;
     label.textContent = minutes === 1 ? '1 minute' : `${minutes} minutes`;
+  }
+
+  _updatePageTimerValueDisplay(intervalMs) {
+    const label = document.getElementById('pageTimerValueLabel');
+    if (!label) return;
+    const seconds = intervalMs / 1000;
+    label.textContent = seconds === 1 ? '1 second' : `${seconds} seconds`;
+  }
+
+  _updateCardTimerValueDisplay(intervalMs) {
+    const label = document.getElementById('cardTimerValueLabel');
+    if (!label) return;
+    const seconds = intervalMs / 1000;
+    label.textContent = seconds === 1 ? '1 second' : `${seconds} seconds`;
   }
 
   _showToast(message) {

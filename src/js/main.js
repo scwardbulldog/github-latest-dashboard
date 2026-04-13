@@ -1234,9 +1234,8 @@ function startDashboard() {
 
 // Initialize with config and start dashboard
 initializeWithConfig().then(() => {
-    // Create refresh interval controller (reads interval from localStorage,
-    // fallback to 5 minutes; does NOT use the config-file refreshInterval so
-    // the user's UI selection always takes precedence).
+    // Create refresh interval controller (reads intervals from localStorage,
+    // fallback to defaults; user's UI selection takes precedence over config file).
     if (window.refreshIntervalController) {
         window.refreshIntervalController.destroy();
     }
@@ -1247,10 +1246,32 @@ initializeWithConfig().then(() => {
             // uses the correct duration after an interval change.
             REFRESH_INTERVAL = newIntervalMs;
             startProgressBar();
+        },
+        onPageTimerChange: (newIntervalMs) => {
+            // Update carousel default interval and reinitialize
+            DEFAULT_PAGE_INTERVAL = newIntervalMs;
+            if (window.carouselInstance) {
+                window.carouselInstance.defaultInterval = newIntervalMs;
+                window.carouselInstance.interval = newIntervalMs;
+                // Reset timer with new interval if currently on a page without override
+                window.carouselInstance.applyIntervalForCurrentPage();
+            }
+        },
+        onCardTimerChange: (newIntervalMs) => {
+            // Update item highlighter default interval
+            DEFAULT_ITEM_INTERVAL = newIntervalMs;
+            if (window.itemHighlighterInstance) {
+                window.itemHighlighterInstance.setInterval(newIntervalMs);
+            }
         }
     });
     // Sync the progress bar duration to the stored interval on startup
     REFRESH_INTERVAL = window.refreshIntervalController.getInterval();
+    // Sync page timer to stored value on startup
+    DEFAULT_PAGE_INTERVAL = window.refreshIntervalController.getPageTimer();
+    // Sync card timer to stored value on startup
+    DEFAULT_ITEM_INTERVAL = window.refreshIntervalController.getCardTimer();
+    
     window.refreshIntervalController.init();
 
     startDashboard();
@@ -1272,9 +1293,25 @@ initializeWithConfig().then(() => {
             onIntervalChange: (newIntervalMs) => {
                 REFRESH_INTERVAL = newIntervalMs;
                 startProgressBar();
+            },
+            onPageTimerChange: (newIntervalMs) => {
+                DEFAULT_PAGE_INTERVAL = newIntervalMs;
+                if (window.carouselInstance) {
+                    window.carouselInstance.defaultInterval = newIntervalMs;
+                    window.carouselInstance.interval = newIntervalMs;
+                    window.carouselInstance.applyIntervalForCurrentPage();
+                }
+            },
+            onCardTimerChange: (newIntervalMs) => {
+                DEFAULT_ITEM_INTERVAL = newIntervalMs;
+                if (window.itemHighlighterInstance) {
+                    window.itemHighlighterInstance.setInterval(newIntervalMs);
+                }
             }
         });
         REFRESH_INTERVAL = window.refreshIntervalController.getInterval();
+        DEFAULT_PAGE_INTERVAL = window.refreshIntervalController.getPageTimer();
+        DEFAULT_ITEM_INTERVAL = window.refreshIntervalController.getCardTimer();
         window.refreshIntervalController.init();
     }
     startDashboard();
