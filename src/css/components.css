@@ -688,7 +688,7 @@
    ============================================ */
 
 .claude-streak-badge {
-  /* Inline display for single-line appearance */
+  /* Inline flex container for badge content alignment */
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
