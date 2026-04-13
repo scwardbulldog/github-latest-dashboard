@@ -90,7 +90,7 @@ This dashboard:
    - Assets that could be preloaded or prefetched
    - Retry logic that could cause request storms
 
-   - Research similar dashboard optimization techniques (use web-search)
+   - Research similar dashboard optimization techniques (use web-fetch)
    - Consider Raspberry Pi-specific performance patterns
 
 3. **Value Assessment**
