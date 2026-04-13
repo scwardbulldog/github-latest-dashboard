@@ -64,25 +64,32 @@ npm run build
    - Inlines all CSS
    - Minifies code
    - Tree-shakes unused code
+   - Copies public assets (img folder) to dist
 
 2. **Copies `/dist/index.html` to project root**:
    - Single-file artifact
    - All CSS/JS inlined
-   - Typically ~65KB with all features
+   - Typically ~165KB with all features
 
-3. **Build completes in < 1 second**
+3. **Copies `/dist/img/` to project root**:
+   - Animation images (jetpacktocat.png, ghskatecat frames)
+   - Required for Easter egg animations
+
+4. **Build completes in < 1 second**
 
 ### Build Output
 
 - **Created:** `/dist/` folder (temporary, gitignored)
 - **Copied:** `/index.html` to project root (committed to git)
-- **Result:** Single HTML file ready for Pi deployment
+- **Copied:** `/img/` folder to project root (committed to git) - includes animation images (jetpacktocat.png, ghskatecat frames)
+- **Result:** HTML file + images ready for Pi deployment
 
 ### Build Architecture
 
 - **Source files:** `/src/` (where you edit)
+- **Static assets:** `/public/img/` (source images, copied during build)
 - **Build artifacts:** `/dist/` (temporary, gitignored)
-- **Deployment file:** `/index.html` (committed to root for Pi)
+- **Deployment files:** `/index.html` and `/img/` folder (committed to root for Pi)
 
 **Why commit build artifacts?** Pi deployment requires zero build tools. The Pi serves pre-built HTML directly using Python's http.server.
 
@@ -96,10 +103,10 @@ npm run build
 
 # 2. Build the production artifact
 npm run build
-# This builds to /dist/ and copies index.html to root
+# This builds to /dist/ and copies index.html and img/ to root
 
-# 3. Commit both source and built artifact
-git add src/ index.html
+# 3. Commit both source and built artifacts
+git add src/ index.html img/
 git commit -m "feat: your changes here"
 
 # 4. Push to GitHub
@@ -261,8 +268,8 @@ You can create custom deployment scripts in `/deploy/` folder:
 # Build on dev machine
 npm run build
 
-# Commit with timestamp
-git add src/ index.html
+# Commit with timestamp (includes index.html and img/ folder)
+git add src/ index.html img/
 git commit -m "deploy: $(date +%Y-%m-%d-%H%M)"
 
 # Push to GitHub
@@ -353,7 +360,7 @@ jobs:
       - run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
-          git add index.html
+          git add index.html img/
           git commit -m "build: automated build [skip ci]" || exit 0
           git push
       # Add SSH deployment step if desired
