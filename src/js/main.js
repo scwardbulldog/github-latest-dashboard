@@ -1625,6 +1625,16 @@ function extractItemData(itemElement) {
   };
 }
 
+/**
+ * Return the share link for the currently highlighted list item,
+ * or null when no item is highlighted.
+ * @returns {string|null}
+ */
+function getHighlightedItemLink() {
+    const highlightedItem = document.querySelector('.list-item--highlighted');
+    return highlightedItem?.dataset?.link || null;
+}
+
 // Set item highlighter callback to render detail panel (Story 3.3)
 // This callback is triggered every 8 seconds when the highlighted item changes
 // ItemHighlighter passes (itemElement, itemIndex) - both parameters available
@@ -2065,25 +2075,33 @@ async function handleExport(format) {
 // ============================================================================
 
 /**
- * Show the pause QR widget with dashboard URL QR code
- * Generates a QR code for the current dashboard URL for easy sharing
+ * Show the pause QR widget with QR code for the currently highlighted card's link.
+ * Falls back to the dashboard URL when no item is highlighted.
  */
 function showPauseQrWidget() {
     const widget = document.getElementById('pauseQrWidget');
     const qrImage = document.getElementById('pauseQrImage');
+    const hintEl = widget ? widget.querySelector('.pause-qr-widget__hint') : null;
     
     if (!widget || !qrImage) return;
     
-    // Generate QR code for current dashboard URL
-    const dashboardUrl = window.location.href;
+    // Prefer the currently highlighted card's share link (same as share modal)
+    const itemLink = getHighlightedItemLink();
+    const urlToEncode = itemLink || window.location.href;
+    const isItemLink = Boolean(itemLink);
     
     // Use the public QR API (same approach as ExportController for Pi 3B optimization)
     const qrSize = 160;
-    const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=${qrSize}x${qrSize}&data=${encodeURIComponent(dashboardUrl)}`;
+    const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=${qrSize}x${qrSize}&data=${encodeURIComponent(urlToEncode)}`;
     
-    // Set QR code image
+    // Set QR code image and accessible label
     qrImage.src = qrApiUrl;
-    qrImage.alt = 'Scan to open dashboard on your device';
+    qrImage.alt = isItemLink ? 'Scan to open this item on your device' : 'Scan to open dashboard on your device';
+    
+    // Update hint text to reflect what the QR code points to
+    if (hintEl) {
+        hintEl.textContent = isItemLink ? 'Scan to open this item' : 'Scan to view on your device';
+    }
     
     // Show the widget with animation
     widget.classList.remove('pause-qr-widget--hiding');
