@@ -22,6 +22,9 @@ import { checkForNewIncidents } from './matrix-rain.js';
 // Import GitHub Uptime Streak Counter (Easter Egg)
 import { GitHubStreakCounter } from './github-streak-counter.js';
 
+// Import Claude Uptime Streak Counter (Easter Egg)
+import { ClaudeStreakCounter } from './claude-streak-counter.js';
+
 // Import Octocat cameo Easter egg
 import { OctocatCameo } from './octocat-cameo.js';
 
@@ -983,6 +986,23 @@ async function fetchAllData() {
                 window.persistentAlertInstance.hide();
             }
         }
+        
+        // Easter Egg: Initialize/Update Claude Uptime Streak Counter
+        // The Claude counter fetches its own data from Anthropic Status API
+        // This is independent of GitHub status data
+        try {
+            if (window.claudeStreakCounterInstance) {
+                if (!window.claudeStreakCounterInitialized) {
+                    // First initialization - counter handles its own API fetch
+                    await window.claudeStreakCounterInstance.initialize();
+                    window.claudeStreakCounterInitialized = true;
+                }
+                // Note: Claude counter has its own 5-minute polling, no need to update here
+            }
+        } catch (error) {
+            console.error('fetchAllData: Error initializing Claude streak counter:', error);
+            // Non-critical - don't affect dashboard operation
+        }
 
         if (vscodeData) {
             renderVSCodeList(vscodeData);
@@ -1199,6 +1219,18 @@ if (window.streakCounterInstance) {
 }
 
 window.streakCounterInstance = new GitHubStreakCounter();
+
+// Initialize Claude Uptime Streak Counter (Easter Egg)
+// Shows days since last major Claude service incident
+if (window.claudeStreakCounterInstance) {
+  // Clean up if exists (hot reload support)
+  window.claudeStreakCounterInstance.stop();
+  window.claudeStreakCounterInstance = null;
+  // Reset initialization flag so new instance will be properly initialized
+  window.claudeStreakCounterInitialized = false;
+}
+
+window.claudeStreakCounterInstance = new ClaudeStreakCounter();
 
 // Initialize Octocat cameo Easter egg
 // Mona appears every 30 minutes and walks across the bottom of the screen
