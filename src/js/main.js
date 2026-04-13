@@ -2068,7 +2068,7 @@ async function handleExport(format) {
  * Show the pause QR widget with dashboard URL QR code
  * Generates a QR code for the current dashboard URL for easy sharing
  */
-async function showPauseQrWidget() {
+function showPauseQrWidget() {
     const widget = document.getElementById('pauseQrWidget');
     const qrImage = document.getElementById('pauseQrImage');
     
@@ -2148,18 +2148,15 @@ function initializePauseQrWidget() {
     }
 }
 
-// Initialize pause QR widget after DOM is fully loaded
+// Initialize export functionality and pause QR widget after DOM is fully loaded
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initializePauseQrWidget);
-} else {
-    initializePauseQrWidget();
-}
-
-// Initialize export functionality after DOM is fully loaded
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initializeExportFunctionality);
+    document.addEventListener('DOMContentLoaded', () => {
+        initializePauseQrWidget();
+        initializeExportFunctionality();
+    });
 } else {
     // DOM already loaded
+    initializePauseQrWidget();
     initializeExportFunctionality();
 }
 
