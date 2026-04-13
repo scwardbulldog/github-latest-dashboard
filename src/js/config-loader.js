@@ -12,7 +12,19 @@
  */
 const DEFAULT_CONFIG = {
   // API refresh interval in milliseconds (5 minutes)
+  // Fallback for sources without specific refresh intervals
   refreshInterval: 5 * 60 * 1000,
+  
+  // Per-source refresh intervals in milliseconds
+  // Each source can have its own refresh rate to optimize API usage
+  refreshIntervals: {
+    blog: 10 * 60 * 1000,        // 10 minutes (low frequency updates)
+    changelog: 10 * 60 * 1000,   // 10 minutes (weekly updates)
+    status: 3 * 60 * 1000,       // 3 minutes (important when incidents occur)
+    vscode: 15 * 60 * 1000,      // 15 minutes (moderate frequency)
+    visualstudio: 15 * 60 * 1000, // 15 minutes
+    anthropic: 15 * 60 * 1000    // 15 minutes
+  },
   
   // Pages to display in the carousel (order matters)
   pages: ['vscode', 'visualstudio', 'blog', 'changelog', 'status', 'anthropic'],
@@ -78,6 +90,23 @@ function validateConfig(config) {
       if (invalidPages.length > 0) {
         errors.push(`Invalid page names: ${invalidPages.join(', ')}. Valid: ${validPages.join(', ')}`);
       }
+    }
+  }
+  
+  // Validate refreshIntervals object (per-source refresh intervals)
+  if (config.refreshIntervals !== undefined) {
+    if (typeof config.refreshIntervals !== 'object' || config.refreshIntervals === null) {
+      errors.push('refreshIntervals must be an object');
+    } else {
+      const validSources = ['blog', 'changelog', 'status', 'vscode', 'visualstudio', 'anthropic'];
+      Object.entries(config.refreshIntervals).forEach(([key, value]) => {
+        if (!validSources.includes(key)) {
+          errors.push(`refreshIntervals.${key} is not a valid source. Valid: ${validSources.join(', ')}`);
+        }
+        if (typeof value !== 'number' || value < 60000) {
+          errors.push(`refreshIntervals.${key} must be a number >= 60000 (1 minute)`);
+        }
+      });
     }
   }
   
@@ -241,6 +270,20 @@ export function getItemInterval(pageName) {
 export function getItemsPerFeed(feedName) {
   const config = getConfig();
   return config.itemsPerFeed[feedName] || config.itemsPerFeed.default;
+}
+
+/**
+ * Get the refresh interval for a specific source
+ * Falls back to global refreshInterval if source-specific not defined
+ * @param {string} sourceName - Name of the source ('blog', 'changelog', 'status', etc.)
+ * @returns {number} Refresh interval in milliseconds
+ */
+export function getRefreshInterval(sourceName) {
+  const config = getConfig();
+  if (config.refreshIntervals && config.refreshIntervals[sourceName] !== undefined) {
+    return config.refreshIntervals[sourceName];
+  }
+  return config.refreshInterval;
 }
 
 /**

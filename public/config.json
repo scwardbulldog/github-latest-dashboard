@@ -4,6 +4,15 @@
   
   "refreshInterval": 300000,
   
+  "refreshIntervals": {
+    "blog": 600000,
+    "changelog": 600000,
+    "status": 180000,
+    "vscode": 900000,
+    "visualstudio": 900000,
+    "anthropic": 900000
+  },
+  
   "pages": ["vscode", "visualstudio", "blog", "changelog", "status", "anthropic"],
   
   "pageIntervals": {
