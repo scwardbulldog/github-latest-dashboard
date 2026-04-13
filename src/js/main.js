@@ -1058,7 +1058,10 @@ async function fetchAllData() {
             }
         } else {
             // Subsequent refresh - DO NOT reset timers, just update data
-            // The existing ItemHighlighter continues highlighting the updated DOM
+            // Refresh cached items in ItemHighlighter to reflect updated DOM
+            if (window.itemHighlighterInstance && window.itemHighlighterInstance.refreshCache) {
+                window.itemHighlighterInstance.refreshCache();
+            }
             console.log('fetchAllData: Data refresh complete (timers preserved)');
         }
 

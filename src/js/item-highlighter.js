@@ -135,6 +135,25 @@ export class ItemHighlighter {
   }
   
   /**
+   * Refresh cached items after DOM update (called on data refresh)
+   * Preserves timer state and current position
+   */
+  refreshCache() {
+    if (!this.timer) {
+      // Not currently running, no need to refresh
+      return;
+    }
+    
+    const activePage = document.querySelector('.carousel-page.active');
+    if (activePage) {
+      this.cachedItems = activePage.querySelectorAll('.list-item');
+      console.log(`ItemHighlighter: Cache refreshed with ${this.cachedItems.length} items`);
+    } else {
+      console.warn('ItemHighlighter: Could not refresh cache, no active page found');
+    }
+  }
+  
+  /**
    * Update highlight interval with validation
    * @param {number} interval - Interval in milliseconds
    */
