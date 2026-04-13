@@ -23,6 +23,11 @@
 }
 
 .page-header {
+  /* Flex layout to position title and badge */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  
   font-size: var(--fontsize-h1);
   font-weight: var(--fontweight-semibold);
   text-transform: uppercase;
@@ -30,6 +35,12 @@
   margin-bottom: 0; /* No gap */
   padding-bottom: 0; /* No gap */
   border-bottom: 1px solid var(--color-border-default);
+}
+
+.status-badge-container {
+  /* Container for status badge - positioned on the right */
+  display: flex;
+  align-items: center;
 }
 
 /* Page-specific header colors */

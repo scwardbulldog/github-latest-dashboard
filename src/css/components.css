@@ -104,6 +104,103 @@
 }
 
 /* ============================================
+   Per-Source Status Badge
+   Added for Enhanced Error UI with Per-Source Status Indicators
+   ============================================ */
+
+.status-badge {
+  /* Positioning in page header */
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);                /* 4px between icon and text */
+  
+  /* Typography - distance optimized for 10-15 feet viewing */
+  font-size: var(--fontsize-small);   /* 14px */
+  font-weight: var(--fontweight-semibold); /* 600 */
+  line-height: 1;
+  
+  /* Compact padding */
+  padding: var(--space-1) var(--space-2); /* 4px 8px */
+  border-radius: 4px;
+  
+  /* Default background */
+  background: var(--color-canvas-subtle);
+  color: var(--color-fg-default);
+  
+  /* Subtle border */
+  border: 1px solid var(--color-border-default);
+  
+  /* GPU-optimized transitions */
+  transition: background-color 200ms ease, border-color 200ms ease;
+}
+
+.status-badge__icon {
+  /* Icon size */
+  font-size: 12px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.status-badge__text {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-1);  /* 4px between state and detail */
+  white-space: nowrap;
+}
+
+.status-badge__state {
+  font-weight: var(--fontweight-semibold);
+}
+
+.status-badge__detail {
+  font-size: var(--fontsize-small);
+  opacity: 0.8;
+}
+
+/* Success state - Green */
+.status-badge--success {
+  background: var(--color-success-subtle);
+  border-color: var(--color-success-emphasis);
+  color: var(--color-success-fg);
+}
+
+/* Retrying state - Yellow/Amber */
+.status-badge--retrying {
+  background: var(--color-attention-subtle);
+  border-color: var(--color-attention-emphasis);
+  color: var(--color-attention-fg);
+}
+
+/* Cached state - Yellow (lighter than retrying) */
+.status-badge--cached {
+  background: var(--color-attention-subtle);
+  border-color: var(--color-attention-muted);
+  color: var(--color-attention-fg);
+}
+
+/* Stale cache state - Orange */
+.status-badge--stale {
+  background: var(--color-severe-subtle);
+  border-color: var(--color-severe-emphasis);
+  color: var(--color-severe-fg);
+}
+
+/* Failed state - Red */
+.status-badge--failed {
+  background: var(--color-danger-subtle);
+  border-color: var(--color-danger-emphasis);
+  color: var(--color-danger-fg);
+}
+
+/* Idle state - Gray */
+.status-badge--idle {
+  background: var(--color-canvas-subtle);
+  border-color: var(--color-border-default);
+  color: var(--color-fg-muted);
+  opacity: 0.7;
+}
+
+/* ============================================
    Item Highlighting Styles
    Added in Story 3.2 - ItemHighlighter
    ============================================ */

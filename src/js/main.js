@@ -10,6 +10,9 @@ import { DetailPanel } from './detail-panel.js';
 // Import persistent alert component (Story 4.3)
 import { PersistentAlert } from './persistent-alert.js';
 
+// Import status badge component (Enhanced Error UI)
+import { StatusBadge } from './status-badge.js';
+
 // Import theme toggle
 import { ThemeToggle } from './theme-toggle.js';
 
@@ -47,7 +50,8 @@ import {
     fetchAnthropic as fetchAnthropicFromApiClient,
     getCacheEntry,
     detectActiveOutages,
-    fetchArticleContent
+    fetchArticleContent,
+    onStatusChange
 } from './api-client.js';
 
 // Import config loader for user-configurable settings
@@ -1395,6 +1399,31 @@ if (window.persistentAlertInstance) {
 }
 
 window.persistentAlertInstance = new PersistentAlert();
+
+// Initialize status badges for all pages (Enhanced Error UI)
+if (window.statusBadges) {
+  // Clean up existing badges if any
+  Object.values(window.statusBadges).forEach(badge => badge.destroy());
+}
+
+window.statusBadges = {
+  blog: new StatusBadge('blog', document.getElementById('badge-blog')),
+  changelog: new StatusBadge('changelog', document.getElementById('badge-changelog')),
+  status: new StatusBadge('status', document.getElementById('badge-status')),
+  vscode: new StatusBadge('vscode', document.getElementById('badge-vscode')),
+  visualstudio: new StatusBadge('visualstudio', document.getElementById('badge-visualstudio')),
+  anthropic: new StatusBadge('anthropic', document.getElementById('badge-anthropic'))
+};
+
+// Register status change callback to update badges
+onStatusChange((sourceName, statusData) => {
+  if (window.statusBadges && window.statusBadges[sourceName]) {
+    window.statusBadges[sourceName].update();
+  }
+});
+
+// Start all status badges
+Object.values(window.statusBadges).forEach(badge => badge.start());
 
 // Initialize theme toggle
 window.themeToggleInstance = new ThemeToggle();
