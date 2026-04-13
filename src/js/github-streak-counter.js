@@ -223,14 +223,14 @@ export class GitHubStreakCounter {
     
     if (this.currentStreak === -1) {
       // No significant incidents on record (unlikely)
-      badgeText = '✓ No major incidents on record';
+      badgeText = '✓ No major GitHub incidents on record';
     } else if (this.currentStreak === 0) {
       // Incident today
-      badgeText = `⚠️ Major incident today`;
+      badgeText = `⚠️ Major GitHub incident today`;
     } else {
       // Normal streak display - single line with day count and last date
       const dayText = this.currentStreak === 1 ? 'day' : 'days';
-      badgeText = `✓ ${this.currentStreak} ${dayText} since last major incident`;
+      badgeText = `✓ ${this.currentStreak} ${dayText} since last major GitHub incident`;
     }
 
     // Set badge content using textContent for XSS safety
