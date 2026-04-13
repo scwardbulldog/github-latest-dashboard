@@ -69,7 +69,7 @@ npm run build
 2. **Copies `/dist/index.html` to project root**:
    - Single-file artifact
    - All CSS/JS inlined
-   - Typically ~165KB with all features
+   - Typically ~165KB with all features (size increased due to additional animation features)
 
 3. **Copies `/dist/img/` to project root**:
    - Animation images (jetpacktocat.png, ghskatecat frames)
