@@ -1,6 +1,6 @@
 /**
  * GitHub Uptime Streak Counter
- * Displays consecutive days since last critical GitHub incident
+ * Displays consecutive days since last major/critical GitHub incident
  * @module github-streak-counter
  */
 
@@ -9,7 +9,7 @@ const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
 
 /**
  * GitHubStreakCounter class manages the uptime streak badge
- * Shows days since last critical incident with localStorage persistence
+ * Shows days since last major/critical incident with localStorage persistence
  */
 export class GitHubStreakCounter {
   /**
@@ -87,26 +87,26 @@ export class GitHubStreakCounter {
 
   /**
    * Calculate streak from status data
-   * Only counts CRITICAL incidents (adjusted per user requirement)
+   * Counts MAJOR and CRITICAL incidents (significant outages)
    * @param {Object} statusData - GitHub Status API incidents data
    */
   calculateStreak(statusData) {
-    const lastCriticalIncident = this.getLastCriticalIncidentDate(statusData);
+    const lastSignificantIncident = this.getLastSignificantIncidentDate(statusData);
     
-    if (!lastCriticalIncident) {
-      // No critical incidents found - use stored data or default to high count
+    if (!lastSignificantIncident) {
+      // No significant incidents found - use stored data or default to high count
       if (!this.lastIncidentDate) {
-        // If no stored data, show "No critical incidents" state
+        // If no stored data, show "No incidents" state
         this.currentStreak = -1; // Special value for "no incidents"
         return;
       }
       // Use stored date to calculate current streak
     } else {
       // Check if this is a new incident (more recent than stored)
-      if (!this.lastIncidentDate || lastCriticalIncident > this.lastIncidentDate) {
-        this.lastIncidentDate = lastCriticalIncident;
+      if (!this.lastIncidentDate || lastSignificantIncident > this.lastIncidentDate) {
+        this.lastIncidentDate = lastSignificantIncident;
         this.lastMilestone = 0; // Reset milestone tracking on new incident
-        console.log('GitHubStreakCounter: New critical incident detected', lastCriticalIncident);
+        console.log('GitHubStreakCounter: New significant incident detected', lastSignificantIncident);
       }
     }
     
@@ -121,38 +121,41 @@ export class GitHubStreakCounter {
   }
 
   /**
-   * Get the most recent CRITICAL incident date from status data
+   * Get the most recent MAJOR or CRITICAL incident date from status data
+   * GitHub Status API uses "major" for significant outages, "critical" for extreme cases
    * @param {Object} statusData - GitHub Status API incidents data
-   * @returns {Date|null} Date of last critical incident or null if none
+   * @returns {Date|null} Date of last significant incident or null if none
    */
-  getLastCriticalIncidentDate(statusData) {
+  getLastSignificantIncidentDate(statusData) {
     if (!statusData || !statusData.incidents || !Array.isArray(statusData.incidents)) {
       console.warn('GitHubStreakCounter: Invalid status data structure');
       return null;
     }
 
-    // Filter for CRITICAL impact incidents only (adjusted per user requirement)
-    const criticalIncidents = statusData.incidents.filter(incident => 
-      incident.impact === 'critical'
+    // Filter for MAJOR and CRITICAL impact incidents (significant outages)
+    // "major" = significant outages affecting many users/services
+    // "critical" = extreme platform-wide failures (very rare)
+    const significantIncidents = statusData.incidents.filter(incident => 
+      incident.impact === 'major' || incident.impact === 'critical'
     );
 
-    if (criticalIncidents.length === 0) {
-      console.log('GitHubStreakCounter: No critical incidents found');
+    if (significantIncidents.length === 0) {
+      console.log('GitHubStreakCounter: No major/critical incidents found');
       return null;
     }
 
     // Sort by created_at to get most recent
-    criticalIncidents.sort((a, b) => 
+    significantIncidents.sort((a, b) => 
       new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     );
 
-    const lastCritical = criticalIncidents[0];
-    const incidentDate = new Date(lastCritical.created_at);
+    const lastSignificant = significantIncidents[0];
+    const incidentDate = new Date(lastSignificant.created_at);
     
-    console.log('GitHubStreakCounter: Last critical incident', {
-      name: lastCritical.name,
+    console.log('GitHubStreakCounter: Last significant incident', {
+      name: lastSignificant.name,
       date: incidentDate,
-      impact: lastCritical.impact
+      impact: lastSignificant.impact
     });
     
     return incidentDate;
@@ -215,12 +218,12 @@ export class GitHubStreakCounter {
     let streakText, dateText;
     
     if (this.currentStreak === -1) {
-      // No critical incidents on record
-      streakText = '✓ No Critical Incidents';
+      // No significant incidents on record (unlikely)
+      streakText = '✓ No Major Incidents';
       dateText = 'on record';
     } else if (this.currentStreak === 0) {
       // Incident today
-      streakText = '⚠️ Critical Incident Today';
+      streakText = '⚠️ Major Incident Today';
       dateText = this.formatDate(this.lastIncidentDate);
     } else {
       // Normal streak display
