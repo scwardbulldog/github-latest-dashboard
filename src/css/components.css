@@ -460,63 +460,46 @@
 
 /* ============================================
    Octocat Cameo - Easter Egg Animation
-   Mona walks across the bottom of the screen
-   every 30 minutes as a delightful surprise.
+   Jetpacktocat flies chaotically around the
+   screen with out-of-control jetpack physics.
+   Official art from GitHub Octodex (#116)
+   by tonyjaramillo.
    ============================================ */
 
-/* Animation keyframes for walking across screen */
-@keyframes mona-walk {
-  0% {
-    transform: translateX(100vw);
-  }
-  100% {
-    transform: translateX(-120px);        /* Exit fully off-screen left */
-  }
-}
-
-/* Optional: Subtle bounce while walking */
-@keyframes mona-bounce {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-4px);          /* Subtle bounce */
-  }
-}
-
-.mona-cameo {
-  /* Fixed positioning at bottom of viewport */
+.jetpacktocat-cameo {
+  /* Fixed positioning for absolute placement */
   position: fixed;
-  bottom: 20px;                           /* Per issue spec: 20px from bottom edge */
+  top: 0;
   left: 0;
   
-  /* Size: 100px (per issue spec: 80-100px visible but not dominant) */
+  /* Size: 100px for visibility */
   width: 100px;
   height: 100px;
   
-  /* Apply walking animation */
-  animation: mona-walk var(--mona-duration, 18s) linear forwards;
-  
-  /* Overlay content safely without blocking critical elements */
+  /* High z-index but non-blocking */
   z-index: 999;
   
   /* Non-interactive */
-  pointer-events: none;                   /* Don't block clicks */
+  pointer-events: none;
   user-select: none;
-  -webkit-user-select: none;              /* Chromium 84 compatibility */
+  -webkit-user-select: none;
   
-  /* GPU acceleration for smooth animation on Raspberry Pi 3B */
+  /* GPU acceleration for smooth physics animation */
   will-change: transform;
-  -webkit-transform: translateZ(0);
   transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  
+  /* Transform origin at center for rotation */
+  transform-origin: center center;
 }
 
-/* SVG styling for Mona */
-.mona-cameo svg {
+/* Image styling for Jetpacktocat */
+.jetpacktocat-cameo img {
   width: 100%;
   height: 100%;
   display: block;
+  object-fit: contain;
   
-  /* Add subtle bounce animation */
-  animation: mona-bounce 0.5s ease-in-out infinite;
+  /* Prevent image drag/selection */
+  -webkit-user-drag: none;
 }

@@ -928,7 +928,7 @@ function getItemCountForPage(pageName) {
 
 // Initialize dashboard
 updateTimestamp();
-fetchAllData();
+// NOTE: fetchAllData() is now called after config initialization in startDashboard()
 
 // Initialize and start carousel rotation
 // Store globally to prevent memory leaks during hot reload
@@ -1153,6 +1153,8 @@ function startDashboard() {
 // Initialize with config and start dashboard
 initializeWithConfig().then(() => {
     startDashboard();
+    // Initial data load after dashboard is initialized
+    fetchAllData();
     console.log('🚀 Dashboard started with configuration');
 }).catch((error) => {
     console.error('Failed to initialize dashboard:', error);
