@@ -32,9 +32,17 @@ const statusChangeCallbacks = [];
 /**
  * Register a callback to be notified of status changes
  * @param {Function} callback - Function to call when status changes (sourceName, statusData)
+ * @returns {Function} Unsubscribe function - call it to remove the callback and prevent memory leaks
  */
 export function onStatusChange(callback) {
   statusChangeCallbacks.push(callback);
+
+  return () => {
+    const index = statusChangeCallbacks.indexOf(callback);
+    if (index > -1) {
+      statusChangeCallbacks.splice(index, 1);
+    }
+  };
 }
 
 /**
