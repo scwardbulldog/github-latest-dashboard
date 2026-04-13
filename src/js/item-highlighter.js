@@ -14,6 +14,7 @@ export class ItemHighlighter {
     this.itemCount = 0;         // Total items on current page
     this.timer = null;          // setInterval handle
     this.onItemHighlight = null; // Callback: (itemIndex: number) => void
+    this.cachedItems = null;    // Cached NodeList of list items (to reduce DOM queries)
     
     // Timer accuracy tracking (for burn-in testing)
     this.lastHighlight = null;  // Timestamp of last highlight
@@ -37,6 +38,16 @@ export class ItemHighlighter {
     // Store item count for this page
     this.itemCount = itemCount;
     this.currentItem = 0;
+    
+    // Cache list items on start to reduce DOM queries (Performance optimization)
+    const activePage = document.querySelector('.carousel-page.active');
+    if (activePage) {
+      this.cachedItems = activePage.querySelectorAll('.list-item');
+      console.log(`ItemHighlighter: Cached ${this.cachedItems.length} items for highlighting`);
+    } else {
+      this.cachedItems = [];
+      console.warn('ItemHighlighter: No active page found during start, caching empty list');
+    }
     
     // Initialize timer accuracy tracking
     this.lastHighlight = Date.now();
@@ -69,6 +80,8 @@ export class ItemHighlighter {
       clearInterval(this.timer);
       this.timer = null;
     }
+    // Clear cached items to free memory
+    this.cachedItems = null;
   }
   
   /**
@@ -119,6 +132,25 @@ export class ItemHighlighter {
     this.currentItem = 0;
     // Remove all highlighting
     this.clearAllHighlights();
+  }
+  
+  /**
+   * Refresh cached items after DOM update (called on data refresh)
+   * Preserves timer state and current position
+   */
+  refreshCache() {
+    if (!this.timer) {
+      // Not currently running (stopped or paused), no need to refresh
+      return;
+    }
+    
+    const activePage = document.querySelector('.carousel-page.active');
+    if (activePage) {
+      this.cachedItems = activePage.querySelectorAll('.list-item');
+      console.log(`ItemHighlighter: Cache refreshed with ${this.cachedItems.length} items`);
+    } else {
+      console.warn('ItemHighlighter: Could not refresh cache, no active page found');
+    }
   }
   
   /**
@@ -174,32 +206,25 @@ export class ItemHighlighter {
    * @private
    */
   highlightItem(index) {
-    // Get active page's list items
-    const activePage = document.querySelector('.carousel-page.active');
-    if (!activePage) {
-      console.error('ItemHighlighter: No active page found');
+    // Use cached items to avoid repeated querySelectorAll() calls (eliminates ~10,800 DOM queries/day)
+    if (!this.cachedItems || this.cachedItems.length === 0) {
+      console.error('ItemHighlighter: No cached items found');
       return;
     }
     
-    const items = activePage.querySelectorAll('.list-item');
-    console.log(`ItemHighlighter: Found ${items.length} items on page, highlighting index ${index}`);
-    
-    if (items.length === 0) {
-      console.error('ItemHighlighter: No list items found on active page');
-      return;
-    }
+    console.log(`ItemHighlighter: Found ${this.cachedItems.length} items on page, highlighting index ${index}`);
     
     // Remove previous highlight from all items
-    items.forEach(item => item.classList.remove('list-item--highlighted'));
+    this.cachedItems.forEach(item => item.classList.remove('list-item--highlighted'));
     
     // Add highlight to current item
-    if (items[index]) {
-      items[index].classList.add('list-item--highlighted');
+    if (this.cachedItems[index]) {
+      this.cachedItems[index].classList.add('list-item--highlighted');
       console.log(`✓ Item ${index} highlighted with class 'list-item--highlighted'`);
       
       // Trigger callback for DetailPanel integration (Story 3.3)
       if (this.onItemHighlight) {
-        this.onItemHighlight(items[index], index);
+        this.onItemHighlight(this.cachedItems[index], index);
       }
     }
   }
