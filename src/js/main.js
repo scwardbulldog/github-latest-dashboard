@@ -161,14 +161,12 @@ function updateLiveIndicator() {
 /**
  * Create a share button element for an item.
  * No click listener is attached here; event delegation in renderRSSList handles clicks.
- * @param {number} index - The item index
  * @returns {HTMLElement} Share button element
  */
-function createShareButton(index) {
+function createShareButton() {
     const shareBtn = document.createElement('button');
     shareBtn.className = 'btn-share';
     shareBtn.title = 'Share this item';
-    shareBtn.dataset.itemIndex = index;
     shareBtn.innerHTML = `
         <svg class="icon-share" viewBox="0 0 16 16" fill="currentColor">
             <path d="M13 7.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zm-11 6a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zm11 0a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z"></path>
@@ -259,7 +257,7 @@ function renderRSSList(data, containerId, sourceName, feedName) {
         headerEl.appendChild(titleEl);
         
         // Add share button
-        const shareBtn = createShareButton(index);
+        const shareBtn = createShareButton();
         headerEl.appendChild(shareBtn);
         
         itemEl.appendChild(headerEl);
