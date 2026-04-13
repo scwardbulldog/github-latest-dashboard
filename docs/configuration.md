@@ -41,6 +41,15 @@ For **Raspberry Pi deployment**, the config file should be in the same directory
   
   "refreshInterval": 300000,
   
+  "refreshIntervals": {
+    "blog": 600000,
+    "changelog": 600000,
+    "status": 180000,
+    "vscode": 900000,
+    "visualstudio": 900000,
+    "anthropic": 900000
+  },
+  
   "pages": ["vscode", "visualstudio", "blog", "changelog", "status", "anthropic"],
   
   "pageIntervals": {
@@ -77,17 +86,81 @@ For **Raspberry Pi deployment**, the config file should be in the same directory
 
 #### `refreshInterval`
 
-API refresh interval in milliseconds.
+Global API refresh interval in milliseconds (fallback for sources without specific intervals).
 
 - **Default:** `300000` (5 minutes)
 - **Minimum:** `60000` (1 minute)
-- **Description:** How often the dashboard fetches new data from APIs
+- **Description:** How often the dashboard fetches new data from APIs. This is used as a fallback if a source doesn't have a specific interval defined in `refreshIntervals`.
 
 ```json
 {
   "refreshInterval": 600000  // 10 minutes
 }
 ```
+
+#### `refreshIntervals`
+
+Per-source API refresh intervals in milliseconds. Each source can have its own refresh rate to optimize API usage.
+
+- **Default:** See table below
+- **Minimum:** `60000` (1 minute) per source
+- **Valid sources:** `"blog"`, `"changelog"`, `"status"`, `"vscode"`, `"visualstudio"`, `"anthropic"`
+- **Description:** Controls how often each individual data source is refreshed. Sources refresh independently on their own timers.
+
+**Default intervals:**
+
+| Source | Default | Rationale |
+|--------|---------|-----------|
+| `blog` | 10 minutes (600000) | Blog posts once per day on average |
+| `changelog` | 10 minutes (600000) | Changelog updates weekly |
+| `status` | 3 minutes (180000) | Important during incidents |
+| `vscode` | 15 minutes (900000) | Moderate update frequency |
+| `visualstudio` | 15 minutes (900000) | Moderate update frequency |
+| `anthropic` | 15 minutes (900000) | Moderate update frequency |
+
+**Examples:**
+
+Incident-focused office (fast status updates, slower blog):
+```json
+{
+  "refreshIntervals": {
+    "status": 60000,    // 1 minute
+    "blog": 1800000     // 30 minutes
+  }
+}
+```
+
+Developer-focused office (fast changelogs and VS Code, slower status):
+```json
+{
+  "refreshIntervals": {
+    "changelog": 300000,     // 5 minutes
+    "vscode": 300000,        // 5 minutes
+    "visualstudio": 300000,  // 5 minutes
+    "status": 900000         // 15 minutes
+  }
+}
+```
+
+Bandwidth-conscious deployment (longer intervals):
+```json
+{
+  "refreshIntervals": {
+    "blog": 1800000,         // 30 minutes
+    "changelog": 1800000,    // 30 minutes
+    "status": 600000,        // 10 minutes
+    "vscode": 1800000,       // 30 minutes
+    "visualstudio": 1800000, // 30 minutes
+    "anthropic": 1800000     // 30 minutes
+  }
+}
+```
+
+**Benefits:**
+- Reduces API load by matching actual update frequency
+- Improves Raspberry Pi performance (less network activity)
+- Better API citizenship (respects rate limits)
+- User control based on office needs
 
 #### `pages`
 
