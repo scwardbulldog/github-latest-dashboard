@@ -275,12 +275,26 @@ export class RefreshIntervalController {
   }
 
   /**
-   * Trigger an immediate data refresh and restart the timer from now.
+   * Trigger an immediate data refresh and restart all timers.
+   * Resets carousel to first page and item highlighter to first item.
    */
   refreshNow() {
     this.markRefreshed();
     this.onRefresh();
-    this._showToast('Data refresh triggered');
+    
+    // Reset carousel to first page by stopping and restarting
+    if (window.carouselInstance) {
+      window.carouselInstance.currentPage = 0;
+      window.carouselInstance.stop();
+      window.carouselInstance.start();
+    }
+    
+    // Reset item highlighter to first item
+    if (window.itemHighlighterInstance) {
+      window.itemHighlighterInstance.reset();
+    }
+    
+    this._showToast('Dashboard refreshed');
 
     // Restart timer from now so the next auto-refresh is a full interval away
     if (this.intervalId) {
