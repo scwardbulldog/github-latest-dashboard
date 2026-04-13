@@ -9,8 +9,8 @@
 const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
 const POLL_INTERVAL = 5 * 60 * 1000; // 5 minutes
 
-// Anthropic Status API endpoint for unresolved incidents
-const CLAUDE_STATUS_API = 'https://status.claude.com/api/v2/incidents/unresolved.json';
+// Anthropic Status API endpoint for all incidents (includes historical)
+const CLAUDE_STATUS_API = 'https://status.claude.com/api/v2/incidents.json';
 
 /**
  * ClaudeStreakCounter class manages the uptime streak badge for Claude services
@@ -61,6 +61,7 @@ export class ClaudeStreakCounter {
 
   /**
    * Check Claude service status via Anthropic Status API
+   * Fetches incident history to find the most recent major/critical incident
    * @returns {boolean|null} true if operational, false if incident, null on API failure
    */
   async checkStatus() {
@@ -74,25 +75,24 @@ export class ClaudeStreakCounter {
       
       const data = await response.json();
       
-      // Check for any unresolved major/critical incidents affecting Claude services
-      const hasActiveIncident = this.hasSignificantIncident(data);
+      // Find the most recent major/critical incident from history
+      const lastSignificantIncident = this.getLastSignificantIncidentDate(data);
       
-      if (hasActiveIncident) {
-        // Record incident date if this is a new incident
-        const now = new Date();
-        if (this.isOperational) {
-          // Transition from operational to incident state
-          this.lastIncidentDate = now;
-          this.lastMilestone = 0; // Reset milestone tracking
-          this.isOperational = false;
+      if (lastSignificantIncident) {
+        // Check if this is a new incident (more recent than stored)
+        if (!this.lastIncidentDate || lastSignificantIncident > this.lastIncidentDate) {
+          this.lastIncidentDate = lastSignificantIncident;
+          this.lastMilestone = 0; // Reset milestone tracking on new incident
           this.saveToStorage();
-          console.log('ClaudeStreakCounter: New significant incident detected', now);
+          console.log('ClaudeStreakCounter: Found significant incident', lastSignificantIncident);
         }
-        return false;
-      } else {
-        this.isOperational = true;
-        return true;
       }
+      
+      // Check if there's currently an active incident
+      const hasActiveIncident = this.hasActiveSignificantIncident(data);
+      this.isOperational = !hasActiveIncident;
+      
+      return !hasActiveIncident;
     } catch (error) {
       console.warn('ClaudeStreakCounter: Status check failed, using cached data', error);
       // Don't assume down on API failure - use last known state
@@ -101,30 +101,66 @@ export class ClaudeStreakCounter {
   }
 
   /**
-   * Check if there are any significant (major/critical) incidents affecting Claude
+   * Get the most recent MAJOR or CRITICAL incident date from status data
    * @param {Object} data - Anthropic Status API response
-   * @returns {boolean} True if there's an active significant incident
+   * @returns {Date|null} Date of last significant incident or null if none
    */
-  hasSignificantIncident(data) {
+  getLastSignificantIncidentDate(data) {
     if (!data || !data.incidents || !Array.isArray(data.incidents)) {
       console.log('ClaudeStreakCounter: No incidents array in API response');
-      return false;
+      return null;
     }
 
     // Filter for major/critical impact incidents
-    // The unresolved.json endpoint only returns active incidents
     const significantIncidents = data.incidents.filter(incident => 
       incident.impact === 'major' || incident.impact === 'critical'
     );
 
-    if (significantIncidents.length > 0) {
-      console.log('ClaudeStreakCounter: Found significant incident(s)', 
-        significantIncidents.map(i => ({ name: i.name, impact: i.impact }))
+    if (significantIncidents.length === 0) {
+      console.log('ClaudeStreakCounter: No major/critical incidents found in history');
+      return null;
+    }
+
+    // Sort by created_at to get most recent
+    significantIncidents.sort((a, b) => 
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+
+    const lastSignificant = significantIncidents[0];
+    const incidentDate = new Date(lastSignificant.created_at);
+    
+    console.log('ClaudeStreakCounter: Last significant incident', {
+      name: lastSignificant.name,
+      date: incidentDate,
+      impact: lastSignificant.impact
+    });
+    
+    return incidentDate;
+  }
+
+  /**
+   * Check if there are any currently active significant incidents
+   * @param {Object} data - Anthropic Status API response
+   * @returns {boolean} True if there's an active significant incident
+   */
+  hasActiveSignificantIncident(data) {
+    if (!data || !data.incidents || !Array.isArray(data.incidents)) {
+      return false;
+    }
+
+    // Filter for active (not resolved) major/critical incidents
+    const activeSignificantIncidents = data.incidents.filter(incident => 
+      (incident.impact === 'major' || incident.impact === 'critical') &&
+      incident.status !== 'resolved' && incident.status !== 'postmortem'
+    );
+
+    if (activeSignificantIncidents.length > 0) {
+      console.log('ClaudeStreakCounter: Found active significant incident(s)', 
+        activeSignificantIncidents.map(i => ({ name: i.name, impact: i.impact, status: i.status }))
       );
       return true;
     }
 
-    console.log('ClaudeStreakCounter: No significant incidents found');
     return false;
   }
 
@@ -218,7 +254,7 @@ export class ClaudeStreakCounter {
   }
 
   /**
-   * Render the streak badge in the header
+   * Render the streak badge in the uptime badges container
    */
   render() {
     // Create or get badge element
@@ -235,20 +271,13 @@ export class ClaudeStreakCounter {
         this.badgeElement.rel = 'noopener noreferrer';
         this.badgeElement.title = 'View Claude Status';
         
-        // Insert in header-right, after GitHub streak badge (if present) or before live indicator
-        const headerRight = document.querySelector('.header-right');
-        const githubBadge = document.getElementById('github-streak-badge');
-        const liveIndicator = document.querySelector('.live-indicator');
+        // Insert in uptime badges container (top-right above detail cards)
+        const badgesContainer = document.getElementById('uptimeBadgesContainer');
         
-        if (headerRight && githubBadge) {
-          // Insert after GitHub badge for visual pairing
-          githubBadge.insertAdjacentElement('afterend', this.badgeElement);
-        } else if (headerRight && liveIndicator) {
-          headerRight.insertBefore(this.badgeElement, liveIndicator);
-        } else if (headerRight) {
-          headerRight.prepend(this.badgeElement);
+        if (badgesContainer) {
+          badgesContainer.appendChild(this.badgeElement);
         } else {
-          console.error('ClaudeStreakCounter: Could not find header-right element');
+          console.error('ClaudeStreakCounter: Could not find uptimeBadgesContainer element');
           return;
         }
       }

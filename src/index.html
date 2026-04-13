@@ -34,17 +34,122 @@
                 <span class="live-dot" id="liveDot"></span>
                 <span id="liveText">Live</span>
             </div>
-            <button class="theme-toggle" id="themeToggle" aria-label="Switch to light mode" title="Toggle dark/light theme">
-                <span class="theme-toggle__icon" id="themeToggleIcon">☀️</span>
-                <span class="theme-toggle__label" id="themeToggleLabel">Light</span>
-            </button>
             <button class="pause-button" id="pauseButton">
                 <span class="pause-icon" id="pauseIcon">⏸</span>
                 <span id="pauseText">Pause</span>
             </button>
+            <button class="settings-toggle" id="settingsToggle" aria-label="Open dashboard settings" title="Dashboard Settings">
+                ⚙️
+            </button>
             <div class="timestamp" id="timestamp">--:-- --</div>
         </div>
     </div>
+
+    <!-- Settings Panel (shown via gear icon) -->
+    <div class="settings-panel" id="settingsPanel" hidden>
+        <h3 class="settings-panel__title">Dashboard Settings</h3>
+
+        <!-- Theme Toggle -->
+        <div class="setting-group">
+            <label class="setting-group__label">Theme</label>
+            <div class="setting-group__toggle-row">
+                <button class="theme-toggle-setting" id="themeToggle" aria-label="Toggle theme" title="Toggle dark/light theme">
+                    <span class="theme-toggle-setting__icon" id="themeToggleIcon">☀️</span>
+                    <span class="theme-toggle-setting__label" id="themeToggleLabel">Light Mode</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="setting-group">
+            <label for="refreshIntervalSlider" class="setting-group__label">Data Refresh Interval</label>
+            <div class="setting-group__slider-row">
+                <!-- Slider values are in milliseconds: min=1min(60000ms), max=60min(3600000ms), step=1min(60000ms), default=5min(300000ms) -->
+                <input
+                    type="range"
+                    id="refreshIntervalSlider"
+                    class="setting-group__slider"
+                    min="60000"
+                    max="3600000"
+                    step="60000"
+                    value="300000"
+                    aria-label="Refresh interval in milliseconds"
+                />
+                <span class="setting-group__value" id="intervalValueLabel">5 minutes</span>
+            </div>
+            <div class="setting-group__ticks" aria-hidden="true">
+                <span>1m</span>
+                <span>5m</span>
+                <span>10m</span>
+                <span>15m</span>
+                <span>30m</span>
+                <span>60m</span>
+            </div>
+        </div>
+
+        <div class="setting-group">
+            <label for="pageTimerSlider" class="setting-group__label">Page Timer</label>
+            <div class="setting-group__slider-row">
+                <!-- Slider values are in milliseconds: min=10s(10000ms), max=180s(180000ms), step=5s(5000ms), default=30s(30000ms) -->
+                <input
+                    type="range"
+                    id="pageTimerSlider"
+                    class="setting-group__slider"
+                    min="10000"
+                    max="180000"
+                    step="5000"
+                    value="30000"
+                    aria-label="Page rotation timer in milliseconds"
+                />
+                <span class="setting-group__value" id="pageTimerValueLabel">30 seconds</span>
+            </div>
+            <div class="setting-group__ticks" aria-hidden="true">
+                <span>10s</span>
+                <span>30s</span>
+                <span>60s</span>
+                <span>90s</span>
+                <span>120s</span>
+                <span>180s</span>
+            </div>
+        </div>
+
+        <div class="setting-group">
+            <label for="cardTimerSlider" class="setting-group__label">Card Timer</label>
+            <div class="setting-group__slider-row">
+                <!-- Slider values are in milliseconds: min=3s(3000ms), max=30s(30000ms), step=1s(1000ms), default=5s(5000ms) -->
+                <input
+                    type="range"
+                    id="cardTimerSlider"
+                    class="setting-group__slider"
+                    min="3000"
+                    max="30000"
+                    step="1000"
+                    value="5000"
+                    aria-label="Card highlight timer in milliseconds"
+                />
+                <span class="setting-group__value" id="cardTimerValueLabel">5 seconds</span>
+            </div>
+            <div class="setting-group__ticks" aria-hidden="true">
+                <span>3s</span>
+                <span>10s</span>
+                <span>15s</span>
+                <span>20s</span>
+                <span>25s</span>
+                <span>30s</span>
+            </div>
+        </div>
+
+        <div class="setting-actions">
+            <button class="btn-action" id="refreshNowBtn">🔄 Refresh Now</button>
+            <button class="btn-action btn-action--secondary" id="resetDefaultsBtn">Reset Defaults</button>
+        </div>
+
+        <div class="last-refresh-indicator">
+            Last refreshed: <span id="lastRefreshTime">Just now</span>
+        </div>
+    </div>
+
+    <!-- Toast notification for settings confirmations -->
+    <div class="toast-notification" id="refreshToast" hidden></div>
 
     <!-- Initial Loading Overlay -->
     <div class="dashboard-loading-overlay" id="loadingOverlay">
@@ -53,6 +158,11 @@
     </div>
 
     <div class="dashboard-container loading">
+        <!-- Uptime Streak Badges Container (positioned top-right above detail panels) -->
+        <div class="uptime-badges-container" id="uptimeBadgesContainer">
+            <!-- GitHub and Claude streak badges will be inserted here by JS -->
+        </div>
+        
         <!-- Blog Page -->
         <div class="carousel-page" id="page-blog">
             <div class="page-header">GITHUB BLOG</div>

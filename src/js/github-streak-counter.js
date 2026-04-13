@@ -186,7 +186,7 @@ export class GitHubStreakCounter {
   }
 
   /**
-   * Render the streak badge in the header
+   * Render the streak badge in the uptime badges container
    */
   render() {
     // Create or get badge element
@@ -203,16 +203,13 @@ export class GitHubStreakCounter {
         this.badgeElement.rel = 'noopener noreferrer';
         this.badgeElement.title = 'View GitHub Status';
         
-        // Insert in header-right, before the live indicator
-        const headerRight = document.querySelector('.header-right');
-        const liveIndicator = document.querySelector('.live-indicator');
+        // Insert in uptime badges container (top-right above detail cards)
+        const badgesContainer = document.getElementById('uptimeBadgesContainer');
         
-        if (headerRight && liveIndicator) {
-          headerRight.insertBefore(this.badgeElement, liveIndicator);
-        } else if (headerRight) {
-          headerRight.prepend(this.badgeElement);
+        if (badgesContainer) {
+          badgesContainer.appendChild(this.badgeElement);
         } else {
-          console.error('GitHubStreakCounter: Could not find header-right element');
+          console.error('GitHubStreakCounter: Could not find uptimeBadgesContainer element');
           return;
         }
       }

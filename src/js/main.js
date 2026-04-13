@@ -19,6 +19,12 @@ import { TimeBasedMessages } from './time-based-messages.js';
 // Import Matrix rain easter egg for incident detection
 import { checkForNewIncidents } from './matrix-rain.js';
 
+// Import settings manager for localStorage persistence
+import { SettingsManager } from './settings-manager.js';
+
+// Import configurable refresh interval controller
+import { RefreshIntervalController } from './refresh-interval-controller.js';
+
 // Import GitHub Uptime Streak Counter (Easter Egg)
 import { GitHubStreakCounter } from './github-streak-counter.js';
 
@@ -710,7 +716,6 @@ class FrameSequenceAnimator {
 // ============================================================================
 
 let isPaused = false;
-let refreshIntervalId = null;
 let skaterAnimator = null;
 
 // Update timestamp
@@ -737,9 +742,8 @@ function togglePause() {
         updateLiveIndicator();
         
         // Pause data refresh (store elapsed for top progress bar)
-        if (refreshIntervalId) {
-            clearInterval(refreshIntervalId);
-            refreshIntervalId = null;
+        if (window.refreshIntervalController) {
+            window.refreshIntervalController.pause();
         }
         // Store elapsed time for top progress bar
         if (progressStartTime) {
@@ -772,7 +776,9 @@ function togglePause() {
         }
         
         // Resume data refresh interval (don't fetch immediately to avoid jarring)
-        refreshIntervalId = setInterval(fetchAllData, REFRESH_INTERVAL);
+        if (window.refreshIntervalController) {
+            window.refreshIntervalController.resume();
+        }
         
         // Resume carousel rotation
         if (window.carouselInstance) {
@@ -1055,6 +1061,11 @@ async function fetchAllData() {
             // The existing ItemHighlighter continues highlighting the updated DOM
             console.log('fetchAllData: Data refresh complete (timers preserved)');
         }
+
+        // Update last-refreshed timestamp in the settings panel
+        if (window.refreshIntervalController) {
+            window.refreshIntervalController.markRefreshed();
+        }
         
     } catch (error) {
         console.error('fetchAllData: Critical error during data initialization:', error);
@@ -1113,6 +1124,9 @@ function getItemCountForPage(pageName) {
     const listItems = pageElement.querySelectorAll('.list-item');
     return listItems.length;
 }
+
+// Initialize settings manager (localStorage persistence)
+window.settingsManager = new SettingsManager();
 
 // Initialize dashboard
 updateTimestamp();
@@ -1199,6 +1213,12 @@ window.persistentAlertInstance = new PersistentAlert();
 // Initialize theme toggle
 window.themeToggleInstance = new ThemeToggle();
 window.themeToggleInstance.init();
+
+// Sync theme changes to SettingsManager so the preference is saved in the
+// unified 'github-dashboard-settings' key alongside other settings.
+window.themeToggleInstance.onThemeChange = (theme) => {
+  window.settingsManager.setSetting('theme', theme);
+};
 
 // Initialize time-based messages (Easter Egg)
 if (window.timeBasedMessagesInstance) {
@@ -1341,10 +1361,16 @@ window.itemHighlighterInstance.onItemHighlight = (itemElement, itemIndex) => {
  * Sets up callbacks and starts all timers
  */
 function startDashboard() {
+    // Load persisted settings
+    const savedSettings = window.settingsManager.loadSettings();
+
     // Set carousel callback BEFORE starting (Story 3.2/3.4)
     // This callback is triggered when the page changes (default 30s, extended on Blog/Changelog)
     window.carouselInstance.onPageChange = (pageName) => {
         console.log(`Page changed to: ${pageName}`);
+
+        // Persist the new page so it is restored on next load
+        window.settingsManager.setSetting('lastCarouselPage', pageName);
         
         // CRITICAL: Reset item highlighting when page changes
         // This clears the 8-second timer and removes all highlights
@@ -1363,6 +1389,11 @@ function startDashboard() {
             console.log(`ItemHighlighter started with ${itemCount} items on ${pageName}`);
         }
     };
+
+    // Restore last-viewed carousel page from settings (FR-8)
+    if (savedSettings.lastCarouselPage) {
+        window.carouselInstance.goToPage(savedSettings.lastCarouselPage);
+    }
     
     // Start carousel
     window.carouselInstance.start();
@@ -1374,12 +1405,52 @@ function startDashboard() {
     // ItemHighlighter will be initialized in fetchAllData() after data is loaded
     // This ensures the first item is highlighted immediately when data is ready
     
-    // Auto-refresh using configured interval
-    refreshIntervalId = setInterval(fetchAllData, REFRESH_INTERVAL);
+    // Auto-refresh using the controller (honours user-configured interval from localStorage)
+    window.refreshIntervalController.start();
 }
 
 // Initialize with config and start dashboard
 initializeWithConfig().then(() => {
+    // Create refresh interval controller (reads intervals from localStorage,
+    // fallback to defaults; user's UI selection takes precedence over config file).
+    if (window.refreshIntervalController) {
+        window.refreshIntervalController.destroy();
+    }
+    window.refreshIntervalController = new RefreshIntervalController({
+        onRefresh: fetchAllData,
+        onIntervalChange: (newIntervalMs) => {
+            // Keep module-level REFRESH_INTERVAL in sync so the progress bar
+            // uses the correct duration after an interval change.
+            REFRESH_INTERVAL = newIntervalMs;
+            startProgressBar();
+        },
+        onPageTimerChange: (newIntervalMs) => {
+            // Update carousel default interval and reinitialize
+            DEFAULT_PAGE_INTERVAL = newIntervalMs;
+            if (window.carouselInstance) {
+                window.carouselInstance.defaultInterval = newIntervalMs;
+                window.carouselInstance.interval = newIntervalMs;
+                // Reset timer with new interval if currently on a page without override
+                window.carouselInstance.applyIntervalForCurrentPage();
+            }
+        },
+        onCardTimerChange: (newIntervalMs) => {
+            // Update item highlighter default interval
+            DEFAULT_ITEM_INTERVAL = newIntervalMs;
+            if (window.itemHighlighterInstance) {
+                window.itemHighlighterInstance.setInterval(newIntervalMs);
+            }
+        }
+    });
+    // Sync the progress bar duration to the stored interval on startup
+    REFRESH_INTERVAL = window.refreshIntervalController.getInterval();
+    // Sync page timer to stored value on startup
+    DEFAULT_PAGE_INTERVAL = window.refreshIntervalController.getPageTimer();
+    // Sync card timer to stored value on startup
+    DEFAULT_ITEM_INTERVAL = window.refreshIntervalController.getCardTimer();
+    
+    window.refreshIntervalController.init();
+
     startDashboard();
     // Initial data load after dashboard is initialized
     fetchAllData();
@@ -1394,6 +1465,34 @@ initializeWithConfig().then(() => {
         pages: defaults.pages,
         pageIntervals: defaultPageOverrides
     });
+    // Create controller with defaults even on config failure
+    if (!window.refreshIntervalController) {
+        window.refreshIntervalController = new RefreshIntervalController({
+            onRefresh: fetchAllData,
+            onIntervalChange: (newIntervalMs) => {
+                REFRESH_INTERVAL = newIntervalMs;
+                startProgressBar();
+            },
+            onPageTimerChange: (newIntervalMs) => {
+                DEFAULT_PAGE_INTERVAL = newIntervalMs;
+                if (window.carouselInstance) {
+                    window.carouselInstance.defaultInterval = newIntervalMs;
+                    window.carouselInstance.interval = newIntervalMs;
+                    window.carouselInstance.applyIntervalForCurrentPage();
+                }
+            },
+            onCardTimerChange: (newIntervalMs) => {
+                DEFAULT_ITEM_INTERVAL = newIntervalMs;
+                if (window.itemHighlighterInstance) {
+                    window.itemHighlighterInstance.setInterval(newIntervalMs);
+                }
+            }
+        });
+        REFRESH_INTERVAL = window.refreshIntervalController.getInterval();
+        DEFAULT_PAGE_INTERVAL = window.refreshIntervalController.getPageTimer();
+        DEFAULT_ITEM_INTERVAL = window.refreshIntervalController.getCardTimer();
+        window.refreshIntervalController.init();
+    }
     startDashboard();
 });
 
@@ -1622,3 +1721,89 @@ window.addEventListener('offline', () => {
     isOffline = true;
     updateLiveIndicator();
 });
+
+// ============================================================================
+// SETTINGS PANEL (localStorage persistence - Issue #40)
+// ============================================================================
+
+/**
+ * Update the storage indicator to reflect whether settings exist in localStorage.
+ */
+function updateStorageIndicator() {
+    const indicator = document.getElementById('storageIndicator');
+    if (!indicator) return;
+
+    if (!window.settingsManager.isStorageAvailable()) {
+        indicator.textContent = '⚠️ Storage unavailable';
+    } else {
+        indicator.textContent = window.settingsManager.hasStoredSettings()
+            ? '💾 Settings saved locally'
+            : '💾 Using defaults';
+    }
+}
+
+// Toggle settings panel visibility
+const settingsButton = document.getElementById('settingsButton');
+const settingsPanel = document.getElementById('settingsPanel');
+
+if (settingsButton && settingsPanel) {
+    settingsButton.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isOpen = settingsPanel.style.display !== 'none';
+        settingsPanel.style.display = isOpen ? 'none' : 'flex';
+        if (!isOpen) {
+            updateStorageIndicator();
+        }
+    });
+
+    // Close panel when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!settingsPanel.contains(e.target) && e.target !== settingsButton) {
+            settingsPanel.style.display = 'none';
+        }
+    });
+}
+
+// Reset to defaults button
+const resetSettingsBtn = document.getElementById('resetSettingsBtn');
+if (resetSettingsBtn) {
+    resetSettingsBtn.addEventListener('click', () => {
+        if (!window.confirm('Reset all settings to defaults?\n\nThis will clear your saved theme, last-viewed page, and any other stored preferences.')) {
+            return;
+        }
+
+        const success = window.settingsManager.resetToDefaults();
+        if (success) {
+            // Close panel
+            if (settingsPanel) settingsPanel.style.display = 'none';
+
+            // Reload so that defaults are applied cleanly (theme, carousel page, etc.)
+            window.location.reload();
+        } else {
+            window.alert('Failed to reset settings. Please try again.');
+        }
+    });
+}
+
+// Export settings button
+const exportSettingsBtn = document.getElementById('exportSettingsBtn');
+if (exportSettingsBtn) {
+    exportSettingsBtn.addEventListener('click', () => {
+        const json = window.settingsManager.exportSettings();
+        const blob = new Blob([json], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'github-dashboard-settings.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        if (settingsPanel) settingsPanel.style.display = 'none';
+    });
+}
+
+// Initialize the storage indicator on load
+updateStorageIndicator();
