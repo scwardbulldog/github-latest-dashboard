@@ -22,7 +22,7 @@
 #
 # For more information: https://github.github.com/gh-aw/introduction/overview/
 #
-# Daily workflow to identify doc files that are out of sync with recent code changes and open a pull request with necessary updates.
+# Weekly workflow to identify doc files that are out of sync with recent code changes and open a pull request with necessary updates.
 #
 # Secrets used:
 #   - COPILOT_GITHUB_TOKEN
@@ -42,8 +42,8 @@
 name: "Documentation Sync Agent"
 "on":
   schedule:
-  - cron: "48 23 * * 1-5"
-    # Friendly format: daily on weekdays (scattered)
+  - cron: "48 23 * * 1"
+    # Friendly format: weekly (scattered)
   # skip-if-match: "Docs sync:" # Skip-if-match processed as search check in pre-activation job
   workflow_dispatch:
     inputs:
@@ -1013,7 +1013,7 @@ jobs:
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
         env:
           WORKFLOW_NAME: "Documentation Sync Agent"
-          WORKFLOW_DESCRIPTION: "Daily workflow to identify doc files that are out of sync with recent code changes and open a pull request with necessary updates."
+          WORKFLOW_DESCRIPTION: "Weekly workflow to identify doc files that are out of sync with recent code changes and open a pull request with necessary updates."
           HAS_PATCH: ${{ needs.agent.outputs.has_patch }}
         with:
           script: |

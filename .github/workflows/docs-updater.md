@@ -1,7 +1,8 @@
 ---
-description: Daily workflow to identify doc files that are out of sync with recent code changes and open a pull request with necessary updates.
+description: Weekly workflow to identify doc files that are out of sync with recent code changes and open a pull request with necessary updates.
 on:
-  schedule: daily on weekdays
+  schedule: weekly
+  workflow_dispatch:    # Allow manual trigger
   skip-if-match: "Docs sync:"
 permissions:
   contents: read
