@@ -9,7 +9,7 @@ const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
 
 /**
  * Developer-relevant GitHub services to track for incidents
- * Excludes services not yet used by the team (Wiki, Pages)
+ * Excludes services not yet used by the team (Wiki, Pages, Codespaces)
  * 
  * Matching Strategy: Case-insensitive partial matching against GitHub Status API component names
  * - Supports variations like "Git Operations" matching "git-operations" or "Git Ops"
@@ -33,10 +33,9 @@ const DEVELOPER_RELEVANT_SERVICES = [
   'GitHub Copilot',
   
   // Infrastructure services
-  'Codespaces',
   'GitHub Connect',
   
-  // Exclude: GitHub Pages, GitHub Wiki (not used yet)
+  // Exclude: GitHub Pages, GitHub Wiki, Codespaces (not used yet)
 ];
 
 // Pre-compute lowercase versions for efficient comparison

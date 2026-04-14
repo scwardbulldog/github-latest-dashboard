@@ -9,7 +9,7 @@ A single-page web dashboard designed to run full-screen on a large office TV, di
 - **GitHub Status** - Real-time status and incident information with uptime tracker
   - Tracks days since last major GitHub incident affecting developer services
   - Filters for relevant services: Actions, Copilot, API, Pull Requests, Issues, Git Operations, etc.
-  - Excludes non-essential services: GitHub Pages, GitHub Wiki (not yet used by team)
+  - Excludes non-essential services: GitHub Pages, GitHub Wiki, Codespaces (not yet used by team)
 - **Auto-refresh** - Updates every 5 minutes automatically
 - **Auto-rotating pages** - Cycles through Blog → Changelog → Status every 30 seconds
 - **Item highlighting** - Highlights and showcases individual items every 8 seconds

@@ -62,7 +62,7 @@ The dashboard is built with a **component-based architecture** using vanilla Jav
 - Displays "days since last major GitHub incident" badge
 - Filters incidents by severity (major/critical only) and affected services
 - Focuses on developer-relevant services: Actions, Copilot, API, Pull Requests, Issues, Git Operations, Webhooks, etc.
-- Excludes non-essential services: GitHub Pages, GitHub Wiki (not yet used)
+- Excludes non-essential services: GitHub Pages, GitHub Wiki, Codespaces (not yet used)
 - Persists state in localStorage with daily auto-increment
 - Provides milestone animations (30, 60, 90, 365 days)
 
