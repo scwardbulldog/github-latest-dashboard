@@ -8,6 +8,40 @@
 const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
 
 /**
+ * Developer-relevant GitHub services to track for incidents
+ * Excludes services not yet used by the team (Wiki, Pages, Codespaces)
+ * 
+ * Matching Strategy: Case-insensitive partial matching against GitHub Status API component names
+ * - Supports variations like "Git Operations" matching "git-operations" or "Git Ops"
+ * - Uses bidirectional substring matching for flexibility
+ */
+const DEVELOPER_RELEVANT_SERVICES = [
+  // Core Git & API services
+  'Git Operations',
+  'API Requests',
+  'Webhooks',
+  
+  // Development workflow services
+  'GitHub Actions',
+  'Pull Requests',
+  'Issues',
+  'Notifications',
+  'Repositories',
+  'GitHub Packages',
+  
+  // AI/Developer tools
+  'GitHub Copilot',
+  
+  // Infrastructure services
+  'GitHub Connect',
+  
+  // Exclude: GitHub Pages, GitHub Wiki, Codespaces (not used yet)
+];
+
+// Pre-compute lowercase versions for efficient comparison
+const DEVELOPER_RELEVANT_SERVICES_LOWER = DEVELOPER_RELEVANT_SERVICES.map(s => s.toLowerCase());
+
+/**
  * GitHubStreakCounter class manages the uptime streak badge
  * Shows days since last major/critical incident with localStorage persistence
  */
@@ -121,7 +155,44 @@ export class GitHubStreakCounter {
   }
 
   /**
+   * Check if an incident affects developer-relevant services
+   * @param {Object} incident - Incident object from GitHub Status API
+   * @returns {boolean} True if incident affects services we care about
+   * @private
+   */
+  affectsDeveloperServices(incident) {
+    // If no components listed, assume it affects core services (conservative approach)
+    if (!incident.components || !Array.isArray(incident.components) || incident.components.length === 0) {
+      console.log('GitHubStreakCounter: Incident has no component info, counting as relevant:', incident.name);
+      return true;
+    }
+
+    // Check if any affected component is in our developer-relevant list
+    // Pre-convert to lowercase once for efficiency
+    const affectedServices = incident.components.map(c => c.name).filter(Boolean);
+    const affectedServicesLower = affectedServices.map(s => s.toLowerCase());
+    
+    // Case-insensitive partial matching to handle variations
+    const isRelevant = affectedServicesLower.some(serviceName => 
+      DEVELOPER_RELEVANT_SERVICES_LOWER.some(relevantService => 
+        serviceName.includes(relevantService) ||
+        relevantService.includes(serviceName)
+      )
+    );
+
+    if (!isRelevant) {
+      console.log('GitHubStreakCounter: Filtering out incident (non-developer services):', {
+        name: incident.name,
+        affectedServices: affectedServices
+      });
+    }
+
+    return isRelevant;
+  }
+
+  /**
    * Get the most recent MAJOR or CRITICAL incident date from status data
+   * Filters for developer-relevant services only (excludes Wiki, Pages, etc.)
    * GitHub Status API uses "major" for significant outages, "critical" for extreme cases
    * @param {Object} statusData - GitHub Status API incidents data
    * @returns {Date|null} Date of last significant incident or null if none
@@ -132,15 +203,17 @@ export class GitHubStreakCounter {
       return null;
     }
 
-    // Filter for MAJOR and CRITICAL impact incidents (significant outages)
+    // Filter for MAJOR and CRITICAL impact incidents affecting developer services
     // "major" = significant outages affecting many users/services
     // "critical" = extreme platform-wide failures (very rare)
-    const significantIncidents = statusData.incidents.filter(incident => 
-      incident.impact === 'major' || incident.impact === 'critical'
-    );
+    const significantIncidents = statusData.incidents.filter(incident => {
+      const isMajorOrCritical = incident.impact === 'major' || incident.impact === 'critical';
+      const affectsDevelopers = this.affectsDeveloperServices(incident);
+      return isMajorOrCritical && affectsDevelopers;
+    });
 
     if (significantIncidents.length === 0) {
-      console.log('GitHubStreakCounter: No major/critical incidents found');
+      console.log('GitHubStreakCounter: No major/critical incidents affecting developer services found');
       return null;
     }
 
@@ -152,10 +225,11 @@ export class GitHubStreakCounter {
     const lastSignificant = significantIncidents[0];
     const incidentDate = new Date(lastSignificant.created_at);
     
-    console.log('GitHubStreakCounter: Last significant incident', {
+    console.log('GitHubStreakCounter: Last significant developer-relevant incident', {
       name: lastSignificant.name,
       date: incidentDate,
-      impact: lastSignificant.impact
+      impact: lastSignificant.impact,
+      affectedServices: lastSignificant.components?.map(c => c.name).filter(Boolean) || []
     });
     
     return incidentDate;
