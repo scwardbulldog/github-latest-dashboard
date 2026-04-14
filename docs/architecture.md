@@ -15,6 +15,8 @@ The dashboard is built with a **component-based architecture** using vanilla Jav
   ├── detail-panel.js            # Detail view rendering
   ├── api-client.js              # Data fetching with retry/cache
   ├── persistent-alert.js        # Cross-page outage indicator
+  ├── github-streak-counter.js   # GitHub uptime streak tracker (days since incident)
+  ├── claude-streak-counter.js   # Claude uptime streak tracker (Easter egg)
   └── utils.js                   # Shared utilities (formatDate, stripHtml, truncate)
 ```
 
@@ -55,6 +57,18 @@ The dashboard is built with a **component-based architecture** using vanilla Jav
 - Cross-page outage indicator (survives page rotation)
 - Shows when using cached data during network issues
 - Auto-hides when connectivity restored
+
+### GitHubStreakCounter (`github-streak-counter.js`)
+- Displays "days since last major GitHub incident" badge
+- Filters incidents by severity (major/critical only) and affected services
+- Focuses on developer-relevant services: Actions, Copilot, API, Pull Requests, Issues, Git Operations, Webhooks, etc.
+- Excludes non-essential services: GitHub Pages, GitHub Wiki (not yet used)
+- Persists state in localStorage with daily auto-increment
+- Provides milestone animations (30, 60, 90, 365 days)
+
+### ClaudeStreakCounter (`claude-streak-counter.js`)
+- Similar to GitHubStreakCounter but tracks Claude/Anthropic service incidents
+- Easter egg feature for team awareness of AI service reliability
 
 ### Utils (`utils.js`)
 - `formatDate()` - ISO timestamps to relative time ("2 hours ago")
