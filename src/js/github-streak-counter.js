@@ -10,7 +10,10 @@ const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
 /**
  * Developer-relevant GitHub services to track for incidents
  * Excludes services not yet used by the team (Wiki, Pages)
- * Matches against component names in GitHub Status API incidents
+ * 
+ * Matching Strategy: Case-insensitive partial matching against GitHub Status API component names
+ * - Supports variations like "Git Operations" matching "git-operations" or "Git Ops"
+ * - Uses bidirectional substring matching for flexibility
  */
 const DEVELOPER_RELEVANT_SERVICES = [
   // Core Git & API services
@@ -35,6 +38,9 @@ const DEVELOPER_RELEVANT_SERVICES = [
   
   // Exclude: GitHub Pages, GitHub Wiki (not used yet)
 ];
+
+// Pre-compute lowercase versions for efficient comparison
+const DEVELOPER_RELEVANT_SERVICES_LOWER = DEVELOPER_RELEVANT_SERVICES.map(s => s.toLowerCase());
 
 /**
  * GitHubStreakCounter class manages the uptime streak badge
@@ -163,13 +169,15 @@ export class GitHubStreakCounter {
     }
 
     // Check if any affected component is in our developer-relevant list
+    // Pre-convert to lowercase once for efficiency
     const affectedServices = incident.components.map(c => c.name).filter(Boolean);
+    const affectedServicesLower = affectedServices.map(s => s.toLowerCase());
     
     // Case-insensitive partial matching to handle variations
-    const isRelevant = affectedServices.some(serviceName => 
-      DEVELOPER_RELEVANT_SERVICES.some(relevantService => 
-        serviceName.toLowerCase().includes(relevantService.toLowerCase()) ||
-        relevantService.toLowerCase().includes(serviceName.toLowerCase())
+    const isRelevant = affectedServicesLower.some(serviceName => 
+      DEVELOPER_RELEVANT_SERVICES_LOWER.some(relevantService => 
+        serviceName.includes(relevantService) ||
+        relevantService.includes(serviceName)
       )
     );
 
