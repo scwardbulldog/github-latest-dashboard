@@ -311,17 +311,17 @@ export class OctocatCameo {
 
   /**
    * Update physics simulation - position, velocity, collisions
-   * Performance: Uses cached screen dimensions, reduced Math.random calls
+   * Performance: Uses cached screen dimensions
    */
   updatePhysics() {
     // Update position
     this.x += this.vx;
     this.y += this.vy;
     
-    // Performance: Single random call for both axes wobble
-    const rand = Math.random();
-    this.vx += (rand - 0.5) * PHYSICS.WOBBLE_INTENSITY;
-    this.vy += ((rand * 2) % 1 - 0.5) * PHYSICS.WOBBLE_INTENSITY; // Pseudo-random from same call
+    // Add chaotic wobble to velocity
+    // Using two random calls is necessary to maintain uncorrelated chaotic behavior
+    this.vx += (Math.random() - 0.5) * PHYSICS.WOBBLE_INTENSITY;
+    this.vy += (Math.random() - 0.5) * PHYSICS.WOBBLE_INTENSITY;
     
     // Clamp speed to stay within bounds
     const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
