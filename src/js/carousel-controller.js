@@ -346,4 +346,59 @@ export class CarouselController {
     console.info(`CarouselController: Restored to page '${pageName}' (index ${pageIndex})`);
     return true;
   }
+  
+  /**
+   * Navigate to next or previous page by direction
+   * Used for keyboard navigation (left/right arrow keys)
+   * Triggers onPageChange callback for proper coordination with ItemHighlighter
+   * @param {number} direction - 1 for next page, -1 for previous page
+   */
+  goToPageByDirection(direction) {
+    // Calculate target index with wrapping
+    let targetIndex = this.currentPage + direction;
+    
+    // Wrap around: going left from first page goes to last, going right from last goes to first
+    if (targetIndex < 0) {
+      targetIndex = this.pages.length - 1;
+    } else if (targetIndex >= this.pages.length) {
+      targetIndex = 0;
+    }
+    
+    // Get DOM elements
+    const currentPageElement = document.getElementById(`page-${this.pages[this.currentPage]}`);
+    const targetPageElement = document.getElementById(`page-${this.pages[targetIndex]}`);
+    
+    if (!currentPageElement || !targetPageElement) {
+      console.error('CarouselController.goToPageByDirection: Page elements not found');
+      return;
+    }
+    
+    // Perform page transition (similar to rotatePage but without scheduling next)
+    // PHASE 1: Remove active from current page
+    currentPageElement.classList.remove('active');
+    
+    // PHASE 2: Swap display properties after fade out
+    setTimeout(() => {
+      currentPageElement.style.display = 'none';
+      targetPageElement.style.display = 'flex';
+      
+      // PHASE 3: Add active to target page
+      requestAnimationFrame(() => {
+        targetPageElement.classList.add('active');
+        
+        // Trigger callback AFTER new page is active
+        if (this.onPageChange) {
+          this.onPageChange(this.pages[targetIndex]);
+        }
+      });
+    }, 300);
+    
+    // Update state
+    this.currentPage = targetIndex;
+    
+    // Update progress for new page (reset the progress bar)
+    this.applyIntervalForCurrentPage();
+    
+    console.log(`CarouselController: Navigated to page '${this.pages[targetIndex]}' (direction: ${direction})`);
+  }
 }

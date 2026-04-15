@@ -135,6 +135,43 @@ export class ItemHighlighter {
   }
   
   /**
+   * Navigate to next or previous item by direction
+   * Used for keyboard navigation (up/down arrow keys)
+   * @param {number} direction - 1 for next item, -1 for previous item
+   */
+  goToItem(direction) {
+    // Ensure we have cached items; if not, try to refresh
+    if (!this.cachedItems || this.cachedItems.length === 0) {
+      const activePage = document.querySelector('.carousel-page.active');
+      if (activePage) {
+        this.cachedItems = activePage.querySelectorAll('.list-item');
+        this.itemCount = this.cachedItems.length;
+      }
+    }
+    
+    if (!this.cachedItems || this.cachedItems.length === 0) {
+      console.warn('ItemHighlighter.goToItem: No items available to navigate');
+      return;
+    }
+    
+    // Calculate target index with wrapping
+    let targetIndex = this.currentItem + direction;
+    
+    // Wrap around: going up from first item goes to last, going down from last goes to first
+    if (targetIndex < 0) {
+      targetIndex = this.cachedItems.length - 1;
+    } else if (targetIndex >= this.cachedItems.length) {
+      targetIndex = 0;
+    }
+    
+    // Update current item and highlight
+    this.currentItem = targetIndex;
+    this.highlightItem(targetIndex);
+    
+    console.log(`ItemHighlighter: Navigated to item ${targetIndex} (direction: ${direction})`);
+  }
+  
+  /**
    * Refresh cached items after DOM update (called on data refresh)
    * Preserves timer state and current position
    */

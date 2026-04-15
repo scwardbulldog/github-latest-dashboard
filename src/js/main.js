@@ -40,6 +40,9 @@ import { ClaudeStreakCounter } from './claude-streak-counter.js';
 // Import Octocat cameo Easter egg
 import { OctocatCameo } from './octocat-cameo.js';
 
+// Import Keyboard Navigation Controller for arrow key navigation
+import { KeyboardNavigationController } from './keyboard-navigation.js';
+
 // Import API client for data fetching (Story 3.5)
 import {
     fetchBlog as fetchBlogFromApiClient,
@@ -924,6 +927,12 @@ function togglePause() {
             window.itemHighlighterInstance.resume();
         }
         
+        // Notify keyboard navigation controller that user manually resumed
+        // This clears any auto-resume timer and resets auto-pause tracking
+        if (window.keyboardNavigationInstance) {
+            window.keyboardNavigationInstance.onManualResume();
+        }
+        
         // Hide pause QR widget and reset dismissed state for next pause
         hidePauseQrWidget();
         pauseQrWidgetDismissed = false;
@@ -1596,6 +1605,39 @@ if (window.octocatCameoInstance) {
 window.octocatCameoInstance = new OctocatCameo();
 // Start the Easter egg timer (will trigger every 30 minutes)
 window.octocatCameoInstance.start();
+
+// Initialize Keyboard Navigation Controller
+// Allows arrow key navigation: Up/Down for items, Left/Right for pages
+// Auto-resumes after 60 seconds of inactivity when auto-paused by navigation
+if (window.keyboardNavigationInstance) {
+  // Clean up if exists (hot reload support)
+  window.keyboardNavigationInstance.stop();
+  window.keyboardNavigationInstance = null;
+}
+
+window.keyboardNavigationInstance = new KeyboardNavigationController({
+  autoResumeDelay: 60000, // 60 seconds before auto-resume
+  carouselController: window.carouselInstance,
+  itemHighlighter: window.itemHighlighterInstance,
+  onPause: function() {
+    // Call togglePause if not already paused
+    if (!isPaused) {
+      togglePause();
+    }
+  },
+  onResume: function() {
+    // Call togglePause if currently paused
+    if (isPaused) {
+      togglePause();
+    }
+  },
+  getIsPaused: function() {
+    return isPaused;
+  }
+});
+
+// Start keyboard navigation
+window.keyboardNavigationInstance.start();
 
 /**
  * Extract item data from a list item DOM element
