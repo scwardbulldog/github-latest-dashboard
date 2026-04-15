@@ -1745,10 +1745,18 @@ function startDashboard() {
         const itemCount = getItemCountForPage(pageName);
         
         // Start highlighting on new page if items exist
-        // Item timer begins fresh countdown using page-specific interval
+        // When dashboard is paused (e.g., via keyboard navigation), initialize items
+        // without starting the auto-advance timer so manual navigation still works
         if (itemCount > 0) {
-            window.itemHighlighterInstance.start(itemCount);
-            console.log(`ItemHighlighter started with ${itemCount} items on ${pageName}`);
+            if (isPaused) {
+                // Dashboard is paused - initialize for manual navigation only
+                window.itemHighlighterInstance.initializeForPausedState(itemCount);
+                console.log(`ItemHighlighter initialized (paused) with ${itemCount} items on ${pageName}`);
+            } else {
+                // Dashboard is running - start normal auto-advance timer
+                window.itemHighlighterInstance.start(itemCount);
+                console.log(`ItemHighlighter started with ${itemCount} items on ${pageName}`);
+            }
         }
     };
 

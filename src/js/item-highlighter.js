@@ -130,8 +130,40 @@ export class ItemHighlighter {
   reset() {
     this.stop();
     this.currentItem = 0;
+    this.isPaused = false;
     // Remove all highlighting
     this.clearAllHighlights();
+  }
+  
+  /**
+   * Initialize for a new page without starting the auto-advance timer.
+   * Used when dashboard is paused and user navigates to a new page via keyboard.
+   * Caches items and highlights the first one, but doesn't start the timer.
+   * @param {number} itemCount - Number of items on the page
+   */
+  initializeForPausedState(itemCount) {
+    // Stop any existing timer
+    this.stop();
+    
+    // Store item count for this page
+    this.itemCount = itemCount;
+    this.currentItem = 0;
+    this.isPaused = true;
+    
+    // Cache list items for the new page
+    const activePage = document.querySelector('.carousel-page.active');
+    if (activePage) {
+      this.cachedItems = activePage.querySelectorAll('.list-item');
+      console.log(`ItemHighlighter: Cached ${this.cachedItems.length} items for paused navigation`);
+    } else {
+      this.cachedItems = [];
+      console.warn('ItemHighlighter: No active page found during initializeForPausedState');
+    }
+    
+    // Highlight first item (but don't start timer)
+    if (this.cachedItems.length > 0) {
+      this.highlightItem(0);
+    }
   }
   
   /**
