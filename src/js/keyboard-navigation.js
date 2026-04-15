@@ -179,8 +179,10 @@ export class KeyboardNavigationController {
       return;
     }
     
-    // Pause dashboard if not already paused
-    this.ensurePaused();
+    // NOTE: Page navigation does NOT pause the dashboard.
+    // Left/Right arrows simply jump to the next/previous page while respecting
+    // the current pause state (if already paused by Up/Down or spacebar, it stays paused).
+    // This differs from Up/Down item navigation which DOES pause to let the user browse.
     
     // Navigate to the target page
     this.carouselController.goToPageByDirection(direction);

@@ -1800,8 +1800,9 @@ function startDashboard() {
             // Update QR code when item changes via keyboard navigation
             updatePauseQrWidget();
         },
-        // Disable item navigation on status pages (they don't have navigable card items)
-        disabledPages: ['status', 'vscode', 'visualstudio', 'anthropic']
+        // Disable item navigation on status monitoring pages only (they don't have navigable card items)
+        // Note: vscode and visualstudio are blog/release note pages and SHOULD have card navigation
+        disabledPages: ['status', 'anthropic']
     });
     
     // Start keyboard navigation
