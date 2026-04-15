@@ -9,6 +9,11 @@
  * @class
  * @requires Chrome/Chromium 84+ (ES6, classList, template literals)
  */
+
+// Default auto-resume delay (60 seconds)
+// Can be overridden via constructor config
+const DEFAULT_AUTO_RESUME_DELAY = 60000;
+
 export class KeyboardNavigationController {
   /**
    * Create a KeyboardNavigationController instance
@@ -21,7 +26,7 @@ export class KeyboardNavigationController {
    * @param {Function} config.getIsPaused - Function that returns current pause state
    */
   constructor({
-    autoResumeDelay = 60000,
+    autoResumeDelay = DEFAULT_AUTO_RESUME_DELAY,
     carouselController = null,
     itemHighlighter = null,
     onPause = null,

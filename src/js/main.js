@@ -1459,6 +1459,10 @@ let PAGE_INTERVAL_OVERRIDES = {};
 let DEFAULT_ITEM_INTERVAL = 5333;
 let ITEM_INTERVAL_OVERRIDES = {};
 
+// Auto-resume delay for keyboard navigation (60 seconds)
+// Dashboard returns to automatic rotation after this period of inactivity
+const KEYBOARD_NAV_AUTO_RESUME_DELAY = 60000;
+
 /**
  * Initialize dashboard with user configuration
  * Loads config.json and sets up all intervals and pages
@@ -1616,7 +1620,7 @@ if (window.keyboardNavigationInstance) {
 }
 
 window.keyboardNavigationInstance = new KeyboardNavigationController({
-  autoResumeDelay: 60000, // 60 seconds before auto-resume
+  autoResumeDelay: KEYBOARD_NAV_AUTO_RESUME_DELAY,
   carouselController: window.carouselInstance,
   itemHighlighter: window.itemHighlighterInstance,
   onPause: function() {
