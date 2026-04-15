@@ -130,8 +130,77 @@ export class ItemHighlighter {
   reset() {
     this.stop();
     this.currentItem = 0;
+    this.isPaused = false;
     // Remove all highlighting
     this.clearAllHighlights();
+  }
+  
+  /**
+   * Initialize for a new page without starting the auto-advance timer.
+   * Used when dashboard is paused and user navigates to a new page via keyboard.
+   * Caches items and highlights the first one, but doesn't start the timer.
+   * @param {number} itemCount - Number of items on the page
+   */
+  initializeForPausedState(itemCount) {
+    // Stop any existing timer
+    this.stop();
+    
+    // Store item count for this page
+    this.itemCount = itemCount;
+    this.currentItem = 0;
+    this.isPaused = true;
+    
+    // Cache list items for the new page
+    const activePage = document.querySelector('.carousel-page.active');
+    if (activePage) {
+      this.cachedItems = activePage.querySelectorAll('.list-item');
+      console.log(`ItemHighlighter: Cached ${this.cachedItems.length} items for paused navigation`);
+    } else {
+      this.cachedItems = [];
+      console.warn('ItemHighlighter: No active page found during initializeForPausedState');
+    }
+    
+    // Highlight first item (but don't start timer)
+    if (this.cachedItems.length > 0) {
+      this.highlightItem(0);
+    }
+  }
+  
+  /**
+   * Navigate to next or previous item by direction
+   * Used for keyboard navigation (up/down arrow keys)
+   * @param {number} direction - 1 for next item, -1 for previous item
+   */
+  goToItem(direction) {
+    // Ensure we have cached items; if not, try to refresh
+    if (!this.cachedItems || this.cachedItems.length === 0) {
+      const activePage = document.querySelector('.carousel-page.active');
+      if (activePage) {
+        this.cachedItems = activePage.querySelectorAll('.list-item');
+        this.itemCount = this.cachedItems.length;
+      }
+    }
+    
+    if (!this.cachedItems || this.cachedItems.length === 0) {
+      console.warn('ItemHighlighter.goToItem: No items available to navigate');
+      return;
+    }
+    
+    // Calculate target index with wrapping
+    let targetIndex = this.currentItem + direction;
+    
+    // Wrap around: going up from first item goes to last, going down from last goes to first
+    if (targetIndex < 0) {
+      targetIndex = this.cachedItems.length - 1;
+    } else if (targetIndex >= this.cachedItems.length) {
+      targetIndex = 0;
+    }
+    
+    // Update current item and highlight
+    this.currentItem = targetIndex;
+    this.highlightItem(targetIndex);
+    
+    console.log(`ItemHighlighter: Navigated to item ${targetIndex} (direction: ${direction})`);
   }
   
   /**

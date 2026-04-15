@@ -40,6 +40,9 @@ import { ClaudeStreakCounter } from './claude-streak-counter.js';
 // Import Octocat cameo Easter egg
 import { OctocatCameo } from './octocat-cameo.js';
 
+// Import Keyboard Navigation Controller for arrow key navigation
+import { KeyboardNavigationController } from './keyboard-navigation.js';
+
 // Import API client for data fetching (Story 3.5)
 import {
     fetchBlog as fetchBlogFromApiClient,
@@ -924,6 +927,12 @@ function togglePause() {
             window.itemHighlighterInstance.resume();
         }
         
+        // Notify keyboard navigation controller that user manually resumed
+        // This clears any auto-resume timer and resets auto-pause tracking
+        if (window.keyboardNavigationInstance) {
+            window.keyboardNavigationInstance.onManualResume();
+        }
+        
         // Hide pause QR widget and reset dismissed state for next pause
         hidePauseQrWidget();
         pauseQrWidgetDismissed = false;
@@ -1597,6 +1606,10 @@ window.octocatCameoInstance = new OctocatCameo();
 // Start the Easter egg timer (will trigger every 30 minutes)
 window.octocatCameoInstance.start();
 
+// Keyboard Navigation Controller will be initialized in startDashboard()
+// after the carousel is properly configured. The controller needs a valid
+// reference to carouselInstance which is only available after initializeWithConfig().
+
 /**
  * Extract item data from a list item DOM element
  * @param {HTMLElement} itemElement - The list item element
@@ -1732,10 +1745,18 @@ function startDashboard() {
         const itemCount = getItemCountForPage(pageName);
         
         // Start highlighting on new page if items exist
-        // Item timer begins fresh countdown using page-specific interval
+        // When dashboard is paused (e.g., via keyboard navigation), initialize items
+        // without starting the auto-advance timer so manual navigation still works
         if (itemCount > 0) {
-            window.itemHighlighterInstance.start(itemCount);
-            console.log(`ItemHighlighter started with ${itemCount} items on ${pageName}`);
+            if (isPaused) {
+                // Dashboard is paused - initialize for manual navigation only
+                window.itemHighlighterInstance.initializeForPausedState(itemCount);
+                console.log(`ItemHighlighter initialized (paused) with ${itemCount} items on ${pageName}`);
+            } else {
+                // Dashboard is running - start normal auto-advance timer
+                window.itemHighlighterInstance.start(itemCount);
+                console.log(`ItemHighlighter started with ${itemCount} items on ${pageName}`);
+            }
         }
     };
 
@@ -1746,6 +1767,46 @@ function startDashboard() {
     
     // Start carousel
     window.carouselInstance.start();
+    
+    // Initialize Keyboard Navigation Controller
+    // Must be done after carousel is configured so we have a valid reference
+    // Allows arrow key navigation: Up/Down for items, Left/Right for pages
+    // Item navigation is disabled on status pages (status, vscode, visualstudio, anthropic)
+    if (window.keyboardNavigationInstance) {
+        // Clean up if exists (hot reload support)
+        window.keyboardNavigationInstance.stop();
+        window.keyboardNavigationInstance = null;
+    }
+    
+    window.keyboardNavigationInstance = new KeyboardNavigationController({
+        carouselController: window.carouselInstance,
+        itemHighlighter: window.itemHighlighterInstance,
+        onPause: function() {
+            // Call togglePause if not already paused
+            if (!isPaused) {
+                togglePause();
+            }
+        },
+        onResume: function() {
+            // Call togglePause if currently paused
+            if (isPaused) {
+                togglePause();
+            }
+        },
+        getIsPaused: function() {
+            return isPaused;
+        },
+        onItemNavigate: function() {
+            // Update QR code when item changes via keyboard navigation
+            updatePauseQrWidget();
+        },
+        // Disable item navigation on status monitoring pages only (they don't have navigable card items)
+        // Note: vscode and visualstudio are blog/release note pages and SHOULD have card navigation
+        disabledPages: ['status', 'anthropic']
+    });
+    
+    // Start keyboard navigation
+    window.keyboardNavigationInstance.start();
     
     // Start time-based messages (Easter Egg)
     // Independent of carousel and item highlighting (FR-16)
@@ -2112,6 +2173,39 @@ function showPauseQrWidget() {
     // Show the widget with animation
     widget.classList.remove('pause-qr-widget--hiding');
     widget.removeAttribute('hidden');
+}
+
+/**
+ * Update the pause QR widget with the currently highlighted item's link.
+ * Called when keyboard navigation changes the selected item.
+ * Only updates if the widget is currently visible.
+ */
+function updatePauseQrWidget() {
+    const widget = document.getElementById('pauseQrWidget');
+    const qrImage = document.getElementById('pauseQrImage');
+    const hintEl = widget ? widget.querySelector('.pause-qr-widget__hint') : null;
+    
+    // Only update if widget is visible
+    if (!widget || !qrImage || widget.hasAttribute('hidden')) return;
+    
+    // Get the currently highlighted item's link
+    const itemLink = getHighlightedItemLink();
+    const urlToEncode = itemLink || window.location.href;
+    const isItemLink = Boolean(itemLink);
+    
+    // Update QR code image
+    const qrSize = 160;
+    const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=${qrSize}x${qrSize}&data=${encodeURIComponent(urlToEncode)}`;
+    
+    qrImage.src = qrApiUrl;
+    qrImage.alt = isItemLink ? 'Scan to open this item on your device' : 'Scan to open dashboard on your device';
+    
+    // Update hint text
+    if (hintEl) {
+        hintEl.textContent = isItemLink ? 'Scan to open this item' : 'Scan to view on your device';
+    }
+    
+    console.log('KeyboardNavigation: Updated QR code for new item selection');
 }
 
 /**
