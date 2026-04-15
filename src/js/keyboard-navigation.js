@@ -26,6 +26,8 @@ export class KeyboardNavigationController {
    * @param {Function} config.onPause - Callback to pause the dashboard
    * @param {Function} config.onResume - Callback to resume the dashboard
    * @param {Function} config.getIsPaused - Function that returns current pause state
+   * @param {Function} config.onItemNavigate - Callback when item navigation occurs (for QR update)
+   * @param {string[]} config.disabledPages - Array of page names where item navigation is disabled
    */
   constructor({
     autoResumeDelay = DEFAULT_AUTO_RESUME_DELAY,
@@ -33,7 +35,9 @@ export class KeyboardNavigationController {
     itemHighlighter = null,
     onPause = null,
     onResume = null,
-    getIsPaused = null
+    getIsPaused = null,
+    onItemNavigate = null,
+    disabledPages = []
   } = {}) {
     this.autoResumeDelay = autoResumeDelay;
     this.carouselController = carouselController;
@@ -41,6 +45,8 @@ export class KeyboardNavigationController {
     this.onPause = onPause;
     this.onResume = onResume;
     this.getIsPaused = getIsPaused;
+    this.onItemNavigate = onItemNavigate;
+    this.disabledPages = disabledPages;
     
     // Auto-resume timer
     this.autoResumeTimer = null;
@@ -128,13 +134,38 @@ export class KeyboardNavigationController {
       return;
     }
     
+    // Check if item navigation is disabled for current page
+    if (this.isItemNavigationDisabled()) {
+      console.log('KeyboardNavigationController: Item navigation disabled for current page');
+      return;
+    }
+    
     // Pause dashboard if not already paused
     this.ensurePaused();
     
     // Navigate to the target item
     this.itemHighlighter.goToItem(direction);
     
+    // Trigger callback to update QR code with new item
+    if (this.onItemNavigate) {
+      this.onItemNavigate();
+    }
+    
     console.log(`KeyboardNavigationController: Navigated item ${direction > 0 ? 'down' : 'up'}`);
+  }
+  
+  /**
+   * Check if item navigation is disabled for the current page
+   * @returns {boolean} True if item navigation should be skipped
+   * @private
+   */
+  isItemNavigationDisabled() {
+    if (!this.carouselController || this.disabledPages.length === 0) {
+      return false;
+    }
+    
+    const currentPageName = this.carouselController.pages[this.carouselController.currentPage];
+    return this.disabledPages.includes(currentPageName);
   }
   
   /**

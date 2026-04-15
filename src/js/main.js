@@ -1606,37 +1606,9 @@ window.octocatCameoInstance = new OctocatCameo();
 // Start the Easter egg timer (will trigger every 30 minutes)
 window.octocatCameoInstance.start();
 
-// Initialize Keyboard Navigation Controller
-// Allows arrow key navigation: Up/Down for items, Left/Right for pages
-// Auto-resumes after inactivity (default: 60 seconds, defined in keyboard-navigation.js)
-if (window.keyboardNavigationInstance) {
-  // Clean up if exists (hot reload support)
-  window.keyboardNavigationInstance.stop();
-  window.keyboardNavigationInstance = null;
-}
-
-window.keyboardNavigationInstance = new KeyboardNavigationController({
-  carouselController: window.carouselInstance,
-  itemHighlighter: window.itemHighlighterInstance,
-  onPause: function() {
-    // Call togglePause if not already paused
-    if (!isPaused) {
-      togglePause();
-    }
-  },
-  onResume: function() {
-    // Call togglePause if currently paused
-    if (isPaused) {
-      togglePause();
-    }
-  },
-  getIsPaused: function() {
-    return isPaused;
-  }
-});
-
-// Start keyboard navigation
-window.keyboardNavigationInstance.start();
+// Keyboard Navigation Controller will be initialized in startDashboard()
+// after the carousel is properly configured. The controller needs a valid
+// reference to carouselInstance which is only available after initializeWithConfig().
 
 /**
  * Extract item data from a list item DOM element
@@ -1787,6 +1759,45 @@ function startDashboard() {
     
     // Start carousel
     window.carouselInstance.start();
+    
+    // Initialize Keyboard Navigation Controller
+    // Must be done after carousel is configured so we have a valid reference
+    // Allows arrow key navigation: Up/Down for items, Left/Right for pages
+    // Item navigation is disabled on status pages (status, vscode, visualstudio, anthropic)
+    if (window.keyboardNavigationInstance) {
+        // Clean up if exists (hot reload support)
+        window.keyboardNavigationInstance.stop();
+        window.keyboardNavigationInstance = null;
+    }
+    
+    window.keyboardNavigationInstance = new KeyboardNavigationController({
+        carouselController: window.carouselInstance,
+        itemHighlighter: window.itemHighlighterInstance,
+        onPause: function() {
+            // Call togglePause if not already paused
+            if (!isPaused) {
+                togglePause();
+            }
+        },
+        onResume: function() {
+            // Call togglePause if currently paused
+            if (isPaused) {
+                togglePause();
+            }
+        },
+        getIsPaused: function() {
+            return isPaused;
+        },
+        onItemNavigate: function() {
+            // Update QR code when item changes via keyboard navigation
+            updatePauseQrWidget();
+        },
+        // Disable item navigation on status pages (they don't have navigable card items)
+        disabledPages: ['status', 'vscode', 'visualstudio', 'anthropic']
+    });
+    
+    // Start keyboard navigation
+    window.keyboardNavigationInstance.start();
     
     // Start time-based messages (Easter Egg)
     // Independent of carousel and item highlighting (FR-16)
@@ -2153,6 +2164,39 @@ function showPauseQrWidget() {
     // Show the widget with animation
     widget.classList.remove('pause-qr-widget--hiding');
     widget.removeAttribute('hidden');
+}
+
+/**
+ * Update the pause QR widget with the currently highlighted item's link.
+ * Called when keyboard navigation changes the selected item.
+ * Only updates if the widget is currently visible.
+ */
+function updatePauseQrWidget() {
+    const widget = document.getElementById('pauseQrWidget');
+    const qrImage = document.getElementById('pauseQrImage');
+    const hintEl = widget ? widget.querySelector('.pause-qr-widget__hint') : null;
+    
+    // Only update if widget is visible
+    if (!widget || !qrImage || widget.hasAttribute('hidden')) return;
+    
+    // Get the currently highlighted item's link
+    const itemLink = getHighlightedItemLink();
+    const urlToEncode = itemLink || window.location.href;
+    const isItemLink = Boolean(itemLink);
+    
+    // Update QR code image
+    const qrSize = 160;
+    const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=${qrSize}x${qrSize}&data=${encodeURIComponent(urlToEncode)}`;
+    
+    qrImage.src = qrApiUrl;
+    qrImage.alt = isItemLink ? 'Scan to open this item on your device' : 'Scan to open dashboard on your device';
+    
+    // Update hint text
+    if (hintEl) {
+        hintEl.textContent = isItemLink ? 'Scan to open this item' : 'Scan to view on your device';
+    }
+    
+    console.log('KeyboardNavigation: Updated QR code for new item selection');
 }
 
 /**
