@@ -10,8 +10,10 @@
  * @requires Chrome/Chromium 84+ (ES6, classList, template literals)
  */
 
-// Default auto-resume delay (60 seconds)
-// Can be overridden via constructor config
+// Default auto-resume delay: 60 seconds (60000ms)
+// This gives users enough time to read content while paused via keyboard navigation,
+// but not so long that the dashboard stays paused indefinitely if left unattended.
+// The TV display use case benefits from automatic recovery to continue cycling content.
 const DEFAULT_AUTO_RESUME_DELAY = 60000;
 
 export class KeyboardNavigationController {

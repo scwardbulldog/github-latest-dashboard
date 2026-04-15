@@ -1459,10 +1459,6 @@ let PAGE_INTERVAL_OVERRIDES = {};
 let DEFAULT_ITEM_INTERVAL = 5333;
 let ITEM_INTERVAL_OVERRIDES = {};
 
-// Auto-resume delay for keyboard navigation (60 seconds)
-// Dashboard returns to automatic rotation after this period of inactivity
-const KEYBOARD_NAV_AUTO_RESUME_DELAY = 60000;
-
 /**
  * Initialize dashboard with user configuration
  * Loads config.json and sets up all intervals and pages
@@ -1612,7 +1608,7 @@ window.octocatCameoInstance.start();
 
 // Initialize Keyboard Navigation Controller
 // Allows arrow key navigation: Up/Down for items, Left/Right for pages
-// Auto-resumes after 60 seconds of inactivity when auto-paused by navigation
+// Auto-resumes after inactivity (default: 60 seconds, defined in keyboard-navigation.js)
 if (window.keyboardNavigationInstance) {
   // Clean up if exists (hot reload support)
   window.keyboardNavigationInstance.stop();
@@ -1620,7 +1616,6 @@ if (window.keyboardNavigationInstance) {
 }
 
 window.keyboardNavigationInstance = new KeyboardNavigationController({
-  autoResumeDelay: KEYBOARD_NAV_AUTO_RESUME_DELAY,
   carouselController: window.carouselInstance,
   itemHighlighter: window.itemHighlighterInstance,
   onPause: function() {
