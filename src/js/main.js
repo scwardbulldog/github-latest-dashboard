@@ -774,38 +774,15 @@ class FrameSequenceAnimator {
             return true; // No frames loaded yet
         }
         
-        // Create a small test canvas to verify image can be drawn
-        const testCanvas = document.createElement('canvas');
-        testCanvas.width = 1;
-        testCanvas.height = 1;
-        const testCtx = testCanvas.getContext('2d');
-        
         let needsReload = false;
         
         for (let i = 0; i < this.frames.length; i++) {
             const frame = this.frames[i];
             
             // Check if frame exists and has valid dimensions
+            // When browser evicts decoded image data, naturalWidth/Height become 0
             if (!frame || !frame.complete || frame.naturalWidth === 0 || frame.naturalHeight === 0) {
                 console.warn(`FrameSequenceAnimator: Frame ${i} is invalid or evicted`);
-                needsReload = true;
-                break;
-            }
-            
-            // Try to draw to test canvas - this will fail silently if image data is evicted
-            try {
-                testCtx.clearRect(0, 0, 1, 1);
-                testCtx.drawImage(frame, 0, 0, 1, 1);
-                
-                // Check if anything was actually drawn by reading a pixel
-                const pixel = testCtx.getImageData(0, 0, 1, 1).data;
-                // If image was drawn, at least one channel should be non-zero 
-                // (unless perfectly black, but our skateboard cat images aren't)
-                // Actually, transparent pixels can have all zeros, so check alpha
-                // For a complete image, we should get some data back
-                // The key is that evicted images fail silently on drawImage
-            } catch (err) {
-                console.warn(`FrameSequenceAnimator: Frame ${i} draw test failed:`, err);
                 needsReload = true;
                 break;
             }
