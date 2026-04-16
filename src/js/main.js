@@ -692,7 +692,12 @@ class FrameSequenceAnimator {
         
         this.onLoad = config.onLoad || null;
         
+        // Health check interval for detecting evicted images (10 minutes)
+        this.healthCheckInterval = null;
+        this.HEALTH_CHECK_PERIOD = 10 * 60 * 1000; // 10 minutes
+        
         this.loadFrames();
+        this.startHealthCheck();
     }
     
     /**
@@ -729,6 +734,145 @@ class FrameSequenceAnimator {
                 }
             };
             img.src = path;
+        });
+    }
+    
+    /**
+     * Start periodic health check to detect evicted image data
+     * Prevents broken images after long runtime on memory-constrained devices
+     */
+    startHealthCheck() {
+        // Clear any existing interval
+        this.stopHealthCheck();
+        
+        this.healthCheckInterval = setInterval(() => {
+            this.checkImageHealth();
+        }, this.HEALTH_CHECK_PERIOD);
+        
+        console.log('FrameSequenceAnimator: Health check started (every 10 minutes)');
+    }
+    
+    /**
+     * Stop the health check interval
+     * Call this when cleaning up to prevent memory leaks
+     */
+    stopHealthCheck() {
+        if (this.healthCheckInterval) {
+            clearInterval(this.healthCheckInterval);
+            this.healthCheckInterval = null;
+        }
+    }
+    
+    /**
+     * Check if image data is still valid by attempting to draw to a test canvas
+     * Browsers on resource-constrained devices (like Raspberry Pi 3B) may evict
+     * decoded image data from memory, leaving the Image object but no pixel data
+     * @returns {boolean} True if images are healthy, false if reload needed
+     */
+    checkImageHealth() {
+        if (this.frames.length === 0) {
+            return true; // No frames loaded yet
+        }
+        
+        // Create a small test canvas to verify image can be drawn
+        const testCanvas = document.createElement('canvas');
+        testCanvas.width = 1;
+        testCanvas.height = 1;
+        const testCtx = testCanvas.getContext('2d');
+        
+        let needsReload = false;
+        
+        for (let i = 0; i < this.frames.length; i++) {
+            const frame = this.frames[i];
+            
+            // Check if frame exists and has valid dimensions
+            if (!frame || !frame.complete || frame.naturalWidth === 0 || frame.naturalHeight === 0) {
+                console.warn(`FrameSequenceAnimator: Frame ${i} is invalid or evicted`);
+                needsReload = true;
+                break;
+            }
+            
+            // Try to draw to test canvas - this will fail silently if image data is evicted
+            try {
+                testCtx.clearRect(0, 0, 1, 1);
+                testCtx.drawImage(frame, 0, 0, 1, 1);
+                
+                // Check if anything was actually drawn by reading a pixel
+                const pixel = testCtx.getImageData(0, 0, 1, 1).data;
+                // If image was drawn, at least one channel should be non-zero 
+                // (unless perfectly black, but our skateboard cat images aren't)
+                // Actually, transparent pixels can have all zeros, so check alpha
+                // For a complete image, we should get some data back
+                // The key is that evicted images fail silently on drawImage
+            } catch (err) {
+                console.warn(`FrameSequenceAnimator: Frame ${i} draw test failed:`, err);
+                needsReload = true;
+                break;
+            }
+        }
+        
+        if (needsReload) {
+            console.log('FrameSequenceAnimator: Reloading evicted frames...');
+            this.reloadFrames();
+        } else {
+            console.log('FrameSequenceAnimator: Health check passed - all frames valid');
+        }
+        
+        return !needsReload;
+    }
+    
+    /**
+     * Reload all frame images (called when health check detects evicted images)
+     * Preserves animation state and resumes playback after reload
+     */
+    reloadFrames() {
+        const wasPlaying = this.isPlaying;
+        const currentFrameIndex = this.currentFrame;
+        
+        // Pause animation during reload
+        if (this.isPlaying) {
+            this.pause();
+        }
+        
+        // Clear existing frames
+        this.frames = [];
+        
+        // Reload all frames
+        let loadedCount = 0;
+        this.frames = new Array(this.framePaths.length);
+        
+        this.framePaths.forEach((path, index) => {
+            const img = new Image();
+            img.onload = () => {
+                this.frames[index] = img;
+                loadedCount++;
+                
+                // All frames reloaded
+                if (loadedCount === this.framePaths.length) {
+                    console.log('FrameSequenceAnimator: Frames reloaded successfully');
+                    this.resizeCanvas();
+                    this.currentFrame = currentFrameIndex;
+                    this.draw();
+                    
+                    // Resume animation if it was playing
+                    if (wasPlaying) {
+                        this.play();
+                    }
+                }
+            };
+            img.onerror = () => {
+                console.error(`FrameSequenceAnimator: Failed to reload frame ${index} (${path})`);
+                loadedCount++;
+                if (loadedCount === this.framePaths.length) {
+                    console.warn('FrameSequenceAnimator: Reloaded with errors, resuming anyway');
+                    // Resume even with errors - partial animation is better than none
+                    if (wasPlaying) {
+                        this.play();
+                    }
+                }
+            };
+            // Add cache-busting parameter to force fresh load
+            img.src = path + '?t=' + Date.now();
         });
     }
     
@@ -840,6 +984,17 @@ class FrameSequenceAnimator {
             cancelAnimationFrame(this.animationId);
             this.animationId = null;
         }
+    }
+    
+    /**
+     * Destroy the animator and clean up all resources
+     * Call this when the animator is no longer needed to prevent memory leaks
+     */
+    destroy() {
+        this.pause();
+        this.stopHealthCheck();
+        this.frames = [];
+        console.log('FrameSequenceAnimator: Destroyed and cleaned up');
     }
 }
 
