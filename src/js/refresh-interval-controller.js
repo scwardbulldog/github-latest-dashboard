@@ -3,8 +3,8 @@
  *
  * Manages configurable dashboard timers with:
  * - Data Refresh slider (1–60 minutes, default: 5 minutes)
- * - Page Timer slider (10–180 seconds, default: 30 seconds)
- * - Card Timer slider (3–30 seconds, default: 5 seconds)
+ * - Page Timer slider (30–180 seconds, default: 80 seconds)
+ * - Card Timer slider (8–30 seconds, default: 16 seconds)
  * - localStorage persistence across sessions
  * - Visual toast confirmation when interval changes
  * - "Last refreshed X minutes ago" indicator
@@ -34,14 +34,14 @@ export class RefreshIntervalController {
 
     // Page Timer settings
     this.pageTimerStorageKey = 'dashboard-page-timer';
-    this.defaultPageTimer = 30 * 1000;     // 30 seconds
-    this.minPageTimer = 10 * 1000;         // 10 seconds
+    this.defaultPageTimer = 80 * 1000;     // 80 seconds (5 items × 16s each)
+    this.minPageTimer = 30 * 1000;         // 30 seconds
     this.maxPageTimer = 180 * 1000;        // 180 seconds (3 minutes)
 
     // Card Timer settings
     this.cardTimerStorageKey = 'dashboard-card-timer';
-    this.defaultCardTimer = 5 * 1000;      // 5 seconds
-    this.minCardTimer = 3 * 1000;          // 3 seconds
+    this.defaultCardTimer = 16 * 1000;     // 16 seconds
+    this.minCardTimer = 8 * 1000;          // 8 seconds
     this.maxCardTimer = 30 * 1000;         // 30 seconds
 
     this.intervalId = null;
