@@ -1,4 +1,4 @@
-name: Rebuild index.html artifact
+name: Rebuild generated artifacts
 
 on:
   push:
@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - 'src/**'
+      - 'public/**'
       - 'vite.config.js'
       - 'package.json'
       - 'package-lock.json'
@@ -34,12 +35,12 @@ jobs:
       - name: Build artifact
         run: npm run build
 
-      - name: Commit rebuilt index.html if changed
+      - name: Commit rebuilt artifacts if changed
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          if ! git diff --quiet index.html; then
-            git add index.html
-            git commit -m "chore: rebuild index.html artifact [skip ci]"
+          if ! git diff --quiet -- index.html img/; then
+            git add index.html img/
+            git commit -m "chore: rebuild generated artifacts [skip ci]"
             git push
           fi
