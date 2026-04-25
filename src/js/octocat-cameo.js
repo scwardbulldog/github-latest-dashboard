@@ -6,12 +6,12 @@
  * 
  * Uses official Jetpacktocat artwork from GitHub Octodex (#116)
  * 
- * Performance optimizations for Raspberry Pi 3B (1GB RAM, Chromium 84):
+ * Performance considerations for Raspberry Pi 3B (1GB RAM, Chromium 84):
  * - Optimized 200x200 image (2x for retina, 70% smaller than original)
  * - 30 FPS target (sufficient for chaotic flight, 50% CPU reduction)
- * - Cached DOM references (no querySelector in render loop)
- * - Pre-computed random values (batched Math.random calls)
- * - Direct style property assignment (no template literal per frame)
+ * - Cached DOM references where possible
+ * - Per-frame randomness to preserve chaotic motion
+ * - Per-frame style updates during rendering
  * 
  * @module octocat-cameo
  */
@@ -37,7 +37,7 @@ const PHYSICS = {
   MAX_ROTATION: 25,
   // Frame rate for animation loop - 30 FPS for Pi performance
   TARGET_FPS: 30,
-  FRAME_MS: 1000 / 30, // 30 FPS - sufficient for chaotic flight
+  FRAME_MS: 1000 / 30, // Derived from TARGET_FPS
   // Wobble intensity (per frame)
   WOBBLE_INTENSITY: 1.0,
   ROTATION_WOBBLE: 4,
@@ -237,8 +237,9 @@ export class OctocatCameo {
     // Initialize physics - start from random edge
     this.initializePhysics();
     
-    // Start animation loop
-    this.animate();
+    // Start animation loop using requestAnimationFrame to get proper timestamp
+    // This ensures first frame renders immediately without flash
+    this.animationFrameId = requestAnimationFrame((ts) => this.animate(ts));
 
     // Schedule cleanup after duration
     this.timeoutId = setTimeout(() => {
@@ -300,8 +301,9 @@ export class OctocatCameo {
     }
 
     // Performance: 30 FPS frame throttling
+    // On first frame (lastFrameTime === 0), always render to avoid flash
     const elapsed = timestamp - this.lastFrameTime;
-    if (elapsed < PHYSICS.FRAME_MS) {
+    if (this.lastFrameTime !== 0 && elapsed < PHYSICS.FRAME_MS) {
       // Skip this frame, schedule next
       this.animationFrameId = requestAnimationFrame((ts) => this.animate(ts));
       return;

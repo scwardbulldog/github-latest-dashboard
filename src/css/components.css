@@ -620,9 +620,6 @@
   
   /* Transform origin at center for rotation */
   transform-origin: center center;
-  
-  /* Disable subpixel antialiasing for performance on Pi */
-  -webkit-font-smoothing: antialiased;
 }
 
 /* Image styling for Jetpacktocat */
