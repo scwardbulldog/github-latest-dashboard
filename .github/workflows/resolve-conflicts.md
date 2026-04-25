@@ -23,13 +23,6 @@ checkout:
   fetch-depth: 0
 
 safe-outputs:
-  create-pull-request:
-    title-prefix: "[resolved] "
-    labels: [conflicts-resolved]
-    draft: false
-    preserve-branch-name: false
-    expires: 14d
-    auto-close-issue: false
   add-comment:
     max: 3
     hide-older-comments: true
@@ -155,35 +148,25 @@ For each conflicted file:
 5. After resolving all files, stage and commit:
    ```bash
    git add -A
-   git commit -m "resolve: merge conflicts with $BASE_BRANCH [skip ci]"
+   git commit -m "resolve: merge conflicts with $BASE_BRANCH"
    ```
 
-## Phase 3: Output Results
+## Phase 3: Push and Report
 
 ### If conflicts were resolved successfully:
 
-1. **Determine the resolved branch name** (follow project conventions):
-   ```
-   resolved-conflicts/pr-<PR_NUMBER>
-   ```
-
-2. **Output a `create_pull_request` safe-output** so the safe-output job pushes your local commits to a new branch and opens a PR:
-   ```json
-   {
-     "type": "create_pull_request",
-     "title": "[resolved] PR #<PR_NUMBER>: <original PR title>",
-     "body": "This PR resolves the merge conflicts in #<PR_NUMBER> (`<HEAD_BRANCH>` ← `<BASE_BRANCH>`).\n\n## What was resolved\n\n<per-file summary of each conflict and how it was resolved>\n\n## Next steps\n\n1. Review the resolved changes above.\n2. If the resolution looks correct, push this branch to your original feature branch:\n   ```bash\n   git fetch origin resolved-conflicts/pr-<PR_NUMBER>\n   git checkout <HEAD_BRANCH>\n   git reset --hard origin/resolved-conflicts/pr-<PR_NUMBER>\n   git push --force-with-lease\n   ```\n3. Close this helper PR once your original PR #<PR_NUMBER> is no longer conflicted.\n\n---\n_Resolved automatically by the Resolve PR Conflicts agent._",
-     "branch": "resolved-conflicts/pr-<PR_NUMBER>",
-     "base": "<BASE_BRANCH>"
-   }
+1. **Configure an authenticated remote** and push the resolved commit directly to the PR head branch:
+   ```bash
+   git remote set-url origin "https://x-access-token:${GH_AW_GITHUB_TOKEN}@github.com/${{ github.repository }}.git"
+   git push origin "HEAD:$HEAD_BRANCH"
    ```
 
-3. **Output an `add_comment`** on the original PR linking to the resolution:
+2. **Output an `add_comment`** on the original PR summarising the resolution:
    ```json
    {
      "type": "add_comment",
      "issue_number": <PR_NUMBER>,
-     "body": "## 🔀 Merge Conflicts Resolved\n\nI've automatically resolved the merge conflicts between `<HEAD_BRANCH>` and `<BASE_BRANCH>`. A new helper PR has been opened with the resolved changes.\n\n**To apply the fix to your branch**, run:\n```bash\ngit fetch origin resolved-conflicts/pr-<PR_NUMBER>\ngit checkout <HEAD_BRANCH>\ngit reset --hard origin/resolved-conflicts/pr-<PR_NUMBER>\ngit push --force-with-lease\n```\n\nPlease review the resolved changes carefully before merging.\n\n---\n_Resolved automatically by the [Resolve PR Conflicts](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) workflow._"
+     "body": "## ✅ Merge Conflicts Resolved\n\nI've resolved the merge conflicts between `<HEAD_BRANCH>` and `<BASE_BRANCH>` and pushed the resolution directly to this branch.\n\n## What was resolved\n\n<per-file summary of each conflict and how it was resolved>\n\nPlease review the changes and re-run CI if needed.\n\n---\n_Resolved automatically by the [Resolve PR Conflicts](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) workflow._"
    }
    ```
 
@@ -218,7 +201,7 @@ This can happen when the AI cannot determine the correct resolution (e.g., compl
 - **Build artifacts**: Do not include `node_modules/`, `dist/`, or the root `index.html` in conflict resolution. If these appear as conflicts, skip them.
 - **Design token rule**: If CSS conflicts involve hardcoded values vs. `var(--token)` syntax, always prefer the design token version.
 - **Timer cleanup**: If JS conflicts involve timer IDs, always keep both the timer start AND the corresponding cleanup (`clearInterval`/`clearTimeout`).
-- After processing all target PRs, if no safe-output was emitted, you **MUST** call `noop`:
+- After processing all target PRs, you **MUST** call `noop` if no `add_comment` safe-output was emitted:
   ```json
   {"noop": {"message": "Conflict resolution complete. <summary of what was done>"}}
   ```
