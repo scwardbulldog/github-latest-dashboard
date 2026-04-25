@@ -6,6 +6,9 @@ on:
   pull_request:
     types: [labeled]
   workflow_dispatch:
+  push:
+    branches:
+      - 'copilot/resolve-conflicts-on-prs'
 
 permissions:
   contents: read
@@ -73,7 +76,7 @@ echo "Label: $LABEL_NAME  HEAD: $HEAD_BRANCH  BASE: $BASE_BRANCH"
    - If the output is `CONFLICTING`: proceed to Phase 1.
    - If the output is `MERGEABLE` or `UNKNOWN`: output a comment on the PR explaining no conflicts were found, then `noop`.
 
-### For `workflow_dispatch` trigger:
+### For `workflow_dispatch` or `push` trigger:
 
 List all open PRs and find those with merge conflicts:
 
