@@ -156,10 +156,12 @@ For each conflicted file:
    - For `.json` files: `python3 -m json.tool <file> > /dev/null`.
    - For `.css` / `.html` files: visual inspection is sufficient.
 
-5. After resolving all files, stage the changes (the `push_to_pull_request_branch` safe output will create the commit automatically). Unstage any `.github/` or `.agents/` files that were added as part of the merge from the base branch — these are CI/CD workflow files that are already up-to-date on the base branch and do not need to be pushed to the PR branch:
+5. After resolving all files, stage the changes (the `push_to_pull_request_branch` safe output will create the commit automatically). Unstage any `.github/` or `.agents/` files that were added as part of the merge from the base branch — these are CI/CD workflow files that are already up-to-date on the base branch and do not need to be pushed to the PR branch. **Skip this step if the PR's stated purpose is to update CI/CD workflow files.**
    ```bash
    git add -A
-   git restore --staged .github/ .agents/ 2>/dev/null || true
+   # Unstage .github/.agents files that came in from the base branch merge.
+   # These are workflow/config files already on main and don't belong in the PR branch patch.
+   git restore --staged .github/ .agents/ 2>/dev/null || true  # dirs may not exist; suppress benign errors
    ```
 
 ## Phase 3: Push and Report
