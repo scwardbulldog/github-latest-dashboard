@@ -4,6 +4,11 @@ on:
   push:
     branches:
       - main
+    paths:
+      - 'src/**'
+      - 'vite.config.js'
+      - 'package.json'
+      - 'package-lock.json'
 
 jobs:
   build-artifact:
