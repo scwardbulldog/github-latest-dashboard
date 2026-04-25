@@ -24,8 +24,16 @@ tools:
 
 checkout:
   fetch-depth: 0
+  fetch: ["*"]
 
 safe-outputs:
+  push-to-pull-request-branch:
+    target: "*"
+    if-no-changes: ignore
+    allowed-files:
+      - ".github/workflows/resolve-conflicts.lock.yml"
+      - ".github/workflows/resolve-conflicts.md"
+      - ".github/workflows/build-artifact.yml"
   add-comment:
     max: 3
     hide-older-comments: true
@@ -148,20 +156,23 @@ For each conflicted file:
    - For `.json` files: `python3 -m json.tool <file> > /dev/null`.
    - For `.css` / `.html` files: visual inspection is sufficient.
 
-5. After resolving all files, stage and commit:
+5. After resolving all files, stage the changes (the `push_to_pull_request_branch` safe output will create the commit automatically):
    ```bash
    git add -A
-   git commit -m "resolve: merge conflicts with $BASE_BRANCH"
    ```
 
 ## Phase 3: Push and Report
 
 ### If conflicts were resolved successfully:
 
-1. **Configure an authenticated remote** and push the resolved commit directly to the PR head branch:
-   ```bash
-   git remote set-url origin "https://x-access-token:${GH_AW_GITHUB_TOKEN}@github.com/${{ github.repository }}.git"
-   git push origin "HEAD:$HEAD_BRANCH"
+1. **Push the resolved changes** to the PR head branch using the `push_to_pull_request_branch` safe output. This is the correct way to push code changes in this agentic workflow — do NOT use `git push` or `git remote set-url` directly. The handler creates the commit and pushes using the framework's write-capable token:
+   ```json
+   {
+     "type": "push_to_pull_request_branch",
+     "pull_request_number": <PR_NUMBER>,
+     "branch": "<HEAD_BRANCH>",
+     "message": "resolve: merge conflicts with <BASE_BRANCH>"
+   }
    ```
 
 2. **Output an `add_comment`** on the original PR summarising the resolution:
@@ -204,7 +215,9 @@ This can happen when the AI cannot determine the correct resolution (e.g., compl
 - **Build artifacts**: Do not include `node_modules/`, `dist/`, or the root `index.html` in conflict resolution. If these appear as conflicts, skip them.
 - **Design token rule**: If CSS conflicts involve hardcoded values vs. `var(--token)` syntax, always prefer the design token version.
 - **Timer cleanup**: If JS conflicts involve timer IDs, always keep both the timer start AND the corresponding cleanup (`clearInterval`/`clearTimeout`).
+- **Pushing changes**: Always use `push_to_pull_request_branch` safe output to push resolved changes. Never call `git push` or `git remote set-url` directly — the workflow does not have direct push access to the repository.
 - After processing all target PRs, you **MUST** call `noop` if no `add_comment` safe-output was emitted:
   ```json
   {"noop": {"message": "Conflict resolution complete. <summary of what was done>"}}
   ```
+
