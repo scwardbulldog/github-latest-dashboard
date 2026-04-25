@@ -213,6 +213,29 @@ function handleShareButtonClick(event) {
 }
 
 /**
+ * Initialize delegated share button click listeners on all list containers.
+ * Called ONCE at startup so listeners are never re-added on data refresh.
+ * Event delegation handles dynamically rendered share buttons automatically.
+ */
+function initializeShareListeners() {
+    const listIds = [
+        'blog-list',
+        'changelog-list',
+        'status-list',
+        'vscode-list',
+        'visualstudio-list',
+        'anthropic-list'
+    ];
+
+    listIds.forEach(listId => {
+        const listEl = document.getElementById(listId);
+        if (listEl) {
+            listEl.addEventListener('click', handleShareButtonClick);
+        }
+    });
+}
+
+/**
  * Shared RSS list renderer - DRY implementation for all RSS-based pages
  * @param {Object} data - RSS data from API with items array
  * @param {string} containerId - DOM element ID for the list container
@@ -289,11 +312,6 @@ function renderRSSList(data, containerId, sourceName, feedName) {
     
     // Single DOM write (one reflow)
     listEl.appendChild(fragment);
-
-    // Attach a single delegated click listener for all share buttons in this list.
-    // Remove before re-adding to prevent duplicates on every data refresh.
-    listEl.removeEventListener('click', handleShareButtonClick);
-    listEl.addEventListener('click', handleShareButtonClick);
 
     console.log(`renderRSSList: Rendered ${items.length} ${sourceName} items`);
     return items.length;
@@ -2403,11 +2421,13 @@ if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
         initializePauseQrWidget();
         initializeExportFunctionality();
+        initializeShareListeners();
     });
 } else {
     // DOM already loaded
     initializePauseQrWidget();
     initializeExportFunctionality();
+    initializeShareListeners();
 }
 
 // Update timestamp every second
