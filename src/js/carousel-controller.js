@@ -10,8 +10,9 @@ export class CarouselController {
    * @param {number} config.interval - Default page rotation interval in milliseconds (default: 30000)
    * @param {string[]} config.pages - Array of page identifiers (default: ['blog', 'changelog', 'status'])
    * @param {Object<string, number>} config.pageIntervals - Optional per-page interval overrides
+   * @param {number} config.refreshInterval - Data refresh cycle duration in milliseconds (default: 300000)
    */
-  constructor({ interval = 30000, pages = ['blog', 'changelog', 'status'], pageIntervals = {} } = {}) {
+  constructor({ interval = 30000, pages = ['blog', 'changelog', 'status'], pageIntervals = {}, refreshInterval = 300000 } = {}) {
     if (typeof interval !== 'number' || interval <= 0) {
       throw new TypeError(`CarouselController: interval must be a positive number, got ${interval}`);
     }
@@ -23,11 +24,17 @@ export class CarouselController {
     this.timer = null;          // Timer handle (setTimeout)
     this.onPageChange = null;   // Callback: (page: string) => void
     
-    // Progress tracking properties
+    // Progress tracking properties (bottom bar - carousel rotation)
     this.progressBar = null;    // DOM element reference (bottom bar)
     this.octocat = null;        // Octocat traveler element
     this.startTime = null;      // Timestamp when current page started
     this.animationFrame = null; // requestAnimationFrame handle
+    
+    // Refresh progress tracking properties (top bar - data refresh cycle)
+    this.refreshInterval = refreshInterval;        // Duration of refresh cycle in ms
+    this.refreshProgressBar = null;                // DOM element reference (top bar)
+    this.refreshStartTime = null;                  // Timestamp when refresh cycle started
+    this.refreshElapsedBeforePause = 0;            // Refresh elapsed time before pause
     
     // Pause/resume state
     this.isPaused = false;
@@ -95,6 +102,11 @@ export class CarouselController {
       this.elapsedBeforePause = Date.now() - this.startTime;
     }
     
+    // Store refresh elapsed time before stopping
+    if (this.refreshStartTime !== null) {
+      this.refreshElapsedBeforePause = Date.now() - this.refreshStartTime;
+    }
+    
     // Stop timer but preserve state
     if (this.timer) {
       clearTimeout(this.timer);
@@ -123,6 +135,11 @@ export class CarouselController {
     
     // Adjust startTime so progress calculation continues correctly
     this.startTime = Date.now() - this.elapsedBeforePause;
+    
+    // Restore refresh start time from saved elapsed (only if it was running before pause)
+    if (this.refreshStartTime !== null) {
+      this.refreshStartTime = Date.now() - this.refreshElapsedBeforePause;
+    }
     
     // Restart progress animation
     this.updateProgress();
@@ -202,6 +219,7 @@ export class CarouselController {
   initProgressBar() {
     this.progressBar = document.getElementById('refreshProgress');
     this.octocat = document.getElementById('octocatTraveler');
+    this.refreshProgressBar = document.getElementById('progressBar');
     if (!this.progressBar) {
       console.warn('CarouselController: Progress bar element not found');
     }
@@ -225,6 +243,13 @@ export class CarouselController {
       this.octocat.style.left = `${progress}%`;
     }
     
+    // Update top refresh progress bar in the same rAF loop (eliminates 2nd RAF loop)
+    if (this.refreshProgressBar && this.refreshStartTime !== null) {
+      const refreshElapsed = Date.now() - this.refreshStartTime;
+      const refreshProgress = Math.min((refreshElapsed / this.refreshInterval) * 100, 100);
+      this.refreshProgressBar.style.width = `${refreshProgress}%`;
+    }
+    
     // Continue animation loop
     this.animationFrame = requestAnimationFrame(() => this.updateProgress());
   }
@@ -240,6 +265,18 @@ export class CarouselController {
     }
     if (this.octocat) {
       this.octocat.style.left = '0%';
+    }
+  }
+  
+  /**
+   * Reset the top refresh progress bar and start tracking a new refresh cycle.
+   * Call this when a data refresh begins (replaces startProgressBar in main.js).
+   */
+  resetRefreshProgress() {
+    this.refreshStartTime = Date.now();
+    this.refreshElapsedBeforePause = 0;
+    if (this.refreshProgressBar) {
+      this.refreshProgressBar.style.width = '0%';
     }
   }
   
