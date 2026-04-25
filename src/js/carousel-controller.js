@@ -184,33 +184,11 @@ export class CarouselController {
       return;
     }
     
-    // PHASE 1: Start fade out (remove .active class)
-    currentPageElement.classList.remove('active');
-    // CSS transition triggers: opacity: 1 → 0 over 300ms
-    
-    // PHASE 2: Wait for fade out, then swap display
-    setTimeout(() => {
-      // Hide previous page completely
-      currentPageElement.style.display = 'none';
-      
-      // Show next page (still invisible - opacity: 0)
-      nextPageElement.style.display = 'flex';
-      
-      // PHASE 3: Next frame, start fade in
-      requestAnimationFrame(() => {
-        nextPageElement.classList.add('active');
-        // CSS transition triggers: opacity: 0 → 1 over 300ms
-        
-        // Trigger callback AFTER new page is active (for ItemHighlighter coordination)
-        // This ensures ItemHighlighter can query .carousel-page.active and get correct page
-        if (this.onPageChange) {
-          this.onPageChange(this.pages[this.currentPage]);
-        }
-      });
-    }, 300); // Match CSS transition duration
-    
-    // Update state
+    // Update state before transition (so callback receives correct page name)
     this.currentPage = nextIndex;
+    
+    // Execute smooth page transition
+    this.transitionToPage(currentPageElement, nextPageElement, this.pages[nextIndex]);
     
     // Apply interval for the newly active page and schedule next rotation
     this.applyIntervalForCurrentPage();
@@ -303,6 +281,48 @@ export class CarouselController {
       }
     }, this.interval);
   }
+  
+  /**
+   * Execute a page transition with smooth fade animation
+   * Common helper used by both rotatePage() and goToPageByDirection()
+   * 
+   * Transition Coordination:
+   * 1. Remove .active from current page → CSS fade out starts (300ms)
+   * 2. Wait for fade out to complete
+   * 3. Swap display properties (hide previous, show next)
+   * 4. Add .active to next page → CSS fade in starts (300ms)
+   * 
+   * @param {HTMLElement} fromElement - Current page element
+   * @param {HTMLElement} toElement - Target page element
+   * @param {string} toPageName - Name of the target page (for callback)
+   * @private
+   */
+  transitionToPage(fromElement, toElement, toPageName) {
+    // PHASE 1: Start fade out (remove .active class)
+    fromElement.classList.remove('active');
+    // CSS transition triggers: opacity: 1 → 0 over 300ms
+    
+    // PHASE 2: Wait for fade out, then swap display
+    setTimeout(() => {
+      // Hide previous page completely
+      fromElement.style.display = 'none';
+      
+      // Show next page (still invisible - opacity: 0)
+      toElement.style.display = 'flex';
+      
+      // PHASE 3: Next frame, start fade in
+      requestAnimationFrame(() => {
+        toElement.classList.add('active');
+        // CSS transition triggers: opacity: 0 → 1 over 300ms
+        
+        // Trigger callback AFTER new page is active (for ItemHighlighter coordination)
+        // This ensures ItemHighlighter can query .carousel-page.active and get correct page
+        if (this.onPageChange) {
+          this.onPageChange(toPageName);
+        }
+      });
+    }, 300); // Match CSS transition duration
+  }
 
   /**
    * Jump directly to a named page without triggering the onPageChange callback.
@@ -345,5 +365,43 @@ export class CarouselController {
     this.currentPage = pageIndex;
     console.info(`CarouselController: Restored to page '${pageName}' (index ${pageIndex})`);
     return true;
+  }
+  
+  /**
+   * Navigate to next or previous page by direction
+   * Used for keyboard navigation (left/right arrow keys)
+   * Triggers onPageChange callback for proper coordination with ItemHighlighter
+   * @param {number} direction - 1 for next page, -1 for previous page
+   */
+  goToPageByDirection(direction) {
+    // Calculate target index with wrapping
+    let targetIndex = this.currentPage + direction;
+    
+    // Wrap around: going left from first page goes to last, going right from last goes to first
+    if (targetIndex < 0) {
+      targetIndex = this.pages.length - 1;
+    } else if (targetIndex >= this.pages.length) {
+      targetIndex = 0;
+    }
+    
+    // Get DOM elements
+    const currentPageElement = document.getElementById(`page-${this.pages[this.currentPage]}`);
+    const targetPageElement = document.getElementById(`page-${this.pages[targetIndex]}`);
+    
+    if (!currentPageElement || !targetPageElement) {
+      console.error('CarouselController.goToPageByDirection: Page elements not found');
+      return;
+    }
+    
+    // Update state before transition
+    this.currentPage = targetIndex;
+    
+    // Execute smooth page transition (uses shared helper)
+    this.transitionToPage(currentPageElement, targetPageElement, this.pages[targetIndex]);
+    
+    // Update progress for new page (reset the progress bar)
+    this.applyIntervalForCurrentPage();
+    
+    console.log(`CarouselController: Navigated to page '${this.pages[targetIndex]}' (direction: ${direction})`);
   }
 }

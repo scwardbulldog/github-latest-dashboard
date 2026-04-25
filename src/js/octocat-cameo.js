@@ -214,16 +214,25 @@ export class OctocatCameo {
     
     // Create the image element
     const img = document.createElement('img');
-    img.src = JETPACKTOCAT_IMAGE_PATH;
     img.alt = 'Jetpacktocat flying chaotically';
     img.draggable = false;
     
     // Append image to container
     octocat.appendChild(img);
     
-    // Add to DOM
+    // Add to DOM and store reference BEFORE setting src
+    // This ensures this.currentElement exists if onerror fires
     document.body.appendChild(octocat);
     this.currentElement = octocat;
+    
+    // Handle image load errors gracefully - skip animation if image fails
+    img.onerror = () => {
+      console.warn('🚀 OctocatCameo: Failed to load Jetpacktocat image, aborting animation');
+      this.stopAnimation();
+    };
+    
+    // Set src after DOM setup and onerror handler to catch load failures
+    img.src = JETPACKTOCAT_IMAGE_PATH;
 
     // Initialize physics - start from random edge
     this.initializePhysics();

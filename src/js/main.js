@@ -40,6 +40,9 @@ import { ClaudeStreakCounter } from './claude-streak-counter.js';
 // Import Octocat cameo Easter egg
 import { OctocatCameo } from './octocat-cameo.js';
 
+// Import Keyboard Navigation Controller for arrow key navigation
+import { KeyboardNavigationController } from './keyboard-navigation.js';
+
 // Import API client for data fetching (Story 3.5)
 import {
     fetchBlog as fetchBlogFromApiClient,
@@ -689,7 +692,12 @@ class FrameSequenceAnimator {
         
         this.onLoad = config.onLoad || null;
         
+        // Health check interval for detecting evicted images (10 minutes)
+        this.healthCheckInterval = null;
+        this.HEALTH_CHECK_PERIOD = 10 * 60 * 1000; // 10 minutes
+        
         this.loadFrames();
+        this.startHealthCheck();
     }
     
     /**
@@ -726,6 +734,122 @@ class FrameSequenceAnimator {
                 }
             };
             img.src = path;
+        });
+    }
+    
+    /**
+     * Start periodic health check to detect evicted image data
+     * Prevents broken images after long runtime on memory-constrained devices
+     */
+    startHealthCheck() {
+        // Clear any existing interval
+        this.stopHealthCheck();
+        
+        this.healthCheckInterval = setInterval(() => {
+            this.checkImageHealth();
+        }, this.HEALTH_CHECK_PERIOD);
+        
+        console.log('FrameSequenceAnimator: Health check started (every 10 minutes)');
+    }
+    
+    /**
+     * Stop the health check interval
+     * Call this when cleaning up to prevent memory leaks
+     */
+    stopHealthCheck() {
+        if (this.healthCheckInterval) {
+            clearInterval(this.healthCheckInterval);
+            this.healthCheckInterval = null;
+        }
+    }
+    
+    /**
+     * Check if image data is still valid by attempting to draw to a test canvas
+     * Browsers on resource-constrained devices (like Raspberry Pi 3B) may evict
+     * decoded image data from memory, leaving the Image object but no pixel data
+     * @returns {boolean} True if images are healthy, false if reload needed
+     */
+    checkImageHealth() {
+        if (this.frames.length === 0) {
+            return true; // No frames loaded yet
+        }
+        
+        let needsReload = false;
+        
+        for (let i = 0; i < this.frames.length; i++) {
+            const frame = this.frames[i];
+            
+            // Check if frame exists and has valid dimensions
+            // When browser evicts decoded image data, naturalWidth/Height become 0
+            if (!frame || !frame.complete || frame.naturalWidth === 0 || frame.naturalHeight === 0) {
+                console.warn(`FrameSequenceAnimator: Frame ${i} is invalid or evicted`);
+                needsReload = true;
+                break;
+            }
+        }
+        
+        if (needsReload) {
+            console.log('FrameSequenceAnimator: Reloading evicted frames...');
+            this.reloadFrames();
+        } else {
+            console.log('FrameSequenceAnimator: Health check passed - all frames valid');
+        }
+        
+        return !needsReload;
+    }
+    
+    /**
+     * Reload all frame images (called when health check detects evicted images)
+     * Preserves animation state and resumes playback after reload
+     */
+    reloadFrames() {
+        const wasPlaying = this.isPlaying;
+        const currentFrameIndex = this.currentFrame;
+        
+        // Pause animation during reload
+        if (this.isPlaying) {
+            this.pause();
+        }
+        
+        // Clear existing frames
+        this.frames = [];
+        
+        // Reload all frames
+        let loadedCount = 0;
+        this.frames = new Array(this.framePaths.length);
+        
+        this.framePaths.forEach((path, index) => {
+            const img = new Image();
+            img.onload = () => {
+                this.frames[index] = img;
+                loadedCount++;
+                
+                // All frames reloaded
+                if (loadedCount === this.framePaths.length) {
+                    console.log('FrameSequenceAnimator: Frames reloaded successfully');
+                    this.resizeCanvas();
+                    this.currentFrame = currentFrameIndex;
+                    this.draw();
+                    
+                    // Resume animation if it was playing
+                    if (wasPlaying) {
+                        this.play();
+                    }
+                }
+            };
+            img.onerror = () => {
+                console.error(`FrameSequenceAnimator: Failed to reload frame ${index} (${path})`);
+                loadedCount++;
+                if (loadedCount === this.framePaths.length) {
+                    console.warn('FrameSequenceAnimator: Reloaded with errors, resuming anyway');
+                    // Resume even with errors - partial animation is better than none
+                    if (wasPlaying) {
+                        this.play();
+                    }
+                }
+            };
+            // Add cache-busting parameter to force fresh load
+            img.src = path + '?t=' + Date.now();
         });
     }
     
@@ -838,6 +962,17 @@ class FrameSequenceAnimator {
             this.animationId = null;
         }
     }
+    
+    /**
+     * Destroy the animator and clean up all resources
+     * Call this when the animator is no longer needed to prevent memory leaks
+     */
+    destroy() {
+        this.pause();
+        this.stopHealthCheck();
+        this.frames = [];
+        console.log('FrameSequenceAnimator: Destroyed and cleaned up');
+    }
 }
 
 // ============================================================================
@@ -922,6 +1057,12 @@ function togglePause() {
         // Resume item highlighting
         if (window.itemHighlighterInstance) {
             window.itemHighlighterInstance.resume();
+        }
+        
+        // Notify keyboard navigation controller that user manually resumed
+        // This clears any auto-resume timer and resets auto-pause tracking
+        if (window.keyboardNavigationInstance) {
+            window.keyboardNavigationInstance.onManualResume();
         }
         
         // Hide pause QR widget and reset dismissed state for next pause
@@ -1597,6 +1738,10 @@ window.octocatCameoInstance = new OctocatCameo();
 // Start the Easter egg timer (will trigger every 30 minutes)
 window.octocatCameoInstance.start();
 
+// Keyboard Navigation Controller will be initialized in startDashboard()
+// after the carousel is properly configured. The controller needs a valid
+// reference to carouselInstance which is only available after initializeWithConfig().
+
 /**
  * Extract item data from a list item DOM element
  * @param {HTMLElement} itemElement - The list item element
@@ -1732,10 +1877,18 @@ function startDashboard() {
         const itemCount = getItemCountForPage(pageName);
         
         // Start highlighting on new page if items exist
-        // Item timer begins fresh countdown using page-specific interval
+        // When dashboard is paused (e.g., via keyboard navigation), initialize items
+        // without starting the auto-advance timer so manual navigation still works
         if (itemCount > 0) {
-            window.itemHighlighterInstance.start(itemCount);
-            console.log(`ItemHighlighter started with ${itemCount} items on ${pageName}`);
+            if (isPaused) {
+                // Dashboard is paused - initialize for manual navigation only
+                window.itemHighlighterInstance.initializeForPausedState(itemCount);
+                console.log(`ItemHighlighter initialized (paused) with ${itemCount} items on ${pageName}`);
+            } else {
+                // Dashboard is running - start normal auto-advance timer
+                window.itemHighlighterInstance.start(itemCount);
+                console.log(`ItemHighlighter started with ${itemCount} items on ${pageName}`);
+            }
         }
     };
 
@@ -1746,6 +1899,46 @@ function startDashboard() {
     
     // Start carousel
     window.carouselInstance.start();
+    
+    // Initialize Keyboard Navigation Controller
+    // Must be done after carousel is configured so we have a valid reference
+    // Allows arrow key navigation: Up/Down for items, Left/Right for pages
+    // Item navigation is disabled on status pages (status, vscode, visualstudio, anthropic)
+    if (window.keyboardNavigationInstance) {
+        // Clean up if exists (hot reload support)
+        window.keyboardNavigationInstance.stop();
+        window.keyboardNavigationInstance = null;
+    }
+    
+    window.keyboardNavigationInstance = new KeyboardNavigationController({
+        carouselController: window.carouselInstance,
+        itemHighlighter: window.itemHighlighterInstance,
+        onPause: function() {
+            // Call togglePause if not already paused
+            if (!isPaused) {
+                togglePause();
+            }
+        },
+        onResume: function() {
+            // Call togglePause if currently paused
+            if (isPaused) {
+                togglePause();
+            }
+        },
+        getIsPaused: function() {
+            return isPaused;
+        },
+        onItemNavigate: function() {
+            // Update QR code when item changes via keyboard navigation
+            updatePauseQrWidget();
+        },
+        // Disable item navigation on status monitoring pages only (they don't have navigable card items)
+        // Note: vscode and visualstudio are blog/release note pages and SHOULD have card navigation
+        disabledPages: ['status', 'anthropic']
+    });
+    
+    // Start keyboard navigation
+    window.keyboardNavigationInstance.start();
     
     // Start time-based messages (Easter Egg)
     // Independent of carousel and item highlighting (FR-16)
@@ -2112,6 +2305,39 @@ function showPauseQrWidget() {
     // Show the widget with animation
     widget.classList.remove('pause-qr-widget--hiding');
     widget.removeAttribute('hidden');
+}
+
+/**
+ * Update the pause QR widget with the currently highlighted item's link.
+ * Called when keyboard navigation changes the selected item.
+ * Only updates if the widget is currently visible.
+ */
+function updatePauseQrWidget() {
+    const widget = document.getElementById('pauseQrWidget');
+    const qrImage = document.getElementById('pauseQrImage');
+    const hintEl = widget ? widget.querySelector('.pause-qr-widget__hint') : null;
+    
+    // Only update if widget is visible
+    if (!widget || !qrImage || widget.hasAttribute('hidden')) return;
+    
+    // Get the currently highlighted item's link
+    const itemLink = getHighlightedItemLink();
+    const urlToEncode = itemLink || window.location.href;
+    const isItemLink = Boolean(itemLink);
+    
+    // Update QR code image
+    const qrSize = 160;
+    const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=${qrSize}x${qrSize}&data=${encodeURIComponent(urlToEncode)}`;
+    
+    qrImage.src = qrApiUrl;
+    qrImage.alt = isItemLink ? 'Scan to open this item on your device' : 'Scan to open dashboard on your device';
+    
+    // Update hint text
+    if (hintEl) {
+        hintEl.textContent = isItemLink ? 'Scan to open this item' : 'Scan to view on your device';
+    }
+    
+    console.log('KeyboardNavigation: Updated QR code for new item selection');
 }
 
 /**
