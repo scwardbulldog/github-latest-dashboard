@@ -16,6 +16,9 @@ export class CarouselController {
     if (typeof interval !== 'number' || interval <= 0) {
       throw new TypeError(`CarouselController: interval must be a positive number, got ${interval}`);
     }
+    if (typeof refreshInterval !== 'number' || refreshInterval <= 0) {
+      throw new TypeError(`CarouselController: refreshInterval must be a positive number, got ${refreshInterval}`);
+    }
     this.defaultInterval = interval;
     this.pageIntervals = pageIntervals;
     this.interval = interval;
