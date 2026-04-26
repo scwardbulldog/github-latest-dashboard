@@ -16,6 +16,10 @@ export class PersistentAlert {
     this.trackElement = document.getElementById('persistent-alert-track');
     this.currentOutages = null;
     
+    // Cache overflow state to avoid repeated layout measurements
+    this.lastTickerContent = null;
+    this.isScrollingEnabled = false;
+    
     if (!this.element) {
       console.error('PersistentAlert: Element with id "persistent-alert" not found');
     }
@@ -51,6 +55,10 @@ export class PersistentAlert {
     this.element.style.display = 'none';
     this.currentOutages = null;
     
+    // Clear cache on hide to prevent stale state
+    this.lastTickerContent = null;
+    this.isScrollingEnabled = false;
+    
     // Stop any scrolling animation and remove scrolling classes
     if (this.trackElement) {
       this.trackElement.classList.remove('persistent-alert__track--scrolling');
@@ -84,13 +92,31 @@ export class PersistentAlert {
     // Join items with separator
     const tickerContent = tickerItems.join(separator);
     
-    // Set content (duplicate for seamless loop if scrolling)
-    this.trackElement.textContent = tickerContent;
-    
-    // Check if scrolling is needed after render
-    requestAnimationFrame(() => {
-      this.checkScrolling(tickerContent, separator);
-    });
+    // Only re-measure if content actually changed (avoids redundant layout recalculations)
+    if (tickerContent !== this.lastTickerContent) {
+      this.lastTickerContent = tickerContent;
+      this.trackElement.textContent = tickerContent;
+      
+      // Defer measurement to avoid layout thrashing
+      requestAnimationFrame(() => {
+        this.checkScrolling(tickerContent, separator);
+      });
+    } else {
+      // Content unchanged - restore correct text without remeasuring
+      this.trackElement.textContent = this.buildTrackText(tickerContent, separator);
+    }
+  }
+  
+  /**
+   * Build the text content for the track element based on scrolling state
+   * @param {string} tickerContent - The base ticker text
+   * @param {string} separator - Separator used between duplicated content
+   * @returns {string} Track text (duplicated when scrolling, plain when not)
+   */
+  buildTrackText(tickerContent, separator) {
+    return this.isScrollingEnabled
+      ? tickerContent + separator + tickerContent
+      : tickerContent;
   }
   
   /**
@@ -101,20 +127,29 @@ export class PersistentAlert {
   checkScrolling(tickerContent, separator) {
     if (!this.trackElement || !this.element) return;
     
-    // Measure content width vs container width
+    // Batch reads together to minimise layout recalculations
     const containerWidth = this.element.offsetWidth;
     const contentWidth = this.trackElement.offsetWidth;
     
-    // If content overflows, enable scrolling with duplicated content
-    if (contentWidth > containerWidth - 32) { // Account for padding
-      // Duplicate content for seamless loop
-      this.trackElement.textContent = tickerContent + separator + tickerContent;
-      this.trackElement.classList.add('persistent-alert__track--scrolling');
-      this.element.classList.add('persistent-alert--scrolling');
+    // Determine if scrolling is needed
+    const needsScrolling = contentWidth > containerWidth - 32; // Account for padding
+    
+    // Batch writes together (avoid interleaved read-write layout thrashing)
+    if (needsScrolling) {
+      if (!this.isScrollingEnabled) {
+        // Duplicate content for seamless loop
+        this.isScrollingEnabled = true;
+        this.trackElement.textContent = this.buildTrackText(tickerContent, separator);
+        this.trackElement.classList.add('persistent-alert__track--scrolling');
+        this.element.classList.add('persistent-alert--scrolling');
+      }
     } else {
-      // Content fits, no scrolling needed - keep text centered
-      this.trackElement.classList.remove('persistent-alert__track--scrolling');
-      this.element.classList.remove('persistent-alert--scrolling');
+      if (this.isScrollingEnabled) {
+        // Content fits, no scrolling needed - keep text centered
+        this.isScrollingEnabled = false;
+        this.trackElement.classList.remove('persistent-alert__track--scrolling');
+        this.element.classList.remove('persistent-alert--scrolling');
+      }
     }
   }
   
