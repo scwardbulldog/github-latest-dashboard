@@ -222,7 +222,7 @@ This dashboard:
 
 ## Example Informational / Low-Severity Items
 
-- Adding Subresource Integrity hashes for locally-served assets (defense-in-depth)
+- Adding Subresource Integrity hashes for any external CDN resources (defense-in-depth)
 - Implementing a nonce-based CSP for inline styles (hardening)
 - Adding rate limiting to client-side API retry logic (resilience improvement)
 - Creating a security.txt or SECURITY.md policy file (compliance documentation)
