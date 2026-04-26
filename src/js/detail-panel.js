@@ -17,6 +17,8 @@ export class DetailPanel {
     this.activePage = null; // Cache active page reference to avoid re-querying on every update
     this.isTransitioning = false; // Prevent overlapping transitions
     this.currentItemId = null; // Track current item to prevent stale updates
+    this.contentEl = null; // Cache #detail-content element reference
+    this.loadingEl = null; // Cache #detail-loading element reference (may not exist)
   }
   
   /**
@@ -26,6 +28,20 @@ export class DetailPanel {
   invalidateCache() {
     this.container = null;
     this.activePage = null;
+    this.contentEl = null; // Clear child element caches
+    this.loadingEl = null; // Clear child element caches
+  }
+  
+  /**
+   * Update cached child element references after DOM changes
+   * Called after rendering new content or creating elements dynamically
+   * @private
+   */
+  _updateChildElementCache() {
+    if (!this.container) return;
+    
+    this.contentEl = this.container.querySelector('#detail-content');
+    this.loadingEl = this.container.querySelector('#detail-loading');
   }
   
   /**
@@ -130,6 +146,9 @@ export class DetailPanel {
       const showLoading = !!contentFetcher && item.link;
       this.container.innerHTML = this.buildContentWithLoading(item, showLoading, hideHeader, skipInitialContent);
       
+      // Update child element cache after innerHTML changes DOM
+      this._updateChildElementCache();
+      
       // Phase 3: Fade in (100ms)
       this.container.style.opacity = '1';
       await this.wait(100);
@@ -229,27 +248,34 @@ export class DetailPanel {
       return;
     }
     
-    let contentEl = this.container.querySelector('#detail-content');
-    const loadingEl = this.container.querySelector('#detail-loading');
+    // Use cached element; re-query on cache miss
+    if (!this.contentEl) {
+      this.contentEl = this.container.querySelector('#detail-content');
+    }
     
     // If no content div exists (skipInitialContent was true), create it
-    if (!contentEl) {
-      contentEl = document.createElement('div');
-      contentEl.className = 'detail-panel__content';
-      contentEl.id = 'detail-content';
+    if (!this.contentEl) {
+      this.contentEl = document.createElement('div');
+      this.contentEl.className = 'detail-panel__content';
+      this.contentEl.id = 'detail-content';
+      
+      // Use cached loadingEl; re-query on cache miss
+      if (!this.loadingEl) {
+        this.loadingEl = this.container.querySelector('#detail-loading');
+      }
       
       // Insert it where the loading indicator is (or at the end)
-      if (loadingEl) {
-        loadingEl.parentNode.insertBefore(contentEl, loadingEl.nextSibling);
+      if (this.loadingEl) {
+        this.loadingEl.parentNode.insertBefore(this.contentEl, this.loadingEl.nextSibling);
       } else {
         const panelContent = this.container.querySelector('.detail-panel-content');
         if (panelContent) {
           // Insert before the link if it exists, otherwise append
           const link = panelContent.querySelector('.detail-panel__link');
           if (link) {
-            panelContent.insertBefore(contentEl, link);
+            panelContent.insertBefore(this.contentEl, link);
           } else {
-            panelContent.appendChild(contentEl);
+            panelContent.appendChild(this.contentEl);
           }
         } else {
           console.error('DetailPanel.updateContent: No .detail-panel-content container found');
@@ -260,12 +286,13 @@ export class DetailPanel {
     
     // Sanitize and update content
     const sanitizedContent = this.sanitizeHtml(content);
-    contentEl.innerHTML = sanitizedContent;
+    this.contentEl.innerHTML = sanitizedContent;
     console.log('DetailPanel: Updated with full article content');
     
     // Remove loading indicator after content is inserted
-    if (loadingEl) {
-      loadingEl.remove();
+    if (this.loadingEl) {
+      this.loadingEl.remove();
+      this.loadingEl = null; // Clear cache since element is removed
     }
   }
   
@@ -276,9 +303,14 @@ export class DetailPanel {
   removeLoadingIndicator() {
     if (!this.container) return;
     
-    const loadingEl = this.container.querySelector('#detail-loading');
-    if (loadingEl) {
-      loadingEl.remove();
+    // Use cached element; re-query on cache miss
+    if (!this.loadingEl) {
+      this.loadingEl = this.container.querySelector('#detail-loading');
+    }
+    
+    if (this.loadingEl) {
+      this.loadingEl.remove();
+      this.loadingEl = null; // Clear cache since element is removed
     }
   }
   
