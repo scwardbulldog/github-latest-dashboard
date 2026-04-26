@@ -29,6 +29,13 @@ const sourceStatus = {
 // Status change callbacks
 const statusChangeCallbacks = [];
 
+// Debounce timer IDs for each source — prevents callback storms during retries.
+// Initialized dynamically from the cache keys so new sources are included automatically.
+const statusEmitTimers = Object.fromEntries(Object.keys(cache).map(k => [k, null]));
+
+// How long to wait before emitting a debounced status change (ms)
+const DEBOUNCE_DELAY = 200;
+
 /**
  * Register a callback to be notified of status changes
  * @param {Function} callback - Function to call when status changes (sourceName, statusData)
@@ -46,11 +53,11 @@ export function onStatusChange(callback) {
 }
 
 /**
- * Emit status change event to all registered callbacks
+ * Invoke all registered callbacks with the current status data (internal helper)
  * @param {string} sourceName - Name of the data source
  * @param {Object} statusData - Current status data
  */
-function emitStatusChange(sourceName, statusData) {
+function invokeStatusCallbacks(sourceName, statusData) {
   statusChangeCallbacks.forEach(callback => {
     try {
       callback(sourceName, statusData);
@@ -58,6 +65,37 @@ function emitStatusChange(sourceName, statusData) {
       console.error('Error in status change callback:', error);
     }
   });
+}
+
+/**
+ * Emit status change event with debouncing to prevent callback storms.
+ * Rapid successive calls for the same source are batched; only the final
+ * state is delivered to callbacks after DEBOUNCE_DELAY ms of quiet time.
+ * @param {string} sourceName - Name of the data source
+ * @param {Object} statusData - Current status data
+ * @param {boolean} [immediate=false] - If true, bypass debounce (e.g. user-initiated refresh)
+ */
+function emitStatusChange(sourceName, statusData, immediate = false) {
+  if (immediate) {
+    // Cancel any pending debounced emission and fire right away
+    if (statusEmitTimers[sourceName]) {
+      clearTimeout(statusEmitTimers[sourceName]);
+      statusEmitTimers[sourceName] = null;
+    }
+    invokeStatusCallbacks(sourceName, statusData);
+    return;
+  }
+
+  // Cancel the previous pending emission for this source
+  if (statusEmitTimers[sourceName]) {
+    clearTimeout(statusEmitTimers[sourceName]);
+  }
+
+  // Schedule a new emission; only the last statusData wins
+  statusEmitTimers[sourceName] = setTimeout(() => {
+    statusEmitTimers[sourceName] = null;
+    invokeStatusCallbacks(sourceName, statusData);
+  }, DEBOUNCE_DELAY);
 }
 
 /**
@@ -143,8 +181,8 @@ const GITHUB_CHANGELOG_RSS = 'https://github.blog/changelog/feed/';
 const GITHUB_STATUS_API = 'https://www.githubstatus.com/api/v2/incidents.json';
 const VSCODE_UPDATES_RSS = 'https://code.visualstudio.com/feed.xml';
 const VISUALSTUDIO_DEVBLOG_RSS = 'https://devblogs.microsoft.com/visualstudio/feed/';
-// Olshansk's community-maintained Claude Code changelog feed
-const ANTHROPIC_NEWS_RSS = 'https://raw.githubusercontent.com/Olshansk/rss-feeds/refs/heads/main/feeds/feed_anthropic_changelog_claude_code.xml';
+// Official Claude Code changelog RSS feed
+const ANTHROPIC_NEWS_RSS = 'https://code.claude.com/docs/en/changelog/rss.xml';
 
 /**
  * Fetch GitHub Blog data with caching and retry logic
@@ -847,7 +885,7 @@ export function clearArticleCache() {
 
 /**
  * Fetch Claude Code Changelog data with caching and retry logic
- * Uses Olshansk's community-maintained RSS feed for Claude Code version updates
+ * Uses the official Claude Code changelog RSS feed
  * @returns {Promise<Object>} Claude Code Changelog RSS data
  * @throws {Error} If fetch fails and no cached data available
  */

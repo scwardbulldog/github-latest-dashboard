@@ -27,7 +27,7 @@ const DEFAULT_CONFIG = {
   },
   
   // Pages to display in the carousel (order matters)
-  pages: ['vscode', 'visualstudio', 'blog', 'changelog', 'status', 'anthropic'],
+  pages: ['anthropic', 'vscode', 'visualstudio', 'blog', 'changelog', 'status'],
   
   // Page rotation intervals in milliseconds
   pageIntervals: {
