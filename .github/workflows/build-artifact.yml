@@ -49,5 +49,5 @@ jobs:
           else
             git commit -m "chore: rebuild generated artifacts [skip ci]"
             git pull --rebase origin main
-            git push
+            git push --force-with-lease
           fi
