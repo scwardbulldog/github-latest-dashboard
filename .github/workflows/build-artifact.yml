@@ -11,6 +11,10 @@ on:
       - 'package.json'
       - 'package-lock.json'
 
+concurrency:
+  group: build-artifact
+  cancel-in-progress: true
+
 jobs:
   build-artifact:
     runs-on: ubuntu-latest
@@ -44,5 +48,6 @@ jobs:
             echo "No artifact changes to commit"
           else
             git commit -m "chore: rebuild generated artifacts [skip ci]"
+            git pull --rebase origin main
             git push
           fi
