@@ -2364,15 +2364,15 @@ if (document.readyState === 'loading') {
 // Update timestamp every second
 let timestampIntervalId = setInterval(updateTimestamp, 1000);
 
-// Cleanup function for timestamp interval (useful for testing and hot-reloading)
+// Internal cleanup function for the timestamp interval before page unload
 function stopTimestampUpdates() {
-    if (timestampIntervalId) {
+    if (timestampIntervalId !== null) {
         clearInterval(timestampIntervalId);
         timestampIntervalId = null;
     }
 }
 
-window.addEventListener('beforeunload', () => {
+window.addEventListener('pagehide', () => {
     stopTimestampUpdates();
 });
 
