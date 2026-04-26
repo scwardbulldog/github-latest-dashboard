@@ -16,7 +16,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      pull-requests: write
 
     steps:
       - name: Checkout repository
@@ -36,14 +35,14 @@ jobs:
       - name: Build artifact
         run: npm run build
 
-      - name: Create PR for rebuilt artifacts if changed
-        uses: peter-evans/create-pull-request@v7
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: "chore: rebuild generated artifacts [skip ci]"
-          branch: chore/rebuild-artifacts
-          title: "chore: rebuild generated artifacts"
-          body: "Automated rebuild of generated artifacts triggered by source changes."
-          add-paths: |
-            index.html
-            img/
+      - name: Commit and push rebuilt artifacts if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add index.html img/ 2>/dev/null || true
+          if git diff --cached --quiet; then
+            echo "No artifact changes to commit"
+          else
+            git commit -m "chore: rebuild generated artifacts [skip ci]"
+            git push
+          fi
