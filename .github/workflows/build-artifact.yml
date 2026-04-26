@@ -16,6 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      pull-requests: write
 
     steps:
       - name: Checkout repository
@@ -23,10 +24,10 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Set up Node.js 18
+      - name: Set up Node.js 20
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
           cache: 'npm'
 
       - name: Install dependencies
@@ -35,12 +36,14 @@ jobs:
       - name: Build artifact
         run: npm run build
 
-      - name: Commit rebuilt artifacts if changed
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          if ! git diff --quiet -- index.html img/; then
-            git add index.html img/
-            git commit -m "chore: rebuild generated artifacts [skip ci]"
-            git push
-          fi
+      - name: Create PR for rebuilt artifacts if changed
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "chore: rebuild generated artifacts [skip ci]"
+          branch: chore/rebuild-artifacts
+          title: "chore: rebuild generated artifacts"
+          body: "Automated rebuild of generated artifacts triggered by source changes."
+          add-paths: |
+            index.html
+            img/
