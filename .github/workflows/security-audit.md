@@ -239,3 +239,9 @@ When analyzing, keep these enterprise-specific factors in mind:
 - SOC 2 Type II auditors may request evidence of security controls on all internal tools
 
 Begin by reviewing the existing security backlog and discussions, then conduct a thorough security analysis across the SOC 2 criteria areas. Report 1-3 high-severity findings and note any informational items for the discussions board.
+
+**Important**: If no action is needed after completing your analysis (no high-severity findings and no informational items), you **MUST** call the `noop` safe-output tool with a brief explanation. Failing to call any safe-output tool is the most common cause of safe-output workflow failures.
+
+```json
+{"noop": {"message": "No actionable security findings: [brief summary of areas reviewed and why no issues were identified]"}}
+```
