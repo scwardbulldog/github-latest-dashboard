@@ -1005,20 +1005,12 @@ function togglePause() {
         pauseText.textContent = 'Resume';
         updateLiveIndicator();
         
-        // Pause data refresh (store elapsed for top progress bar)
+        // Pause data refresh
         if (window.refreshIntervalController) {
             window.refreshIntervalController.pause();
         }
-        // Store elapsed time for top progress bar
-        if (progressStartTime) {
-            progressElapsedBeforePause = Date.now() - progressStartTime;
-        }
-        if (progressAnimationFrame) {
-            cancelAnimationFrame(progressAnimationFrame);
-            progressAnimationFrame = null;
-        }
         
-        // Pause carousel (preserves position)
+        // Pause carousel (preserves position and both progress bars)
         if (window.carouselInstance) {
             window.carouselInstance.pause();
         }
@@ -1038,13 +1030,7 @@ function togglePause() {
         pauseText.textContent = 'Pause';
         updateLiveIndicator();
         
-        // Resume top progress bar from where it was
-        if (progressElapsedBeforePause > 0) {
-            progressStartTime = Date.now() - progressElapsedBeforePause;
-            resumeProgressBar();
-        }
-        
-        // Resume data refresh interval (don't fetch immediately to avoid jarring)
+        // Resume data refresh interval and top progress bar (don't fetch immediately to avoid jarring)
         if (window.refreshIntervalController) {
             window.refreshIntervalController.resume();
         }
@@ -1071,80 +1057,13 @@ function togglePause() {
     }
 }
 
-// Refresh Progress Bar Animation (RAF-based for smooth 60fps updates)
-// Top bar (#progressBar) tracks 5-minute refresh cycle
-// Octocat handled by CarouselController on bottom bar
-let progressAnimationFrame = null;
-let progressStartTime;
-let progressElapsedBeforePause = 0;
-
-function startProgressBar() {
-    const progressBar = document.getElementById('progressBar');
-    progressStartTime = Date.now();
-    progressElapsedBeforePause = 0;
-    
-    progressBar.style.width = '0%';
-    
-    // Cancel any existing animation
-    if (progressAnimationFrame) {
-        cancelAnimationFrame(progressAnimationFrame);
-    }
-    
-    function updateProgressBar() {
-        const elapsed = Date.now() - progressStartTime;
-        const progress = Math.min((elapsed / REFRESH_INTERVAL) * 100, 100);
-        
-        progressBar.style.width = progress + '%';
-        
-        // Continue animation until complete
-        if (progress < 100) {
-            progressAnimationFrame = requestAnimationFrame(updateProgressBar);
-        } else {
-            // Reset after brief hold at 100%
-            setTimeout(() => {
-                progressBar.style.width = '0%';
-            }, 500);
-        }
-    }
-    
-    // Start animation loop
-    progressAnimationFrame = requestAnimationFrame(updateProgressBar);
-}
-
-function resumeProgressBar() {
-    const progressBar = document.getElementById('progressBar');
-    
-    // Cancel any existing animation
-    if (progressAnimationFrame) {
-        cancelAnimationFrame(progressAnimationFrame);
-    }
-    
-    function updateProgressBar() {
-        const elapsed = Date.now() - progressStartTime;
-        const progress = Math.min((elapsed / REFRESH_INTERVAL) * 100, 100);
-        
-        progressBar.style.width = progress + '%';
-        
-        // Continue animation until complete
-        if (progress < 100) {
-            progressAnimationFrame = requestAnimationFrame(updateProgressBar);
-        } else {
-            // Reset after brief hold at 100%
-            setTimeout(() => {
-                progressBar.style.width = '0%';
-            }, 500);
-        }
-    }
-    
-    // Resume animation loop
-    progressAnimationFrame = requestAnimationFrame(updateProgressBar);
-}
-
 // Fetch all data
 async function fetchAllData() {
     if (isPaused) return;
     updateTimestamp();
-    startProgressBar();
+    if (window.carouselInstance) {
+        window.carouselInstance.resetRefreshProgress();
+    }
     
     console.log('fetchAllData: Starting parallel API fetches...');
     
@@ -1623,7 +1542,8 @@ async function initializeWithConfig() {
     window.carouselInstance = new CarouselController({
         interval: DEFAULT_PAGE_INTERVAL,
         pages: config.pages,
-        pageIntervals: PAGE_INTERVAL_OVERRIDES
+        pageIntervals: PAGE_INTERVAL_OVERRIDES,
+        refreshInterval: REFRESH_INTERVAL
     });
 }
 
@@ -1998,7 +1918,10 @@ initializeWithConfig().then(() => {
             // Keep module-level REFRESH_INTERVAL in sync so the progress bar
             // uses the correct duration after an interval change.
             REFRESH_INTERVAL = newIntervalMs;
-            startProgressBar();
+            if (window.carouselInstance) {
+                window.carouselInstance.refreshInterval = newIntervalMs;
+                window.carouselInstance.resetRefreshProgress();
+            }
         },
         onPageTimerChange: (newIntervalMs) => {
             // Update carousel default interval and reinitialize
@@ -2020,6 +1943,10 @@ initializeWithConfig().then(() => {
     });
     // Sync the progress bar duration to the stored interval on startup
     REFRESH_INTERVAL = window.refreshIntervalController.getInterval();
+    // Sync carousel's refreshInterval to match the stored value
+    if (window.carouselInstance) {
+        window.carouselInstance.refreshInterval = REFRESH_INTERVAL;
+    }
     // Sync page timer to stored value on startup
     DEFAULT_PAGE_INTERVAL = window.refreshIntervalController.getPageTimer();
     // Sync card timer to stored value on startup
@@ -2039,7 +1966,8 @@ initializeWithConfig().then(() => {
     window.carouselInstance = new CarouselController({
         interval: defaults.pageIntervals.default,
         pages: defaults.pages,
-        pageIntervals: defaultPageOverrides
+        pageIntervals: defaultPageOverrides,
+        refreshInterval: REFRESH_INTERVAL
     });
     // Create controller with defaults even on config failure
     if (!window.refreshIntervalController) {
@@ -2047,7 +1975,10 @@ initializeWithConfig().then(() => {
             onRefresh: fetchAllData,
             onIntervalChange: (newIntervalMs) => {
                 REFRESH_INTERVAL = newIntervalMs;
-                startProgressBar();
+                if (window.carouselInstance) {
+                    window.carouselInstance.refreshInterval = newIntervalMs;
+                    window.carouselInstance.resetRefreshProgress();
+                }
             },
             onPageTimerChange: (newIntervalMs) => {
                 DEFAULT_PAGE_INTERVAL = newIntervalMs;
