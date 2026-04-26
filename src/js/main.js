@@ -2362,7 +2362,19 @@ if (document.readyState === 'loading') {
 }
 
 // Update timestamp every second
-setInterval(updateTimestamp, 1000);
+let timestampIntervalId = setInterval(updateTimestamp, 1000);
+
+// Cleanup function for timestamp interval (useful for testing and hot-reloading)
+function stopTimestampUpdates() {
+    if (timestampIntervalId) {
+        clearInterval(timestampIntervalId);
+        timestampIntervalId = null;
+    }
+}
+
+window.addEventListener('beforeunload', () => {
+    stopTimestampUpdates();
+});
 
 // Browser online/offline event listeners for immediate network detection
 // Story 4.1: Detect network changes instantly without waiting for API fetch
