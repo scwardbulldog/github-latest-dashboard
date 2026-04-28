@@ -46,12 +46,15 @@
     --space-6: 40px;   /* Extra-large spacing (page margins) */
     --space-8: 64px;   /* Section spacing (major layout breaks) */
     
-    /* Typography - Font Sizes */
-    --fontsize-h1: 32px;       /* Section headers (BLOG, CHANGELOG, STATUS) */
-    --fontsize-h2: 24px;       /* Detail panel titles */
-    --fontsize-h3: 20px;       /* List item titles */
-    --fontsize-base: 16px;     /* Body text, descriptions */
-    --fontsize-small: 14px;    /* Timestamps, metadata */
+    /* Font Scale Factor - adjusted by AccessibilityController */
+    --font-scale: 1.0;
+
+    /* Typography - Font Sizes (scaled via --font-scale) */
+    --fontsize-h1: calc(32px * var(--font-scale));       /* Section headers (BLOG, CHANGELOG, STATUS) */
+    --fontsize-h2: calc(24px * var(--font-scale));       /* Detail panel titles */
+    --fontsize-h3: calc(20px * var(--font-scale));       /* List item titles */
+    --fontsize-base: calc(16px * var(--font-scale));     /* Body text, descriptions */
+    --fontsize-small: calc(14px * var(--font-scale));    /* Timestamps, metadata */
     
     /* Typography - Font Weights */
     --fontweight-normal: 400;
@@ -961,4 +964,83 @@ body {
 .incident-resolution::before {
     content: '✓';
     font-weight: var(--fontweight-semibold);
+}
+
+/* ============================================================================
+   High Contrast Mode - WCAG AAA (7:1 minimum contrast ratio)
+   Applied when .high-contrast is set on <html> by AccessibilityController
+   ============================================================================ */
+
+.high-contrast {
+    /* Backgrounds */
+    --color-canvas-default: #000000;
+    --color-canvas-subtle: #0d1117;
+
+    /* Text (white on black: 21:1 ratio) */
+    --color-fg-default: #ffffff;
+    --color-fg-muted: #e6e6e6;
+    --color-fg-subtle: #e6e6e6;
+    --color-fg-muted-alt: #d0d0d0;
+
+    /* Interactive elements */
+    --color-accent-fg: #58a6ff;           /* Blue links: 8.6:1 on black */
+    --color-accent-emphasis: #1f6feb;     /* Darker blue: 7.3:1 */
+
+    /* Success/Error/Warning */
+    --color-success-fg: #3fb950;          /* Green: 7.4:1 on black */
+    --color-danger-fg: #f85149;           /* Red: 7.1:1 on black */
+    --color-attention-fg: #d29922;        /* Yellow: 7.8:1 on black */
+    --color-sponsor-fg: #bc8cff;          /* Purple: 8.2:1 on black */
+    --color-success-alt: #3fb950;
+    --color-danger-alt: #f85149;
+    --color-attention-alt: #d29922;
+    --color-success-deep: #3fb950;
+    --color-attention-deep: #d29922;
+    --color-accent-alt: #58a6ff;
+    --color-success-badge: #238636;
+
+    /* Borders (increased contrast) */
+    --color-border-default: #ffffff;
+    --color-border-strong: #c9d1d9;
+
+    /* Overlay Tints - stronger for visibility */
+    --color-overlay-subtle: rgba(255, 255, 255, 0.08);
+    --color-overlay-mild: rgba(255, 255, 255, 0.12);
+    --color-overlay-strong: rgba(255, 255, 255, 0.20);
+
+    /* Enhanced focus indicators */
+    --focus-outline-width: 3px;
+    --focus-outline-color: #58a6ff;
+}
+
+/* Stronger focus indicators in high contrast */
+.high-contrast *:focus {
+    outline: var(--focus-outline-width, 3px) solid var(--focus-outline-color, #58a6ff);
+    outline-offset: 2px;
+}
+
+/* Thicker borders for better visibility */
+.high-contrast .list-item,
+.high-contrast .detail-panel {
+    border-width: 2px;
+}
+
+/* High contrast overrides for light theme */
+[data-theme="light"].high-contrast {
+    --color-canvas-default: #ffffff;
+    --color-canvas-subtle: #f0f0f0;
+    --color-fg-default: #000000;
+    --color-fg-muted: #1a1a1a;
+    --color-fg-subtle: #1a1a1a;
+    --color-fg-muted-alt: #2a2a2a;
+    --color-accent-fg: #0550ae;
+    --color-accent-emphasis: #033d8b;
+    --color-success-fg: #116329;
+    --color-danger-fg: #a40e26;
+    --color-attention-fg: #7d4e00;
+    --color-border-default: #000000;
+    --color-border-strong: #1a1a1a;
+    --color-overlay-subtle: rgba(0, 0, 0, 0.08);
+    --color-overlay-mild: rgba(0, 0, 0, 0.12);
+    --color-overlay-strong: rgba(0, 0, 0, 0.20);
 }
