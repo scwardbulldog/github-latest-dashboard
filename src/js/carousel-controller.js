@@ -229,12 +229,23 @@ export class CarouselController {
   }
   
   /**
-   * Update progress bar width and octocat position based on elapsed time
-   * Uses requestAnimationFrame for smooth animation
+   * Update progress bar width and octocat position based on elapsed time.
+   * Single shared RAF loop for both the bottom carousel bar and the top refresh bar
+   * (consolidates what were formerly separate startProgressBar/resumeProgressBar
+   * loops in main.js, preventing RAF handle accumulation).
+   * Uses requestAnimationFrame for smooth animation.
    * @private
    */
   updateProgress() {
     if (!this.progressBar || !this.startTime) return;
+    
+    // Cancel any pending animation frame before scheduling a new one.
+    // Prevents RAF handle accumulation if updateProgress() is called while
+    // a frame is already queued (mirrors the guard pattern used in pause/stop).
+    if (this.animationFrame) {
+      cancelAnimationFrame(this.animationFrame);
+      this.animationFrame = null;
+    }
     
     const elapsed = Date.now() - this.startTime;
     const progress = Math.min((elapsed / this.interval) * 100, 100);
@@ -253,7 +264,7 @@ export class CarouselController {
       this.refreshProgressBar.style.width = `${refreshProgress}%`;
     }
     
-    // Continue animation loop
+    // Schedule next frame to continue the animation loop
     this.animationFrame = requestAnimationFrame(() => this.updateProgress());
   }
   
