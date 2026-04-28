@@ -60,6 +60,29 @@
             </div>
         </div>
 
+        <!-- Font Size Controls -->
+        <div class="setting-group">
+            <label class="setting-group__label">Font Size</label>
+            <div class="font-size-controls">
+                <button class="font-size-btn" data-size="small" title="Small text (75%)" aria-pressed="false">A-</button>
+                <button class="font-size-btn active" data-size="medium" title="Medium text (100%, default)" aria-pressed="true">A</button>
+                <button class="font-size-btn" data-size="large" title="Large text (150%)" aria-pressed="false">A+</button>
+            </div>
+            <p class="setting-description">Current size: <span id="font-size-label">Medium (100%)</span></p>
+        </div>
+
+        <!-- High Contrast Toggle -->
+        <div class="setting-group">
+            <label class="setting-group__label">Accessibility</label>
+            <div class="setting-group__checkbox-row">
+                <label>
+                    <input type="checkbox" id="high-contrast-toggle" />
+                    High Contrast Mode
+                </label>
+            </div>
+            <p class="setting-description">WCAG AAA compliant (7:1 contrast minimum)</p>
+        </div>
+
         <div class="setting-group">
             <label for="refreshIntervalSlider" class="setting-group__label">Data Refresh Interval</label>
             <div class="setting-group__slider-row">

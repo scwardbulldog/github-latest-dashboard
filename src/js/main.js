@@ -43,6 +43,9 @@ import { OctocatCameo } from './octocat-cameo.js';
 // Import Keyboard Navigation Controller for arrow key navigation
 import { KeyboardNavigationController } from './keyboard-navigation.js';
 
+// Import Accessibility Controller for font size and high contrast
+import { AccessibilityController } from './accessibility-controller.js';
+
 // Import API client for data fetching (Story 3.5)
 import {
     fetchBlog as fetchBlogFromApiClient,
@@ -1511,6 +1514,10 @@ function getItemCountForPage(pageName) {
 // Initialize settings manager (localStorage persistence)
 window.settingsManager = new SettingsManager();
 
+// Initialize accessibility controller (font size & high contrast)
+const a11yController = new AccessibilityController(window.settingsManager);
+a11yController.initialize();
+
 // Initialize dashboard
 updateTimestamp();
 // NOTE: fetchAllData() is now called after config initialization in startDashboard()
@@ -2479,3 +2486,22 @@ if (exportSettingsBtn) {
 
 // Initialize the storage indicator on load
 updateStorageIndicator();
+
+// ============================================================================
+// ACCESSIBILITY CONTROLS (Font Size & High Contrast - Issue #32)
+// ============================================================================
+
+// Wire up font size buttons
+document.querySelectorAll('.font-size-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        a11yController.setFontSize(btn.dataset.size);
+    });
+});
+
+// Wire up high contrast toggle
+const highContrastToggle = document.getElementById('high-contrast-toggle');
+if (highContrastToggle) {
+    highContrastToggle.addEventListener('change', () => {
+        a11yController.toggleHighContrast();
+    });
+}
