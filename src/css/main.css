@@ -149,7 +149,8 @@ body {
     left: 0;
     transform: translateX(-50%); /* Static position transform OK (not animated) */
     z-index: 1001;
-    /* RAF handles smooth position updates - no CSS transition needed */
+    /* CSS @keyframes handles smooth position updates - no rAF needed */
+    will-change: left;
 }
 
 .octocat-traveler canvas {
