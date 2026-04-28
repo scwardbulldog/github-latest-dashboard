@@ -1,0 +1,33 @@
+name: Guard generated artifacts in PRs
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+
+jobs:
+  block-generated-artifacts:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Ensure PR does not modify generated artifacts
+        run: |
+          CHANGED_FILES=$(git diff --name-only --diff-filter=ACMRT "origin/${{ github.base_ref }}...HEAD")
+          if echo "$CHANGED_FILES" | grep -Eq '^(index\.html|img/)'; then
+            echo "PR includes generated artifacts (index.html or img/)."
+            echo "Please commit source files only; artifacts are rebuilt and committed automatically on main."
+            echo ""
+            echo "Artifact files found:"
+            echo "$CHANGED_FILES" | grep -E '^(index\.html|img/)'
+            exit 1
+          fi
+
+          echo "No generated artifacts changed in this PR."

@@ -346,14 +346,17 @@ npm run build
 python3 -m http.server 8000
 # Visit http://localhost:8000
 
-# 6. Commit source and built artifact
-git add src/ index.html
+# 6. Commit source changes only
+git add src/
 git commit -m "feat: your changes here"
 
 # 7. Push to GitHub
-git push origin main
+git push origin <your-branch>
 
-# 8. Deploy to Pi (restart kiosk)
+# 8. Open PR and merge to main
+# Rebuild workflow auto-commits index.html + img/ on main
+
+# 9. Deploy to Pi (restart kiosk)
 ssh pi@github-dashboard.local "sudo systemctl restart kiosk.service"
 ```
 
@@ -366,7 +369,8 @@ ssh pi@github-dashboard.local "sudo systemctl restart kiosk.service"
 - [ ] Timers have cleanup methods
 - [ ] Design token validation passes (`npm run test:validate`)
 - [ ] Built artifact regenerated (`npm run build`)
-- [ ] Both `/src/` and `/index.html` staged for commit
+- [ ] PR includes source/docs changes only (`/src/**`, `/docs/**`, etc.)
+- [ ] PR does NOT include generated `/index.html` or `/img/**`
 
 ### Before Deploying to Pi
 

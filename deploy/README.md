@@ -43,20 +43,23 @@ See [../docs/raspberry-pi-setup.md](../docs/raspberry-pi-setup.md) for complete 
    ```
    This creates `/dist/` (temporary) and copies final build to `/index.html` at root.
 
-3. **Commit both source and built artifact**:
+3. **Commit source changes only**:
    ```bash
-   git add src/ index.html
+   git add src/
    git commit -m "feat: your changes"
    ```
 
-4. **Push to GitHub**:
+4. **Push branch and open PR**:
    ```bash
-   git push origin main
+   git push origin <your-branch>
    ```
+
+5. **Merge PR to main** (artifacts are rebuilt automatically):
+   - `Rebuild generated artifacts` workflow commits root `index.html` + `img/`
 
 ### Raspberry Pi Automatic Update
 
-5. **Restart the kiosk** to trigger update:
+6. **Restart the kiosk** to trigger update:
    ```bash
    ssh pi@github-dashboard.local
    sudo systemctl restart kiosk.service

@@ -87,9 +87,11 @@ npm run dev
 npm run build
 
 # Deploy to Pi
-git add src/ index.html
+git add src/
 git commit -m "feat: changes"
-git push origin main
+git push origin <your-branch>
+# Open PR and merge to main
+# Build-artifact workflow auto-commits root index.html + img/ on main
 ```
 
 ---

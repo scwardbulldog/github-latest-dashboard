@@ -87,17 +87,20 @@ See [Testing Guide](docs/testing-guide.md) for detailed testing procedures.
 ### Git-Based Deployment
 
 ```bash
-# 1. Build
+# 1. Build locally for validation
 npm run build
 
-# 2. Commit source and artifact
-git add src/ index.html
+# 2. Commit source changes only
+git add src/
 git commit -m "feat: your changes"
 
-# 3. Push to GitHub
-git push origin main
+# 3. Push branch / open PR
+git push origin <your-branch>
 
-# 4. Restart Pi kiosk (pulls automatically)
+# 4. Merge PR to main
+# Build-artifact workflow auto-commits root index.html + img/ on main
+
+# 5. Restart Pi kiosk (pulls automatically)
 ssh pi@github-dashboard.local "sudo systemctl restart kiosk.service"
 ```
 

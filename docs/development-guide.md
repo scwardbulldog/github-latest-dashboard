@@ -61,9 +61,11 @@ Creates `/dist/` (temporary) and copies to `/index.html` (committed).
 
 ### 4. Commit Changes
 ```bash
-git add src/ index.html
+git add src/
 git commit -m "feat: your changes"
-git push origin main
+git push origin <your-branch>
+# Open PR and merge to main
+# Build-artifact workflow auto-commits root index.html + img/ on main
 ```
 
 ## File Editing Rules

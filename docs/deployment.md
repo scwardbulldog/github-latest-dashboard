@@ -105,14 +105,17 @@ npm run build
 npm run build
 # This builds to /dist/ and copies index.html and img/ to root
 
-# 3. Commit both source and built artifacts
-git add src/ index.html img/
+# 3. Commit source changes only
+git add src/
 git commit -m "feat: your changes here"
 
-# 4. Push to GitHub
-git push origin main
+# 4. Push branch and open PR
+git push origin <your-branch>
 
-# 5. Deploy to Pi (restart kiosk to pull latest)
+# 5. Merge PR to main
+# Build-artifact workflow auto-commits root index.html + img/ on main
+
+# 6. Deploy to Pi (restart kiosk to pull latest)
 ssh pi@github-dashboard.local "cd ~/dashboard && git pull origin main && sudo systemctl restart kiosk.service"
 ```
 
@@ -121,7 +124,11 @@ ssh pi@github-dashboard.local "cd ~/dashboard && git pull origin main && sudo sy
 **On Development Machine:**
 - Node.js + npm + Vite installed
 - Build happens here (`npm run build`)
-- Source and artifact committed to git
+- Source changes committed in PRs
+
+**On GitHub main branch:**
+- `Rebuild generated artifacts` workflow runs on source/config changes
+- Workflow commits root `index.html` and `img/` automatically
 
 **On Raspberry Pi:**
 - **No Node.js or build tools** required
@@ -268,12 +275,15 @@ You can create custom deployment scripts in `/deploy/` folder:
 # Build on dev machine
 npm run build
 
-# Commit with timestamp (includes index.html and img/ folder)
-git add src/ index.html img/
+# Commit source changes only
+git add src/
 git commit -m "deploy: $(date +%Y-%m-%d-%H%M)"
 
-# Push to GitHub
-git push origin main
+# Push branch / open PR
+git push origin <your-branch>
+
+# Merge PR to main
+# Build-artifact workflow auto-commits root index.html + img/
 
 # Deploy to Pi
 ssh pi@github-dashboard.local "cd ~/dashboard && git pull && sudo systemctl restart kiosk.service"
