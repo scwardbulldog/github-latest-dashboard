@@ -1,6 +1,7 @@
 name: Rebuild generated artifacts
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
