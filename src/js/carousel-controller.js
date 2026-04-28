@@ -31,7 +31,6 @@ export class CarouselController {
     this.progressBar = null;    // DOM element reference (bottom bar)
     this.octocat = null;        // Octocat traveler element
     this.startTime = null;      // Timestamp when current page started
-    this.animationFrame = null; // requestAnimationFrame handle
     
     // Refresh progress tracking properties (top bar - data refresh cycle)
     this.refreshInterval = refreshInterval;        // Duration of refresh cycle in ms
@@ -59,9 +58,8 @@ export class CarouselController {
     // Initialize progress bar reference
     this.initProgressBar();
     
-    // Reset progress and start animation for current page interval
+    // Reset progress and start CSS animation for current page interval
     this.applyIntervalForCurrentPage();
-    this.updateProgress();
     
     // Initialize timer accuracy tracking
     this.lastRotation = Date.now();
@@ -86,10 +84,15 @@ export class CarouselController {
       this.timer = null;
     }
     
-    // Cancel progress animation
-    if (this.animationFrame) {
-      cancelAnimationFrame(this.animationFrame);
-      this.animationFrame = null;
+    // Stop CSS animations
+    if (this.progressBar) {
+      this.progressBar.style.animation = 'none';
+    }
+    if (this.octocat) {
+      this.octocat.style.animation = 'none';
+    }
+    if (this.refreshProgressBar) {
+      this.refreshProgressBar.style.animation = 'none';
     }
   }
   
@@ -116,10 +119,15 @@ export class CarouselController {
       this.timer = null;
     }
     
-    // Stop progress animation but preserve position
-    if (this.animationFrame) {
-      cancelAnimationFrame(this.animationFrame);
-      this.animationFrame = null;
+    // Pause CSS animations, preserving current position
+    if (this.progressBar) {
+      this.progressBar.style.animationPlayState = 'paused';
+    }
+    if (this.octocat) {
+      this.octocat.style.animationPlayState = 'paused';
+    }
+    if (this.refreshProgressBar) {
+      this.refreshProgressBar.style.animationPlayState = 'paused';
     }
   }
   
@@ -136,16 +144,24 @@ export class CarouselController {
     // Calculate remaining time
     const remainingTime = Math.max(0, this.interval - this.elapsedBeforePause);
     
-    // Adjust startTime so progress calculation continues correctly
+    // Adjust startTime so elapsed time calculation continues correctly
     this.startTime = Date.now() - this.elapsedBeforePause;
     
-    // Restore refresh start time from saved elapsed (only if it was running before pause)
-    if (this.refreshStartTime !== null) {
-      this.refreshStartTime = Date.now() - this.refreshElapsedBeforePause;
+    // Resume CSS animations from their paused position
+    if (this.progressBar) {
+      this.progressBar.style.animationPlayState = 'running';
+    }
+    if (this.octocat) {
+      this.octocat.style.animationPlayState = 'running';
     }
     
-    // Restart progress animation
-    this.updateProgress();
+    // Restore refresh start time from saved elapsed and resume its animation
+    if (this.refreshStartTime !== null) {
+      this.refreshStartTime = Date.now() - this.refreshElapsedBeforePause;
+      if (this.refreshProgressBar) {
+        this.refreshProgressBar.style.animationPlayState = 'running';
+      }
+    }
     
     // Schedule next rotation with remaining time
     this.timer = setTimeout(() => {
@@ -229,45 +245,29 @@ export class CarouselController {
   }
   
   /**
-   * Update progress bar width and octocat position based on elapsed time
-   * Uses requestAnimationFrame for smooth animation
-   * @private
-   */
-  updateProgress() {
-    if (!this.progressBar || !this.startTime) return;
-    
-    const elapsed = Date.now() - this.startTime;
-    const progress = Math.min((elapsed / this.interval) * 100, 100);
-    
-    this.progressBar.style.width = `${progress}%`;
-    
-    // Update octocat position to match progress
-    if (this.octocat) {
-      this.octocat.style.left = `${progress}%`;
-    }
-    
-    // Update top refresh progress bar in the same rAF loop (eliminates 2nd RAF loop)
-    if (this.refreshProgressBar && this.refreshStartTime !== null) {
-      const refreshElapsed = Date.now() - this.refreshStartTime;
-      const refreshProgress = Math.min((refreshElapsed / this.refreshInterval) * 100, 100);
-      this.refreshProgressBar.style.width = `${refreshProgress}%`;
-    }
-    
-    // Continue animation loop
-    this.animationFrame = requestAnimationFrame(() => this.updateProgress());
-  }
-  
-  /**
-   * Reset progress and octocat to 0%
+   * Reset progress and octocat to 0% and start CSS animations
    * @private
    */
   resetProgress() {
     this.startTime = Date.now();
+    
     if (this.progressBar) {
+      // Remove any running animation, then reset width to 0%
+      this.progressBar.style.animation = 'none';
       this.progressBar.style.width = '0%';
+      
+      // Force reflow so the animation restart takes effect
+      void this.progressBar.offsetWidth;
+      
+      // Start CSS animation for this interval duration
+      this.progressBar.style.animation = `progressGrow ${this.interval}ms linear forwards`;
     }
+    
     if (this.octocat) {
+      this.octocat.style.animation = 'none';
       this.octocat.style.left = '0%';
+      void this.octocat.offsetWidth;
+      this.octocat.style.animation = `octocatMove ${this.interval}ms linear forwards`;
     }
   }
   
@@ -279,7 +279,9 @@ export class CarouselController {
     this.refreshStartTime = Date.now();
     this.refreshElapsedBeforePause = 0;
     if (this.refreshProgressBar) {
-      this.refreshProgressBar.style.width = '0%';
+      this.refreshProgressBar.style.animation = 'none';
+      void this.refreshProgressBar.offsetWidth;
+      this.refreshProgressBar.style.animation = `progressGrow ${this.refreshInterval}ms linear forwards`;
     }
   }
   

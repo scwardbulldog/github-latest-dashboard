@@ -23,9 +23,21 @@
 
 .progress-bar {
   height: 100%;
-  width: 0%; /* Start at 0%, animated by JavaScript */
+  width: 0%; /* Start at 0%, animated by CSS @keyframes */
   background: var(--color-accent-fg); /* GitHub blue */
-  transition: width 100ms linear; /* Smooth width updates */
+  /* GPU acceleration hint for compositor-layer promotion */
+  will-change: width;
+  transform: translateZ(0);
+}
+
+@keyframes progressGrow {
+  from { width: 0%; }
+  to { width: 100%; }
+}
+
+@keyframes octocatMove {
+  from { left: 0%; }
+  to { left: 100%; }
 }
 
 /* ============================================
