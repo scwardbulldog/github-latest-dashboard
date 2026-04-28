@@ -3,8 +3,6 @@ name: Resolve PR Conflicts
 description: Automatically resolves merge conflicts in pull requests. Triggered when the 'resolve-conflicts' label is applied to a PR, or via workflow_dispatch to scan all open conflicted PRs.
 
 on:
-  pull_request:
-    types: [labeled]
   workflow_dispatch:
 
 permissions:

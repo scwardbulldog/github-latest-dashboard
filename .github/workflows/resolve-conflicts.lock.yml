@@ -41,9 +41,6 @@
 
 name: "Resolve PR Conflicts"
 "on":
-  pull_request:
-    types:
-    - labeled
   workflow_dispatch:
     inputs:
       aw_context:

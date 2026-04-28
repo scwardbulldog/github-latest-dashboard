@@ -3,7 +3,6 @@ name: Security Audit
 description: Discovers and evaluates security concerns for enterprise internal hosting, logging high-severity findings to the backlog and informational items to discussions
 
 on:
-  schedule: weekly
   workflow_dispatch:    # Allow manual trigger
 
 permissions:

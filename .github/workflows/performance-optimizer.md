@@ -3,7 +3,6 @@ name: Performance Optimizer
 description: Discovers and evaluates performance improvements, logging high-value optimizations to the backlog and low-value ideas to discussions
 
 on:
-  schedule: daily on weekdays
   workflow_dispatch:    # Allow manual trigger
 
 permissions:

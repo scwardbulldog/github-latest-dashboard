@@ -1,8 +1,6 @@
 ---
 description: Daily analysis and improvement of repository quality focusing on different software development lifecycle areas
 on:
-  schedule:
-    - cron: "daily around 13:00 on weekdays"  # ~1 PM UTC, weekdays only
   workflow_dispatch:
 permissions:
   contents: read

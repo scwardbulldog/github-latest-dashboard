@@ -41,9 +41,6 @@
 
 name: "Repository Quality Improvement Agent"
 "on":
-  schedule:
-  - cron: "39 12 * * 1-5"
-    # Friendly format: daily around 13:00 on weekdays (scattered)
   workflow_dispatch:
     inputs:
       aw_context:

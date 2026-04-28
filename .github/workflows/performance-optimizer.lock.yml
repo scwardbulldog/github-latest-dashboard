@@ -40,9 +40,6 @@
 
 name: "Performance Optimizer"
 "on":
-  schedule:
-  - cron: "50 12 * * 1-5"
-    # Friendly format: daily on weekdays (scattered)
   workflow_dispatch:
     inputs:
       aw_context:

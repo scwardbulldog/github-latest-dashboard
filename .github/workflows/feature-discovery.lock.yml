@@ -40,9 +40,6 @@
 
 name: "Feature Discovery & Backlog Management"
 "on":
-  schedule:
-  - cron: "6 10 * * 4"
-    # Friendly format: weekly (scattered)
   workflow_dispatch:
     inputs:
       aw_context:

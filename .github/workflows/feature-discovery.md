@@ -1,6 +1,5 @@
 ---
 on:
-  schedule: weekly
   workflow_dispatch:    # Allow manual trigger
 
 permissions:
