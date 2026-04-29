@@ -20,6 +20,7 @@ export class StatusBadge {
     this.sourceName = sourceName;
     this.container = container;
     this.updateIntervalId = null;
+    this._prevRenderKey = null;
     
     // Create badge element
     this.element = document.createElement('div');
@@ -129,6 +130,11 @@ export class StatusBadge {
         break;
     }
     
+    // Skip DOM rebuild if nothing has changed
+    const renderKey = `${stateClass}|${stateIcon}|${stateText}|${detailText}`;
+    if (renderKey === this._prevRenderKey) return;
+    this._prevRenderKey = renderKey;
+
     // Update badge classes
     this.element.className = `status-badge ${stateClass}`;
     
