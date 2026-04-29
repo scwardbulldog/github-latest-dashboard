@@ -5,6 +5,12 @@
 export class DetailPanel {
   // Counter for generating unique item IDs
   static itemIdCounter = 0;
+
+  // Maximum sanitization cache entries (prevents unbounded memory growth)
+  static SANITIZATION_CACHE_SIZE = 50;
+
+  // LRU cache: Map<rawHtml, sanitizedHtml>
+  static sanitizationCache = new Map();
   
   /**
    * Create a DetailPanel instance
@@ -350,14 +356,24 @@ export class DetailPanel {
   /**
    * Sanitize HTML content (allow safe HTML rendering)
    * Allows common HTML tags for rich content display
+   * Uses LRU cache to avoid re-parsing identical HTML strings.
    * @private
    * @param {string} html - HTML content to sanitize
    * @returns {string} Sanitized HTML
    */
   sanitizeHtml(html) {
     if (!html) return '';
-    
-    // Create temporary element for parsing
+
+    // Check cache first (O(1) lookup)
+    if (DetailPanel.sanitizationCache.has(html)) {
+      const cached = DetailPanel.sanitizationCache.get(html);
+      // Move to end for LRU (delete + re-add preserves Map insertion order)
+      DetailPanel.sanitizationCache.delete(html);
+      DetailPanel.sanitizationCache.set(html, cached);
+      return cached;
+    }
+
+    // Cache miss - perform sanitization
     const temp = document.createElement('div');
     temp.innerHTML = html;
     
@@ -379,8 +395,25 @@ export class DetailPanel {
       });
     });
     
-    // Return sanitized HTML
-    return temp.innerHTML;
+    const sanitized = temp.innerHTML;
+
+    // Evict oldest entry if at capacity (LRU eviction)
+    if (DetailPanel.sanitizationCache.size >= DetailPanel.SANITIZATION_CACHE_SIZE) {
+      const firstKey = DetailPanel.sanitizationCache.keys().next().value;
+      if (firstKey !== undefined) {
+        DetailPanel.sanitizationCache.delete(firstKey);
+      }
+    }
+    DetailPanel.sanitizationCache.set(html, sanitized);
+
+    return sanitized;
+  }
+
+  /**
+   * Clear sanitization cache (call on data refresh to release memory)
+   */
+  static clearSanitizationCache() {
+    DetailPanel.sanitizationCache.clear();
   }
   
   /**
