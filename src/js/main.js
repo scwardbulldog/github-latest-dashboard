@@ -1284,6 +1284,9 @@ async function fetchAllData() {
             console.log('fetchAllData: Data refresh complete (timers preserved)');
         }
 
+        // Clear sanitization cache to release memory after data refresh
+        DetailPanel.clearSanitizationCache();
+
         // Update last-refreshed timestamp in the settings panel
         if (window.refreshIntervalController) {
             window.refreshIntervalController.markRefreshed();
