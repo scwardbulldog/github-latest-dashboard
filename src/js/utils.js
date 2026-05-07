@@ -45,15 +45,20 @@ export function formatDate(dateString) {
     });
 }
 
+// Reusable element for stripHtml() - created once at module load to avoid
+// repeated DOM allocations during frequent data refresh cycles.
+const stripHtmlElement = document.createElement('div');
+
 /**
  * Strip HTML tags from a string
  * @param {string} html - HTML string to strip tags from
  * @returns {string} Plain text content without HTML tags
  */
 export function stripHtml(html) {
-    const tmp = document.createElement('div');
-    tmp.innerHTML = html;
-    return tmp.textContent || tmp.innerText || '';
+    stripHtmlElement.innerHTML = html;
+    const text = stripHtmlElement.textContent || stripHtmlElement.innerText || '';
+    stripHtmlElement.innerHTML = '';
+    return text;
 }
 
 /**

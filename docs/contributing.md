@@ -297,7 +297,34 @@ import { CarouselController } from './carousel-controller';  // Wrong
 
 **Why?** ES modules in browsers require explicit file extensions.
 
-### 5. Clean Up Timers
+### 5. Use Singleton Pattern for Reusable DOM Elements
+
+When a utility function needs a temporary DOM element for parsing (e.g., `stripHtml()`), create it **once at module level** rather than on every call:
+
+```javascript
+// ✅ Correct - created once, reused across calls
+const stripHtmlElement = document.createElement('div');
+
+export function stripHtml(html) {
+    stripHtmlElement.innerHTML = html;
+    const text = stripHtmlElement.textContent || stripHtmlElement.innerText || '';
+    stripHtmlElement.innerHTML = ''; // Clear for next use
+    return text;
+}
+```
+
+```javascript
+// ❌ Wrong - creates a new element on every call
+export function stripHtml(html) {
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html;
+    return tmp.textContent || tmp.innerText || '';
+}
+```
+
+**Why?** On a Raspberry Pi 3B running 24+ hours, `stripHtml()` is called 17,000+ times per day. Reusing a single element eliminates thousands of unnecessary DOM allocations and GC cycles.
+
+### 6. Clean Up Timers
 
 ✅ **ALWAYS** implement `stop()` methods to prevent memory leaks:
 ```javascript
