@@ -221,7 +221,7 @@ export class DetailPanel {
     const safeDescription = this.sanitizeHtml(
       item.description || 'No description available'
     );
-    const safeLink = item.link || '';
+    const safeLink = this.sanitizeUrl(item.link);
     
     const loadingIndicator = showLoading ? `
       <div class="detail-panel__loading" id="detail-loading">
@@ -342,7 +342,7 @@ export class DetailPanel {
     const safeDescription = preserveHtml 
       ? this.sanitizeHtml(item.description || 'No description available')
       : this.sanitizeHtml(item.description || 'No description available');
-    const safeLink = item.link || '';
+    const safeLink = this.sanitizeUrl(item.link);
     
     // Hide timestamp if it's unknown (e.g., changelog items without dates)
     const timestampHtml = (safeTimestamp && safeTimestamp !== 'Unknown date') 
@@ -359,6 +359,18 @@ export class DetailPanel {
     `;
   }
   
+  /**
+   * Validate a URL, returning it only if it uses a safe scheme.
+   * Blocks javascript:, data:, and vbscript: URIs.
+   * @private
+   * @param {string} url - URL to validate
+   * @returns {string} The URL if safe, otherwise empty string
+   */
+  sanitizeUrl(url) {
+    if (!url) return '';
+    return DANGEROUS_URI_SCHEME.test(url) ? '' : url;
+  }
+
   /**
    * Sanitize HTML content (allow safe HTML rendering)
    * Allows common HTML tags for rich content display
