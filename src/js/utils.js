@@ -78,12 +78,15 @@ export function truncate(text, maxLength) {
  * @returns {string} HTML-escaped text safe for interpolation in HTML templates
  */
 export function escapeHtml(text) {
-    return String(text)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
+    const htmlEntities = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        '\'': '&#39;'
+    };
+    
+    return String(text).replace(/[&<>"']/g, character => htmlEntities[character]);
 }
 
 /**

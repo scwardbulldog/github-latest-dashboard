@@ -5,6 +5,7 @@
 
 import assert from 'node:assert/strict';
 
+// Minimal DOM mock required because utils.js creates a reusable element at module load.
 globalThis.document = {
   createElement() {
     return {
@@ -17,7 +18,7 @@ globalThis.document = {
 
 const { escapeHtml } = await import('../src/js/utils.js');
 
-function run() {
+function runSecurityTests() {
   assert.equal(escapeHtml('Plain text'), 'Plain text');
   assert.equal(
     escapeHtml('<img src=x onerror="alert(1)">'),
@@ -31,4 +32,4 @@ function run() {
   console.log('✅ escapeHtml security checks passed');
 }
 
-run();
+runSecurityTests();
