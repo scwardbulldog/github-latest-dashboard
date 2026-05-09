@@ -797,6 +797,18 @@ export async function fetchArticleContent(url) {
 }
 
 /**
+ * URL attributes that can carry dangerous URI schemes.
+ * Shared by extractVSCodeArticleContent for attribute sanitization.
+ */
+const SANITIZE_URL_ATTRS = ['href', 'src', 'action', 'formaction', 'xlink:href'];
+
+/**
+ * Regex to detect dangerous URI schemes (case-insensitive, leading whitespace-tolerant).
+ * Blocks javascript:, data:, and vbscript: URIs in HTML attributes.
+ */
+const DANGEROUS_URI_SCHEME = /^\s*(javascript|data|vbscript)\s*:/i;
+
+/**
  * Extract the main article content from VS Code update page HTML
  * @param {string} html - The full HTML of the page
  * @returns {string} The extracted article content HTML
@@ -856,11 +868,18 @@ function extractVSCodeArticleContent(html) {
     contentEl.querySelectorAll(sel).forEach(el => el.remove());
   });
   
-  // Remove event handlers from all elements
+  // Remove event handlers and dangerous URL schemes from all elements
   contentEl.querySelectorAll('*').forEach(el => {
     Array.from(el.attributes).forEach(attr => {
       if (attr.name.startsWith('on')) {
         el.removeAttribute(attr.name);
+      }
+    });
+    // Strip dangerous URI schemes from URL-bearing attributes
+    SANITIZE_URL_ATTRS.forEach(attr => {
+      const value = el.getAttribute(attr);
+      if (value !== null && DANGEROUS_URI_SCHEME.test(value)) {
+        el.removeAttribute(attr);
       }
     });
   });
