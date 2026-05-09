@@ -1,3 +1,9 @@
+// URL attributes that can carry dangerous URI schemes
+const SANITIZE_URL_ATTRS = ['href', 'src', 'action', 'formaction', 'xlink:href'];
+
+// Regex to detect dangerous URI schemes (case-insensitive, leading whitespace-tolerant)
+const DANGEROUS_URI_SCHEME = /^\s*(javascript|data|vbscript)\s*:/i;
+
 /**
  * DetailPanel - Manages detail view rendering for highlighted items
  * @class
@@ -384,13 +390,20 @@ export class DetailPanel {
       elements.forEach(el => el.remove());
     });
     
-    // Remove event handler attributes (onclick, onerror, etc.)
+    // Remove event handler attributes (onclick, onerror, etc.) and dangerous URL schemes
     const allElements = temp.querySelectorAll('*');
     allElements.forEach(el => {
       const attributes = Array.from(el.attributes);
       attributes.forEach(attr => {
         if (attr.name.startsWith('on')) {
           el.removeAttribute(attr.name);
+        }
+      });
+      // Strip dangerous URI schemes from URL-bearing attributes
+      SANITIZE_URL_ATTRS.forEach(attr => {
+        const value = el.getAttribute(attr);
+        if (value !== null && DANGEROUS_URI_SCHEME.test(value)) {
+          el.removeAttribute(attr);
         }
       });
     });
