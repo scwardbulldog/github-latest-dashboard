@@ -27,7 +27,7 @@ export function getLanguageColor(language) {
   return LANGUAGE_COLORS[language] || '#8b949e';
 }
 
-function safeUrl(value) {
+function validateHttpsUrl(value) {
   if (typeof value !== 'string') {
     return '#';
   }
@@ -35,7 +35,7 @@ function safeUrl(value) {
   return /^https:\/\//.test(value) ? value : '#';
 }
 
-function safeGitHubRepoUrl(value) {
+function validateGitHubRepoUrl(value) {
   if (typeof value !== 'string') {
     return '#';
   }
@@ -44,7 +44,7 @@ function safeGitHubRepoUrl(value) {
 }
 
 function getOrganizationAvatarUrl(value) {
-  const sanitizedUrl = safeUrl(value);
+  const sanitizedUrl = validateHttpsUrl(value);
   if (sanitizedUrl !== '#') {
     return sanitizedUrl;
   }
@@ -139,7 +139,7 @@ function buildTreemapNodes(repositories) {
       name: repository.name,
       size: repository.size,
       language: repository.language || 'Other',
-      url: safeGitHubRepoUrl(repository.html_url)
+      url: validateGitHubRepoUrl(repository.html_url)
     }));
 }
 
@@ -241,7 +241,7 @@ export function renderOrganizationStats(containerId, orgData) {
     return `
       <article class="org-repo-card">
         <div class="org-repo-card__header">
-          <a class="org-repo-card__name" href="${safeGitHubRepoUrl(repository.html_url)}" target="_blank" rel="noreferrer">
+          <a class="org-repo-card__name" href="${validateGitHubRepoUrl(repository.html_url)}" target="_blank" rel="noreferrer">
             ${escapeHtml(repository.name)}
           </a>
           <span class="org-repo-card__timestamp">Updated ${escapeHtml(formatRepoUpdatedAt(repository.updated_at))}</span>

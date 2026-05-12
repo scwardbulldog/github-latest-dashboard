@@ -1365,8 +1365,8 @@ async function fetchAllData() {
         renderErrorState('vscode-list', 'Dashboard initialization failed');
         renderErrorState('visualstudio-list', 'Dashboard initialization failed');
         renderErrorState('anthropic-list', 'Dashboard initialization failed');
-        renderOrganizationStatsError('org-stats-content', getOrganizationName(), 'Dashboard initialization failed');
-        renderOrganizationVisualizationsError('org-visualizations-content', getOrganizationName(), 'Dashboard initialization failed');
+        renderOrganizationStatsError('org-stats-content', getOrganizationName(), 'Failed to initialize organization dashboard');
+        renderOrganizationVisualizationsError('org-visualizations-content', getOrganizationName(), 'Failed to initialize organization dashboard');
     }
 }
 
