@@ -162,6 +162,10 @@ export function prepareOrganizationData(orgData) {
   return {
     organization: {
       ...organization,
+      avatarUrl: organization.avatarUrl ?? organization.avatar_url,
+      htmlUrl: organization.htmlUrl ?? organization.html_url,
+      publicRepos: organization.publicRepos ?? organization.public_repos ?? 0,
+      publicMembers: organization.publicMembers ?? organization.public_members ?? 0,
       displayName: organization.name || organization.login || 'Organization'
     },
     topRepositories: sortedByStars.slice(0, 8),
@@ -267,7 +271,7 @@ export function renderOrganizationStats(containerId, orgData) {
           <div class="org-overview-card__stats">
             <span class="org-pill">${formatNumber(organization.publicRepos || 0)} public repos</span>
             <span class="org-pill">${formatNumber(organization.publicMembers || 0)} public members</span>
-            <span class="org-pill">${escapeHtml(organization.login || '')}</span>
+            <span class="org-pill">@${escapeHtml(organization.login || '')}</span>
           </div>
         </div>
       </div>

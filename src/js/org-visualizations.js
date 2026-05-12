@@ -1,4 +1,5 @@
-import { escapeHtml, formatNumber, getLanguageColor, prepareOrganizationData } from './org-stats.js';
+import { escapeHtml, formatNumber } from './utils.js';
+import { getLanguageColor, prepareOrganizationData } from './org-stats.js';
 
 const MIN_TREEMAP_LABEL_WIDTH = 150;
 const MIN_TREEMAP_LABEL_HEIGHT = 70;

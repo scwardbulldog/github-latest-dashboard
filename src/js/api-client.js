@@ -188,7 +188,7 @@ const VISUALSTUDIO_DEVBLOG_RSS = 'https://devblogs.microsoft.com/visualstudio/fe
 const ANTHROPIC_NEWS_RSS = 'https://code.claude.com/docs/en/changelog/rss.xml';
 const GITHUB_API_BASE = 'https://api.github.com';
 const REPOS_PER_PAGE = 100;
-const MAX_REPO_PAGES = 10; // REPOS_PER_PAGE × MAX_REPO_PAGES = 1000 repos, a pragmatic cap for TV dashboard usage
+const MAX_REPO_PAGES = 10; // REPOS_PER_PAGE * MAX_REPO_PAGES = 1000 repos, a pragmatic cap for TV dashboard usage
 
 /**
  * Fetch GitHub Blog data with caching and retry logic
@@ -791,10 +791,10 @@ export async function fetchOrganization(orgName = 'github') {
           login: organization.login,
           name: organization.name,
           description: organization.description,
-          avatarUrl: organization.avatar_url,
-          htmlUrl: organization.html_url,
-          publicRepos: organization.public_repos,
-          publicMembers: publicMemberCount
+          avatar_url: organization.avatar_url,
+          html_url: organization.html_url,
+          public_repos: organization.public_repos,
+          public_members: publicMemberCount
         },
         repositories,
         fetchedAt: now
