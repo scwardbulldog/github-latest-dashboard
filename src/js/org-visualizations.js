@@ -1,5 +1,11 @@
 import { escapeHtml, formatNumber, getLanguageColor, prepareOrganizationData } from './org-stats.js';
 
+const MIN_TREEMAP_LABEL_WIDTH = 150;
+const MIN_TREEMAP_LABEL_HEIGHT = 70;
+const TREEMAP_LABEL_PADDING_X = 20;
+const TREEMAP_LABEL_PRIMARY_Y = 42;
+const TREEMAP_LABEL_SECONDARY_Y = 74;
+
 function buildDonutChart(languageDistribution) {
   const radius = 50;
   const circumference = 2 * Math.PI * radius;
@@ -141,9 +147,9 @@ function buildTreemap(treemapNodes) {
               fill-opacity="0.75"
             ></rect>
           </a>
-          ${node.width > 150 && node.height > 70 ? `
-            <text x="${node.x + 20}" y="${node.y + 42}" class="org-treemap__label">${escapeHtml(node.name)}</text>
-            <text x="${node.x + 20}" y="${node.y + 74}" class="org-treemap__meta">${formatNumber(node.size)} KB</text>
+          ${node.width > MIN_TREEMAP_LABEL_WIDTH && node.height > MIN_TREEMAP_LABEL_HEIGHT ? `
+            <text x="${node.x + TREEMAP_LABEL_PADDING_X}" y="${node.y + TREEMAP_LABEL_PRIMARY_Y}" class="org-treemap__label">${escapeHtml(node.name)}</text>
+            <text x="${node.x + TREEMAP_LABEL_PADDING_X}" y="${node.y + TREEMAP_LABEL_SECONDARY_Y}" class="org-treemap__meta">${formatNumber(node.size)} KB</text>
           ` : ''}
         </g>
       `).join('')}

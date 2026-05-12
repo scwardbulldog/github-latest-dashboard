@@ -187,7 +187,8 @@ const VISUALSTUDIO_DEVBLOG_RSS = 'https://devblogs.microsoft.com/visualstudio/fe
 // Official Claude Code changelog RSS feed
 const ANTHROPIC_NEWS_RSS = 'https://code.claude.com/docs/en/changelog/rss.xml';
 const GITHUB_API_BASE = 'https://api.github.com';
-const MAX_REPO_PAGES = 10; // 100 repos/page × 10 pages = 1000 repos, a pragmatic cap for TV dashboard usage
+const REPOS_PER_PAGE = 100;
+const MAX_REPO_PAGES = 10; // REPOS_PER_PAGE × MAX_REPO_PAGES = 1000 repos, a pragmatic cap for TV dashboard usage
 
 /**
  * Fetch GitHub Blog data with caching and retry logic
@@ -697,7 +698,7 @@ async function fetchAllOrganizationRepos(orgName) {
 
   while (page <= MAX_REPO_PAGES) {
     const pageData = await fetchGitHubJson(
-      `${GITHUB_API_BASE}/orgs/${encodeURIComponent(orgName)}/repos?type=public&per_page=100&page=${page}`
+      `${GITHUB_API_BASE}/orgs/${encodeURIComponent(orgName)}/repos?type=public&per_page=${REPOS_PER_PAGE}&page=${page}`
     );
 
     if (!Array.isArray(pageData)) {
@@ -706,7 +707,7 @@ async function fetchAllOrganizationRepos(orgName) {
 
     repositories.push(...pageData);
 
-    if (pageData.length < 100) {
+    if (pageData.length < REPOS_PER_PAGE) {
       break;
     }
 

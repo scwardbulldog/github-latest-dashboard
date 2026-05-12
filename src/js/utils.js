@@ -112,3 +112,28 @@ export function formatDuration(startDateString, endDateString) {
         return '< 1m';
     }
 }
+
+/**
+ * Escape HTML-sensitive characters in user/content strings
+ * @param {string} value - Raw text to escape
+ * @returns {string} HTML-safe string
+ */
+export function escapeHtml(value = '') {
+    return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+const numberFormatter = new Intl.NumberFormat('en-US');
+
+/**
+ * Format a numeric value with locale-aware separators
+ * @param {number} value - Number to format
+ * @returns {string} Formatted number string
+ */
+export function formatNumber(value) {
+    return numberFormatter.format(Number.isFinite(value) ? value : 0);
+}

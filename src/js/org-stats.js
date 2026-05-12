@@ -1,6 +1,4 @@
-import { formatDate } from './utils.js';
-
-const numberFormatter = new Intl.NumberFormat('en-US');
+import { escapeHtml, formatDate, formatNumber } from './utils.js';
 
 const LANGUAGE_COLORS = {
   JavaScript: '#f1e05a',
@@ -24,19 +22,6 @@ const LANGUAGE_COLORS = {
   Vue: '#41b883',
   Dockerfile: '#384d54'
 };
-
-export function escapeHtml(value = '') {
-  return String(value)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
-
-export function formatNumber(value) {
-  return numberFormatter.format(Number.isFinite(value) ? value : 0);
-}
 
 export function getLanguageColor(language) {
   return LANGUAGE_COLORS[language] || '#8b949e';
