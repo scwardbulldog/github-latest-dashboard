@@ -62,22 +62,26 @@ async function healthCheck() {
       const blogPage = document.getElementById('page-blog');
       const changelogPage = document.getElementById('page-changelog');
       const statusPage = document.getElementById('page-status');
+      const orgStatsPage = document.getElementById('page-orgstats');
+      const orgVisualsPage = document.getElementById('page-orgvisuals');
       const progressBar = document.getElementById('progressBar');
       
       return {
         blogExists: !!blogPage,
         changelogExists: !!changelogPage,
         statusExists: !!statusPage,
+        orgStatsExists: !!orgStatsPage,
+        orgVisualsExists: !!orgVisualsPage,
         progressBarExists: !!progressBar,
         activePage: !!document.querySelector('.carousel-page.active')
       };
     });
     
-    if (structure.blogExists && structure.changelogExists && structure.statusExists) {
+    if (structure.blogExists && structure.changelogExists && structure.statusExists && structure.orgStatsExists && structure.orgVisualsExists) {
       console.log('   ✅ All pages exist');
     } else {
       console.log('   ❌ Missing page elements');
-      console.log(`      Blog: ${structure.blogExists}, Changelog: ${structure.changelogExists}, Status: ${structure.statusExists}`);
+      console.log(`      Blog: ${structure.blogExists}, Changelog: ${structure.changelogExists}, Status: ${structure.statusExists}, Org Overview: ${structure.orgStatsExists}, Org Analytics: ${structure.orgVisualsExists}`);
     }
     
     if (structure.progressBarExists) {
@@ -182,7 +186,7 @@ async function healthCheck() {
     // Overall assessment
     console.log('========================================================================================================');
     const issues = [];
-    if (!structure.blogExists || !structure.changelogExists || !structure.statusExists) {
+    if (!structure.blogExists || !structure.changelogExists || !structure.statusExists || !structure.orgStatsExists || !structure.orgVisualsExists) {
       issues.push('Missing page elements');
     }
     if (!structure.activePage) {

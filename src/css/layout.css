@@ -51,6 +51,11 @@
   color: var(--color-attention-fg);
 }
 
+#page-orgstats .page-header,
+#page-orgvisuals .page-header {
+  color: var(--color-accent-fg);
+}
+
 .page-content {
   flex: 1;
   overflow: auto;

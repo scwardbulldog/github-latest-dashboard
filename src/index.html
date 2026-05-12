@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="./css/layout.css" />
     <link rel="stylesheet" href="./css/carousel.css" />
     <link rel="stylesheet" href="./css/components.css" />
+    <link rel="stylesheet" href="./css/org-stats.css" />
 </head>
 <body>
     <!-- Rotation Progress Indicator -->
@@ -362,6 +363,30 @@
                             <p>Select an item to view details</p>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- GitHub Organization Overview Page -->
+        <div class="carousel-page" id="page-orgstats">
+            <div class="page-header" id="org-stats-page-header">GITHUB ORGANIZATION OVERVIEW</div>
+            <div class="page-content org-page-content">
+                <div id="org-stats-content" class="org-page-message">
+                    <div class="loading-spinner"></div>
+                    <div class="org-page-message__title">Loading organization overview…</div>
+                    <div class="org-page-message__detail">Fetching GitHub organization profile and repository statistics.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- GitHub Organization Visual Analytics Page -->
+        <div class="carousel-page" id="page-orgvisuals">
+            <div class="page-header" id="org-visuals-page-header">GITHUB ORGANIZATION ANALYTICS</div>
+            <div class="page-content org-page-content">
+                <div id="org-visualizations-content" class="org-page-message">
+                    <div class="loading-spinner"></div>
+                    <div class="org-page-message__title">Loading visual analytics…</div>
+                    <div class="org-page-message__detail">Preparing charts for languages, stars, activity, and repository sizes.</div>
                 </div>
             </div>
         </div>

@@ -54,6 +54,7 @@ import {
     fetchVSCode as fetchVSCodeFromApiClient,
     fetchVisualStudio as fetchVisualStudioFromApiClient,
     fetchAnthropic as fetchAnthropicFromApiClient,
+    fetchOrganization as fetchOrganizationFromApiClient,
     getCacheEntry,
     detectActiveOutages,
     fetchArticleContent,
@@ -66,10 +67,22 @@ import {
     getConfig,
     getDefaultConfig,
     getItemsPerFeed,
+    getOrganizationName,
     getPageInterval,
     getItemInterval,
     getRefreshInterval
 } from './config-loader.js';
+
+import {
+    renderOrganizationStats,
+    renderOrganizationStatsError,
+    renderOrganizationStatsLoading
+} from './org-stats.js';
+import {
+    renderOrganizationVisualizations,
+    renderOrganizationVisualizationsError,
+    renderOrganizationVisualizationsLoading
+} from './org-visualizations.js';
 
 // Import ExportController for share/export functionality
 import { ExportController } from './export-controller.js';
@@ -430,6 +443,29 @@ function renderAnthropicList(anthropicData) {
 
     console.log(`renderAnthropicList: Rendered ${items.length} Claude Code changelog items`);
     return items.length;
+}
+
+/**
+ * Render organization overview and analytics pages
+ * @param {Object} organizationData - GitHub organization API data
+ */
+function renderOrganizationPages(organizationData) {
+    renderOrganizationStats('org-stats-content', organizationData);
+    renderOrganizationVisualizations('org-visualizations-content', organizationData);
+
+    const displayName = organizationData && organizationData.organization
+        ? (organizationData.organization.name || organizationData.organization.login || 'Organization')
+        : 'Organization';
+    const statsHeader = document.getElementById('org-stats-page-header');
+    const visualsHeader = document.getElementById('org-visuals-page-header');
+
+    if (statsHeader) {
+        statsHeader.textContent = `${displayName.toUpperCase()} OVERVIEW`;
+    }
+
+    if (visualsHeader) {
+        visualsHeader.textContent = `${displayName.toUpperCase()} ANALYTICS`;
+    }
 }
 
 /**
@@ -1089,14 +1125,16 @@ async function fetchAllData() {
     console.log('fetchAllData: Starting parallel API fetches...');
     
     try {
+        const organizationName = getOrganizationName();
+
         // Track fetch failures for intelligent network status detection
         // We track failures per source to determine if we're truly offline
         let failureCount = 0;
-        let totalSources = 6;
+        let totalSources = 7;
         
         // Parallel fetch with Promise.all (AC requirement)
         // Per-column error isolation: each fetch has its own catch block
-        const [blogData, changelogData, statusData, vscodeData, visualstudioData, anthropicData] = await Promise.all([
+        const [blogData, changelogData, statusData, vscodeData, visualstudioData, anthropicData, organizationData] = await Promise.all([
             fetchBlogFromApiClient().catch(err => {
                 console.error('fetchAllData: Blog fetch failed:', err);
                 failureCount++;
@@ -1124,6 +1162,11 @@ async function fetchAllData() {
             }),
             fetchAnthropicFromApiClient().catch(err => {
                 console.error('fetchAllData: Claude Code changelog fetch failed:', err);
+                failureCount++;
+                return null;
+            }),
+            fetchOrganizationFromApiClient(organizationName).catch(err => {
+                console.error('fetchAllData: Organization fetch failed:', err);
                 failureCount++;
                 return null;
             })
@@ -1246,6 +1289,13 @@ async function fetchAllData() {
         } else {
             renderErrorState('anthropic-list', 'Unable to load Claude Code changelog');
         }
+
+        if (organizationData) {
+            renderOrganizationPages(organizationData);
+        } else {
+            renderOrganizationStatsError('org-stats-content', organizationName, 'GitHub API unavailable or rate limited.');
+            renderOrganizationVisualizationsError('org-visualizations-content', organizationName, 'GitHub API unavailable or rate limited.');
+        }
         
         // CRITICAL: Restart highlighter on current page with updated item count
         // Timer states must be preserved (do NOT call reset() - that would break timer)
@@ -1315,6 +1365,8 @@ async function fetchAllData() {
         renderErrorState('vscode-list', 'Dashboard initialization failed');
         renderErrorState('visualstudio-list', 'Dashboard initialization failed');
         renderErrorState('anthropic-list', 'Dashboard initialization failed');
+        renderOrganizationStatsError('org-stats-content', getOrganizationName(), 'Dashboard initialization failed');
+        renderOrganizationVisualizationsError('org-visualizations-content', getOrganizationName(), 'Dashboard initialization failed');
     }
 }
 
@@ -1482,6 +1534,30 @@ async function fetchAnthropic() {
     }
 }
 
+/**
+ * Fetch and render GitHub organization overview and analytics data
+ */
+async function fetchOrganization() {
+    if (isPaused) return;
+
+    const organizationName = getOrganizationName();
+
+    try {
+        const organizationData = await fetchOrganizationFromApiClient(organizationName);
+        if (organizationData) {
+            renderOrganizationPages(organizationData);
+            console.log('✅ Organization data refreshed');
+        } else {
+            renderOrganizationStatsError('org-stats-content', organizationName, 'Unable to load organization overview');
+            renderOrganizationVisualizationsError('org-visualizations-content', organizationName, 'Unable to load organization analytics');
+        }
+    } catch (err) {
+        console.error('fetchOrganization: Error:', err);
+        renderOrganizationStatsError('org-stats-content', organizationName, 'Unable to load organization overview');
+        renderOrganizationVisualizationsError('org-visualizations-content', organizationName, 'Unable to load organization analytics');
+    }
+}
+
 // Initialize frame sequence animator with individual cut images
 const canvas = document.getElementById('spriteCanvas');
 const framePaths = Array.from({length: 15}, (_, i) => 
@@ -1545,6 +1621,7 @@ let ITEM_INTERVAL_OVERRIDES = {};
 async function initializeWithConfig() {
     // Load configuration from config.json (or use defaults if not found)
     const config = await loadConfig();
+    const organizationName = getOrganizationName();
     
     // Update refresh interval from config
     REFRESH_INTERVAL = config.refreshInterval;
@@ -1565,6 +1642,19 @@ async function initializeWithConfig() {
     console.log(`   - Pages: ${config.pages.join(', ')}`);
     console.log(`   - Default page interval: ${DEFAULT_PAGE_INTERVAL / 1000}s`);
     console.log(`   - Default item interval: ${DEFAULT_ITEM_INTERVAL / 1000}s`);
+    console.log(`   - Organization: ${organizationName}`);
+
+    renderOrganizationStatsLoading('org-stats-content', organizationName);
+    renderOrganizationVisualizationsLoading('org-visualizations-content', organizationName);
+    const initialOrgHeader = organizationName.toUpperCase();
+    const statsHeader = document.getElementById('org-stats-page-header');
+    const visualsHeader = document.getElementById('org-visuals-page-header');
+    if (statsHeader) {
+        statsHeader.textContent = `${initialOrgHeader} OVERVIEW`;
+    }
+    if (visualsHeader) {
+        visualsHeader.textContent = `${initialOrgHeader} ANALYTICS`;
+    }
     
     // Initialize carousel with configured pages and intervals
     window.carouselInstance = new CarouselController({
@@ -1619,7 +1709,8 @@ window.statusBadges = {
   status: new StatusBadge('status', statusBadgesContainer),
   vscode: new StatusBadge('vscode', statusBadgesContainer),
   visualstudio: new StatusBadge('visualstudio', statusBadgesContainer),
-  anthropic: new StatusBadge('anthropic', statusBadgesContainer)
+  anthropic: new StatusBadge('anthropic', statusBadgesContainer),
+  org: new StatusBadge('org', statusBadgesContainer)
 };
 
 // Register status change callback to update badges; store unsubscribe for future cleanup
@@ -1882,7 +1973,7 @@ function startDashboard() {
         },
         // Disable item navigation on status monitoring pages only (they don't have navigable card items)
         // Note: vscode and visualstudio are blog/release note pages and SHOULD have card navigation
-        disabledPages: ['status', 'anthropic']
+        disabledPages: ['status', 'anthropic', 'orgstats', 'orgvisuals']
     });
     
     // Start keyboard navigation
@@ -1926,6 +2017,7 @@ initializeWithConfig().then(() => {
     window.multiSourceRefreshController.registerSource('vscode', fetchVSCode);
     window.multiSourceRefreshController.registerSource('visualstudio', fetchVisualStudio);
     window.multiSourceRefreshController.registerSource('anthropic', fetchAnthropic);
+    window.multiSourceRefreshController.registerSource('org', fetchOrganization);
     
     // Create refresh interval controller (reads intervals from localStorage,
     // fallback to defaults; user's UI selection takes precedence over config file).

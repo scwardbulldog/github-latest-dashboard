@@ -23,11 +23,12 @@ const DEFAULT_CONFIG = {
     status: 3 * 60 * 1000,       // 3 minutes (important when incidents occur)
     vscode: 15 * 60 * 1000,      // 15 minutes (moderate frequency)
     visualstudio: 15 * 60 * 1000, // 15 minutes
-    anthropic: 15 * 60 * 1000    // 15 minutes
+    anthropic: 15 * 60 * 1000,   // 15 minutes
+    org: 45 * 60 * 1000          // 45 minutes (public org stats change slowly)
   },
   
   // Pages to display in the carousel (order matters)
-  pages: ['anthropic', 'vscode', 'visualstudio', 'blog', 'changelog', 'status'],
+  pages: ['anthropic', 'vscode', 'visualstudio', 'blog', 'changelog', 'status', 'orgstats', 'orgvisuals'],
   
   // Page rotation intervals in milliseconds
   pageIntervals: {
@@ -36,7 +37,9 @@ const DEFAULT_CONFIG = {
     changelog: 80000,
     vscode: 80000,
     visualstudio: 80000,
-    anthropic: 80000
+    anthropic: 80000,
+    orgstats: 45000,
+    orgvisuals: 45000
   },
   
   // Item highlighting intervals in milliseconds
@@ -57,7 +60,13 @@ const DEFAULT_CONFIG = {
     status: 10,
     vscode: 5,
     visualstudio: 5,
-    anthropic: 5
+    anthropic: 5,
+    orgstats: 8
+  },
+
+  // GitHub organization dashboard settings
+  organization: {
+    name: 'github'
   }
 };
 
@@ -85,7 +94,7 @@ function validateConfig(config) {
     if (!Array.isArray(config.pages) || config.pages.length === 0) {
       errors.push('pages must be a non-empty array of strings');
     } else {
-      const validPages = ['blog', 'changelog', 'status', 'vscode', 'visualstudio', 'anthropic'];
+      const validPages = ['blog', 'changelog', 'status', 'vscode', 'visualstudio', 'anthropic', 'orgstats', 'orgvisuals'];
       const invalidPages = config.pages.filter(p => !validPages.includes(p));
       if (invalidPages.length > 0) {
         errors.push(`Invalid page names: ${invalidPages.join(', ')}. Valid: ${validPages.join(', ')}`);
@@ -98,7 +107,7 @@ function validateConfig(config) {
     if (typeof config.refreshIntervals !== 'object' || config.refreshIntervals === null) {
       errors.push('refreshIntervals must be an object');
     } else {
-      const validSources = ['blog', 'changelog', 'status', 'vscode', 'visualstudio', 'anthropic'];
+      const validSources = ['blog', 'changelog', 'status', 'vscode', 'visualstudio', 'anthropic', 'org'];
       Object.entries(config.refreshIntervals).forEach(([key, value]) => {
         if (!validSources.includes(key)) {
           errors.push(`refreshIntervals.${key} is not a valid source. Valid: ${validSources.join(', ')}`);
@@ -136,6 +145,17 @@ function validateConfig(config) {
           errors.push(`itemsPerFeed.${key} must be a number between 1 and 20`);
         }
       });
+    }
+  }
+
+  // Validate organization configuration
+  if (config.organization !== undefined) {
+    if (typeof config.organization !== 'object' || config.organization === null) {
+      errors.push('organization must be an object');
+    } else if (config.organization.name !== undefined) {
+      if (typeof config.organization.name !== 'string' || config.organization.name.trim() === '') {
+        errors.push('organization.name must be a non-empty string');
+      }
     }
   }
   
@@ -284,6 +304,15 @@ export function getRefreshInterval(sourceName) {
     return config.refreshIntervals[sourceName];
   }
   return config.refreshInterval;
+}
+
+/**
+ * Get the configured GitHub organization name
+ * @returns {string} GitHub organization login
+ */
+export function getOrganizationName() {
+  const config = getConfig();
+  return (config.organization && config.organization.name) || DEFAULT_CONFIG.organization.name;
 }
 
 /**

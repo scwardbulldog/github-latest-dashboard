@@ -10,11 +10,13 @@ const cache = {
   status: { data: null, timestamp: 0 },
   vscode: { data: null, timestamp: 0 },
   visualstudio: { data: null, timestamp: 0 },
-  anthropic: { data: null, timestamp: 0 }
+  anthropic: { data: null, timestamp: 0 },
+  org: { data: null, timestamp: 0 }
 };
 
 // Cache duration: 5 minutes (matches existing auto-refresh interval)
 const CACHE_DURATION = 5 * 60 * 1000;
+const ORG_CACHE_DURATION = 45 * 60 * 1000;
 
 // Status tracking for each data source
 const sourceStatus = {
@@ -23,7 +25,8 @@ const sourceStatus = {
   status: { state: 'idle', lastFetch: 0, nextRetry: null, retryAttempt: 0, cacheAge: 0, error: null },
   vscode: { state: 'idle', lastFetch: 0, nextRetry: null, retryAttempt: 0, cacheAge: 0, error: null },
   visualstudio: { state: 'idle', lastFetch: 0, nextRetry: null, retryAttempt: 0, cacheAge: 0, error: null },
-  anthropic: { state: 'idle', lastFetch: 0, nextRetry: null, retryAttempt: 0, cacheAge: 0, error: null }
+  anthropic: { state: 'idle', lastFetch: 0, nextRetry: null, retryAttempt: 0, cacheAge: 0, error: null },
+  org: { state: 'idle', lastFetch: 0, nextRetry: null, retryAttempt: 0, cacheAge: 0, error: null }
 };
 
 // Status change callbacks
@@ -183,6 +186,7 @@ const VSCODE_UPDATES_RSS = 'https://code.visualstudio.com/feed.xml';
 const VISUALSTUDIO_DEVBLOG_RSS = 'https://devblogs.microsoft.com/visualstudio/feed/';
 // Official Claude Code changelog RSS feed
 const ANTHROPIC_NEWS_RSS = 'https://code.claude.com/docs/en/changelog/rss.xml';
+const GITHUB_API_BASE = 'https://api.github.com';
 
 /**
  * Fetch GitHub Blog data with caching and retry logic
@@ -653,6 +657,183 @@ export async function fetchVisualStudio() {
 }
 
 /**
+ * Fetch JSON from the GitHub REST API with basic rate-limit handling
+ * @param {string} url - Full GitHub API URL
+ * @returns {Promise<any>} Parsed JSON response
+ * @throws {Error} If the request fails
+ */
+async function fetchGitHubJson(url) {
+  const response = await fetch(url, {
+    headers: {
+      Accept: 'application/vnd.github+json'
+    }
+  });
+
+  if (!response.ok) {
+    const remaining = response.headers.get('x-ratelimit-remaining');
+    if (response.status === 403 && remaining === '0') {
+      throw new Error('GitHub API rate limit reached');
+    }
+
+    if (response.status === 404) {
+      throw new Error('GitHub organization not found');
+    }
+
+    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Fetch all public repositories for an organization
+ * @param {string} orgName - GitHub organization login
+ * @returns {Promise<Object[]>} Repository list
+ */
+async function fetchAllOrganizationRepos(orgName) {
+  const repositories = [];
+  let page = 1;
+
+  while (page <= 10) {
+    const pageData = await fetchGitHubJson(
+      `${GITHUB_API_BASE}/orgs/${encodeURIComponent(orgName)}/repos?type=public&per_page=100&page=${page}`
+    );
+
+    if (!Array.isArray(pageData)) {
+      throw new Error('Invalid GitHub repositories response structure');
+    }
+
+    repositories.push(...pageData);
+
+    if (pageData.length < 100) {
+      break;
+    }
+
+    page += 1;
+  }
+
+  return repositories;
+}
+
+/**
+ * Fetch public member count for a GitHub organization
+ * @param {string} orgName - GitHub organization login
+ * @returns {Promise<number>} Public member count
+ */
+async function fetchOrganizationMemberCount(orgName) {
+  const searchResponse = await fetchGitHubJson(
+    `${GITHUB_API_BASE}/search/users?q=${encodeURIComponent(`type:user org:${orgName}`)}&per_page=1`
+  );
+
+  if (!searchResponse || typeof searchResponse.total_count !== 'number') {
+    throw new Error('Invalid GitHub member search response structure');
+  }
+
+  return searchResponse.total_count;
+}
+
+/**
+ * Fetch GitHub organization profile and repository stats
+ * @param {string} orgName - GitHub organization login
+ * @returns {Promise<Object>} Organization data and repositories
+ * @throws {Error} If fetch fails and no cached data is available
+ */
+export async function fetchOrganization(orgName = 'github') {
+  const sourceName = 'org';
+  const now = Date.now();
+  const normalizedOrgName = (orgName || 'github').trim().toLowerCase();
+  const cachedOrgName = cache.org.data && cache.org.data.organization
+    ? String(cache.org.data.organization.login || '').toLowerCase()
+    : null;
+
+  if (
+    cache.org.data &&
+    cachedOrgName === normalizedOrgName &&
+    now - cache.org.timestamp < ORG_CACHE_DURATION
+  ) {
+    console.log('fetchOrganization: Using cached data');
+    updateStatus(sourceName, {
+      state: 'success',
+      lastFetch: cache.org.timestamp,
+      retryAttempt: 0,
+      nextRetry: null,
+      error: null
+    });
+    return cache.org.data;
+  }
+
+  updateStatus(sourceName, {
+    state: 'fetching',
+    retryAttempt: 0,
+    nextRetry: null,
+    error: null
+  });
+
+  try {
+    const data = await retryFetch(async () => {
+      console.log(`fetchOrganization: Fetching organization data for ${normalizedOrgName}...`);
+
+      const [organization, publicMemberCount, repositories] = await Promise.all([
+        fetchGitHubJson(`${GITHUB_API_BASE}/orgs/${encodeURIComponent(normalizedOrgName)}`),
+        fetchOrganizationMemberCount(normalizedOrgName),
+        fetchAllOrganizationRepos(normalizedOrgName)
+      ]);
+
+      if (!organization || !Array.isArray(repositories)) {
+        throw new Error('Invalid GitHub organization response structure');
+      }
+
+      return {
+        organization: {
+          login: organization.login,
+          name: organization.name,
+          description: organization.description,
+          avatarUrl: organization.avatar_url,
+          htmlUrl: organization.html_url,
+          publicRepos: organization.public_repos,
+          publicMembers: publicMemberCount
+        },
+        repositories,
+        fetchedAt: now
+      };
+    }, 2, [2000, 4000], sourceName);
+
+    cache.org = { data, timestamp: now };
+    updateStatus(sourceName, {
+      state: 'success',
+      lastFetch: now,
+      retryAttempt: 0,
+      nextRetry: null,
+      error: null
+    });
+
+    return data;
+  } catch (error) {
+    console.error('fetchOrganization: Error fetching organization data after retries:', error);
+
+    if (cache.org.data && cachedOrgName === normalizedOrgName) {
+      console.warn('fetchOrganization: Using stale cached data due to fetch error');
+      updateStatus(sourceName, {
+        state: 'cached',
+        retryAttempt: 0,
+        nextRetry: null,
+        error: error.message
+      });
+      return cache.org.data;
+    }
+
+    updateStatus(sourceName, {
+      state: 'failed',
+      retryAttempt: 0,
+      nextRetry: null,
+      error: error.message
+    });
+
+    throw error;
+  }
+}
+
+/**
  * Detect active outages from GitHub Status API data
  * @param {Object} statusData - GitHub Status API response
  * @returns {Object|null} Outage data or null if all operational
@@ -994,4 +1175,3 @@ export async function fetchAnthropic() {
     throw error;
   }
 }
-

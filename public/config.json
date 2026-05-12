@@ -10,10 +10,11 @@
     "status": 180000,
     "vscode": 900000,
     "visualstudio": 900000,
-    "anthropic": 900000
+    "anthropic": 900000,
+    "org": 2700000
   },
   
-  "pages": ["vscode", "visualstudio", "blog", "changelog", "status", "anthropic"],
+  "pages": ["vscode", "visualstudio", "blog", "changelog", "status", "orgstats", "orgvisuals", "anthropic"],
   
   "pageIntervals": {
     "default": 30000,
@@ -21,7 +22,9 @@
     "changelog": 80000,
     "vscode": 80000,
     "visualstudio": 80000,
-    "anthropic": 80000
+    "anthropic": 80000,
+    "orgstats": 45000,
+    "orgvisuals": 45000
   },
   
   "itemIntervals": {
@@ -40,6 +43,11 @@
     "status": 10,
     "vscode": 5,
     "visualstudio": 5,
-    "anthropic": 5
+    "anthropic": 5,
+    "orgstats": 8
+  },
+
+  "organization": {
+    "name": "github"
   }
 }
