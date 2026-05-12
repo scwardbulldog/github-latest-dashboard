@@ -187,6 +187,7 @@ const VISUALSTUDIO_DEVBLOG_RSS = 'https://devblogs.microsoft.com/visualstudio/fe
 // Official Claude Code changelog RSS feed
 const ANTHROPIC_NEWS_RSS = 'https://code.claude.com/docs/en/changelog/rss.xml';
 const GITHUB_API_BASE = 'https://api.github.com';
+const MAX_REPO_PAGES = 10; // 100 repos/page × 10 pages = 1000 repos, a pragmatic cap for TV dashboard usage
 
 /**
  * Fetch GitHub Blog data with caching and retry logic
@@ -694,7 +695,7 @@ async function fetchAllOrganizationRepos(orgName) {
   const repositories = [];
   let page = 1;
 
-  while (page <= 10) {
+  while (page <= MAX_REPO_PAGES) {
     const pageData = await fetchGitHubJson(
       `${GITHUB_API_BASE}/orgs/${encodeURIComponent(orgName)}/repos?type=public&per_page=100&page=${page}`
     );
@@ -741,7 +742,8 @@ async function fetchOrganizationMemberCount(orgName) {
 export async function fetchOrganization(orgName = 'github') {
   const sourceName = 'org';
   const now = Date.now();
-  const normalizedOrgName = (orgName || 'github').trim().toLowerCase();
+  const requestedOrgName = (orgName || 'github').trim() || 'github';
+  const normalizedOrgName = requestedOrgName.toLowerCase();
   const cachedOrgName = cache.org.data && cache.org.data.organization
     ? String(cache.org.data.organization.login || '').toLowerCase()
     : null;
@@ -771,12 +773,12 @@ export async function fetchOrganization(orgName = 'github') {
 
   try {
     const data = await retryFetch(async () => {
-      console.log(`fetchOrganization: Fetching organization data for ${normalizedOrgName}...`);
+      console.log(`fetchOrganization: Fetching organization data for ${requestedOrgName}...`);
 
       const [organization, publicMemberCount, repositories] = await Promise.all([
-        fetchGitHubJson(`${GITHUB_API_BASE}/orgs/${encodeURIComponent(normalizedOrgName)}`),
-        fetchOrganizationMemberCount(normalizedOrgName),
-        fetchAllOrganizationRepos(normalizedOrgName)
+        fetchGitHubJson(`${GITHUB_API_BASE}/orgs/${encodeURIComponent(requestedOrgName)}`),
+        fetchOrganizationMemberCount(requestedOrgName),
+        fetchAllOrganizationRepos(requestedOrgName)
       ]);
 
       if (!organization || !Array.isArray(repositories)) {

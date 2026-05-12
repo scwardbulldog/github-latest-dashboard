@@ -355,7 +355,7 @@
 }
 
 .org-heatmap-cell--level-4 {
-  background: var(--color-success-fg);
+  background: var(--color-success-badge);
 }
 
 .org-heatmap-cell__value {

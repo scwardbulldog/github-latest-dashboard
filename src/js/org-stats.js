@@ -58,6 +58,15 @@ function safeGitHubRepoUrl(value) {
   return /^https:\/\/github\.com\//.test(value) ? value : '#';
 }
 
+function getOrganizationAvatarUrl(value) {
+  const sanitizedUrl = safeUrl(value);
+  if (sanitizedUrl !== '#') {
+    return sanitizedUrl;
+  }
+
+  return 'https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png';
+}
+
 function formatRepoUpdatedAt(updatedAt) {
   if (!updatedAt) {
     return 'Unknown';
@@ -265,7 +274,7 @@ export function renderOrganizationStats(containerId, orgData) {
   container.innerHTML = `
     <section class="org-overview-card">
       <div class="org-overview-card__header">
-        <img class="org-overview-card__avatar" src="${safeUrl(organization.avatarUrl)}" alt="${escapeHtml(organization.displayName)} avatar" />
+        <img class="org-overview-card__avatar" src="${getOrganizationAvatarUrl(organization.avatarUrl)}" alt="${escapeHtml(organization.displayName)} avatar" />
         <div class="org-overview-card__body">
           <div class="org-overview-card__eyebrow">GitHub Organization</div>
           <h2 class="org-overview-card__title">${escapeHtml(organization.displayName)}</h2>

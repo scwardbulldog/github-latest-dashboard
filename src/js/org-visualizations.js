@@ -68,7 +68,7 @@ function buildActivityHeatmap(activityTimeline) {
     }
 
     return `
-      <div class="org-heatmap-cell org-heatmap-cell--level-${level}">
+      <div class="org-heatmap-cell org-heatmap-cell--level-${level}" aria-label="${escapeHtml(`${day.label}: ${day.count} updates`)}">
         <span class="org-heatmap-cell__value">${formatNumber(day.count)}</span>
         <span class="org-heatmap-cell__label">${escapeHtml(day.label)}</span>
       </div>
@@ -130,7 +130,7 @@ function buildTreemap(treemapNodes) {
     <svg class="org-treemap" viewBox="0 0 1000 420" aria-hidden="true">
       ${laidOutNodes.map((node) => `
         <g>
-          <a href="${node.url}" target="_blank" rel="noreferrer">
+          <a href="${node.url}" target="_blank" rel="noreferrer" aria-label="${escapeHtml(`${node.name} repository, ${node.size} KB`)}">
             <rect
               x="${node.x + 4}"
               y="${node.y + 4}"
