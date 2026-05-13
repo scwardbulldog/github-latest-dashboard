@@ -731,11 +731,11 @@ function cleanupArticleCache() {
 
 // CORS proxy for fetching external pages
 // Note: Using a public CORS proxy is necessary for this client-side only application.
-// The proxy (allorigins.win) acts as an intermediary to bypass CORS restrictions.
-// Security consideration: This proxy can see all fetched content. Only use for 
+// corsproxy.io acts as an intermediary to bypass CORS restrictions.
+// Security consideration: This proxy can see all fetched content. Only use for
 // public, non-sensitive content (VS Code update pages are public documentation).
 // Alternative: Deploy your own CORS proxy or backend endpoint for production use.
-const CORS_PROXY = 'https://api.allorigins.win/raw?url=';
+const CORS_PROXY = 'https://corsproxy.io/?';
 
 /**
  * Fetch article content from a VS Code update page URL
@@ -765,8 +765,17 @@ export async function fetchArticleContent(url) {
     const content = await retryFetch(async () => {
       const proxyUrl = CORS_PROXY + encodeURIComponent(url);
       console.log('fetchArticleContent: Fetching from', url);
-      
-      const response = await fetch(proxyUrl);
+
+      // Abort after 5 seconds – prevents indefinite hangs on slow Pi networking
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+      let response;
+      try {
+        response = await fetch(proxyUrl, { signal: controller.signal });
+      } finally {
+        clearTimeout(timeoutId);
+      }
       
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -776,7 +785,7 @@ export async function fetchArticleContent(url) {
       
       // Extract main article content from the page
       return extractVSCodeArticleContent(html);
-    }, 2, [1000, 2000]); // 2 retries with shorter delays
+    }, 1, [1000]); // 1 retry — fail fast since allorigins.win is unreliable on slow hardware
 
     // Cache the extracted content
     articleCache.set(url, { content, timestamp: now });

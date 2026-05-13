@@ -1751,18 +1751,16 @@ window.itemHighlighterInstance.onItemHighlight = (itemElement, itemIndex) => {
   // Check if this is HTML content that should be preserved (like changelog)
   const isHtmlContent = itemElement.dataset.isHtmlContent === 'true';
   
-  // Check if we're on the VS Code page - use async content fetching
+  // Check if we're on the VS Code page
   const isVSCodePage = activePage.id === 'page-vscode';
   
-  // If this is HTML content (like changelog), render it directly with HTML preserved
-  if (isHtmlContent && !isVSCodePage) {
-    // Render with HTML formatting preserved
+  if (isHtmlContent) {
+    // Render HTML content directly – changelog items preserve HTML formatting.
     window.detailPanelInstance.render(itemData, { preserveHtml: true });
     console.log(`DetailPanel rendering HTML content for item ${itemIndex}:`, itemData.title);
   } else if (isVSCodePage && itemData.link) {
-    // Use async content fetching for VS Code items
-    // Hide header since fetched article includes title
-    // Show RSS description initially to avoid blank state while full article loads
+    // Fetch full article content via CORS proxy in background.
+    // RSS stub shows immediately; full article replaces it when ready.
     window.detailPanelInstance.renderWithAsyncContent(itemData, fetchArticleContent, { hideHeader: true, skipInitialContent: false });
     console.log(`DetailPanel rendering VS Code item ${itemIndex} with async content:`, itemData.title);
   } else {
