@@ -1,0 +1,1479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=1920" />
+<title>UX Mockup — Org Stats Page · GitHub Latest Dashboard</title>
+<style>
+/* =========================================================
+   GitHub Primer Design Tokens (from src/css/main.css)
+   ========================================================= */
+:root {
+  --color-canvas-default: #0d1117;
+  --color-canvas-subtle: #161b22;
+  --color-fg-default: #c9d1d9;
+  --color-fg-muted: #7d8590;
+  --color-fg-subtle: #8b949e;
+  --color-border-default: #21262d;
+  --color-border-strong: #30363d;
+  --color-accent-fg: #58a6ff;
+  --color-accent-emphasis: #1f6feb;
+  --color-success-fg: #2da44e;
+  --color-success-alt: #3fb950;
+  --color-attention-fg: #bf8700;
+  --color-attention-alt: #d29922;
+  --color-danger-fg: #cf222e;
+  --color-danger-alt: #f85149;
+  --color-sponsor-fg: #8250df;
+  --color-fg-on-accent: #ffffff;
+
+  /* Spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 16px;
+  --space-4: 24px;
+  --space-5: 32px;
+
+  /* Org Stats page accent */
+  --color-org-stats-accent: #f0883e;
+
+  /* Heatmap cell backgrounds (tinted) */
+  --cell-passing-bg: rgba(45, 164, 78, 0.25);
+  --cell-passing-border: rgba(63, 185, 80, 0.45);
+  --cell-passing-text: #3fb950;
+  --cell-failing-bg: rgba(207, 34, 46, 0.35);
+  --cell-failing-border: rgba(248, 81, 73, 0.55);
+  --cell-failing-text: #f85149;
+  --cell-running-bg: rgba(191, 135, 0, 0.25);
+  --cell-running-border: rgba(210, 153, 34, 0.4);
+  --cell-running-text: #d29922;
+  --cell-noci-bg: rgba(48, 54, 61, 0.5);
+  --cell-noci-text: #6e7681;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: #090d13;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  color: var(--color-fg-default);
+  min-height: 100vh;
+}
+
+/* =========================================================
+   Mockup Document Layout
+   ========================================================= */
+.mockup-doc {
+  max-width: 1960px;
+  margin: 0 auto;
+  padding: 32px;
+}
+
+.mockup-section-title {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--color-fg-muted);
+  margin: 48px 0 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--color-border-default);
+}
+.mockup-section-title:first-of-type { margin-top: 0; }
+
+.mockup-note {
+  font-size: 12px;
+  color: var(--color-fg-muted);
+  margin-bottom: 12px;
+  font-style: italic;
+}
+
+/* =========================================================
+   Full Page Simulation — 1920 × 1080
+   ========================================================= */
+.kiosk-frame {
+  width: 1920px;
+  height: 1080px;
+  background: var(--color-canvas-default);
+  border: 2px solid var(--color-border-strong);
+  border-radius: 4px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  transform-origin: top left;
+}
+
+/* Scale down for screen fit */
+.kiosk-frame-wrapper {
+  overflow: auto;
+}
+
+/* ─── Global Progress Bar ─────────────────────────────── */
+.progress-bar-rail {
+  height: 4px;
+  background: var(--color-border-default);
+  flex-shrink: 0;
+}
+.progress-bar-fill {
+  height: 100%;
+  width: 62%;
+  background: var(--color-accent-fg);
+}
+
+/* ─── Global Header ───────────────────────────────────── */
+.global-header {
+  height: 64px;
+  background: var(--color-canvas-subtle);
+  border-bottom: 1px solid var(--color-border-default);
+  display: flex;
+  align-items: center;
+  padding: 0 var(--space-4);
+  flex-shrink: 0;
+  gap: var(--space-4);
+}
+.global-header h1 {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--color-fg-default);
+  white-space: nowrap;
+}
+.header-ticker-zone {
+  flex: 1;
+  height: 32px;
+  background: rgba(207, 34, 46, 0.15);
+  border: 1px solid rgba(207, 34, 46, 0.3);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  overflow: hidden;
+}
+.header-ticker-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: #f85149;
+  white-space: nowrap;
+  animation: ticker-scroll 24s linear infinite;
+}
+@keyframes ticker-scroll {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-shrink: 0;
+}
+.live-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-success-alt);
+}
+.live-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--color-success-alt);
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+.header-btn {
+  background: var(--color-canvas-default);
+  border: 1px solid var(--color-border-default);
+  color: var(--color-fg-muted);
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.header-time {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-fg-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─── Dashboard Container ─────────────────────────────── */
+.dashboard-container {
+  flex: 1;
+  padding: var(--space-4);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ─── Page Header (ORG STATS) ─────────────────────────── */
+.page-header-bar {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-4);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--color-border-default);
+  flex-shrink: 0;
+  margin-bottom: var(--space-2);
+}
+.page-title {
+  font-size: 28px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--color-org-stats-accent);
+}
+.page-dots {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.page-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--color-border-strong);
+}
+.page-dot.active {
+  background: var(--color-org-stats-accent);
+  width: 24px;
+  border-radius: 4px;
+}
+.last-updated {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--color-fg-muted);
+}
+
+/* ─── Heartbeat Numbers Bar ───────────────────────────── */
+.heartbeat-bar {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border: 1px solid var(--color-border-default);
+  border-radius: 6px;
+  background: var(--color-canvas-subtle);
+  flex-shrink: 0;
+  margin-bottom: var(--space-2);
+  overflow: hidden;
+}
+.heartbeat-stat {
+  padding: 16px var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-right: 1px solid var(--color-border-default);
+}
+.heartbeat-stat:last-child { border-right: none; }
+.heartbeat-number {
+  font-size: 44px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--color-fg-default);
+  letter-spacing: -1px;
+}
+.heartbeat-number.has-failure {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+.heartbeat-failure {
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--color-danger-alt);
+}
+.heartbeat-label {
+  font-size: 11px;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--color-fg-muted);
+}
+.heartbeat-trend {
+  font-size: 12px;
+  color: var(--color-success-alt);
+  font-weight: 600;
+}
+.heartbeat-trend.down { color: var(--color-attention-alt); }
+
+/* ─── Main Content Zone ───────────────────────────────── */
+.main-content-zone {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 60% 40%;
+  gap: 0;
+  border: 1px solid var(--color-border-default);
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: var(--space-2);
+}
+
+/* ── Pipeline Heatmap ─────────────────────────────────── */
+.heatmap-panel {
+  background: var(--color-canvas-default);
+  border-right: 1px solid var(--color-border-default);
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-3);
+  overflow: hidden;
+}
+.widget-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-2);
+  flex-shrink: 0;
+}
+.widget-title {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--color-org-stats-accent);
+}
+.widget-meta {
+  font-size: 12px;
+  color: var(--color-fg-muted);
+}
+.heatmap-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 4px;
+  align-content: start;
+  overflow: hidden;
+}
+.heatmap-cell {
+  border-radius: 4px;
+  padding: 5px 4px 4px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 60px;
+  font-size: 10px;
+  font-family: "SFMono-Regular", "Consolas", monospace;
+  overflow: hidden;
+  position: relative;
+}
+.heatmap-cell.passing  { background: var(--cell-passing-bg);  border: 1px solid var(--cell-passing-border); }
+.heatmap-cell.failing  { background: var(--cell-failing-bg);  border: 1px solid var(--cell-failing-border); }
+.heatmap-cell.running  { background: var(--cell-running-bg);  border: 1px solid var(--cell-running-border); }
+.heatmap-cell.no-ci    { background: var(--cell-noci-bg);     border: 1px solid transparent; }
+
+.cell-repo-name {
+  font-size: 9px;
+  line-height: 1.2;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  word-break: break-all;
+}
+.heatmap-cell.passing .cell-repo-name  { color: var(--cell-passing-text); }
+.heatmap-cell.failing .cell-repo-name  { color: var(--cell-failing-text); font-weight: 600; }
+.heatmap-cell.running .cell-repo-name  { color: var(--cell-running-text); }
+.heatmap-cell.no-ci   .cell-repo-name  { color: var(--cell-noci-text); }
+
+.cell-status-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  align-self: flex-end;
+  flex-shrink: 0;
+}
+.heatmap-cell.passing .cell-status-dot { background: var(--cell-passing-text); }
+.heatmap-cell.failing .cell-status-dot { background: var(--cell-failing-text); }
+.heatmap-cell.running .cell-status-dot { background: var(--cell-running-text); animation: pulse-dot 1.5s ease-in-out infinite; }
+.heatmap-cell.no-ci   .cell-status-dot { background: var(--cell-noci-text); opacity: 0.4; }
+
+.heatmap-legend {
+  display: flex;
+  gap: var(--space-3);
+  flex-shrink: 0;
+  margin-top: var(--space-2);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--color-border-default);
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--color-fg-muted);
+}
+.legend-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+}
+.legend-dot.passing { background: var(--cell-passing-text); }
+.legend-dot.failing { background: var(--cell-failing-text); }
+.legend-dot.running { background: var(--cell-running-text); }
+.legend-dot.no-ci   { background: var(--cell-noci-text); }
+
+/* ── Commit Leaderboard ───────────────────────────────── */
+.leaderboard-panel {
+  background: var(--color-canvas-subtle);
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-3);
+  overflow: hidden;
+}
+.leaderboard-rows {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow: hidden;
+}
+.leaderboard-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 6px var(--space-2);
+  border-radius: 6px;
+  background: var(--color-canvas-default);
+  border: 1px solid var(--color-border-default);
+  flex-shrink: 0;
+  overflow: hidden;
+}
+.lb-rank {
+  width: 22px;
+  font-size: 18px;
+  font-weight: 600;
+  text-align: center;
+  flex-shrink: 0;
+  color: var(--color-fg-muted);
+}
+.lb-rank.top { color: var(--color-accent-fg); }
+.lb-avatar {
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  overflow: hidden;
+}
+.lb-name {
+  flex: 1;
+  font-size: 15px;
+  font-weight: 400;
+  color: var(--color-fg-default);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+.lb-bar-wrap {
+  width: 140px;
+  height: 6px;
+  background: var(--color-border-default);
+  border-radius: 3px;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+.lb-bar {
+  height: 100%;
+  border-radius: 3px;
+  background: var(--color-success-alt);
+}
+.lb-count {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-fg-default);
+  flex-shrink: 0;
+  text-align: right;
+  width: 38px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─── PR Merge Ticker ─────────────────────────────────── */
+.pr-ticker-bar {
+  height: 48px;
+  background: var(--color-canvas-subtle);
+  border: 1px solid var(--color-border-default);
+  border-radius: 6px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  position: relative;
+}
+.pr-ticker-label {
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--color-fg-muted);
+  padding: 0 12px;
+  border-right: 1px solid var(--color-border-default);
+  height: 100%;
+  display: flex;
+  align-items: center;
+  background: var(--color-canvas-default);
+}
+.pr-ticker-track {
+  display: inline-block;
+  white-space: nowrap;
+  padding: 0 var(--space-3);
+  animation: ticker-pr-scroll 40s linear infinite;
+  will-change: transform;
+}
+@keyframes ticker-pr-scroll {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.pr-ticker-item {
+  display: inline-block;
+  font-size: 15px;
+  margin-right: 80px;
+}
+.pr-ticker-item .emoji { margin-right: 6px; }
+.pr-ticker-item .author { color: var(--color-accent-fg); font-weight: 600; }
+.pr-ticker-item .merged-word { color: var(--color-fg-muted); }
+.pr-ticker-item .pr-title { color: var(--color-fg-default); }
+.pr-ticker-item .arrow { color: var(--color-fg-muted); margin: 0 4px; }
+.pr-ticker-item .repo-name { color: var(--color-fg-muted); }
+.pr-ticker-item .time-ago { color: var(--color-fg-subtle); font-size: 12px; margin-left: 8px; }
+.pr-ticker-separator { color: var(--color-border-strong); margin: 0 20px; }
+
+
+/* =========================================================
+   Widget Anatomy Sections (zoomed detail views)
+   ========================================================= */
+.anatomy-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+}
+.anatomy-card {
+  background: var(--color-canvas-subtle);
+  border: 1px solid var(--color-border-default);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.anatomy-card-header {
+  padding: 12px 16px;
+  background: var(--color-canvas-default);
+  border-bottom: 1px solid var(--color-border-default);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--color-fg-muted);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.anatomy-card-body {
+  padding: 20px;
+}
+.anatomy-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--color-fg-muted);
+  margin-bottom: 8px;
+  display: block;
+}
+
+/* ── Heartbeat anatomy ─────────────────────────────────── */
+.anatomy-heartbeat-demo {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border: 1px solid var(--color-border-default);
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--color-canvas-subtle);
+}
+.anatomy-hb-stat {
+  padding: 16px 20px;
+  border-right: 1px solid var(--color-border-default);
+}
+.anatomy-hb-stat:last-child { border-right: none; }
+.anatomy-hb-num  { font-size: 40px; font-weight: 600; color: var(--color-fg-default); line-height: 1; letter-spacing: -1px; }
+.anatomy-hb-num.warn { color: var(--color-danger-alt); }
+.anatomy-hb-fail-sub { font-size: 20px; font-weight: 600; color: var(--color-danger-alt); margin-left: 10px; }
+.anatomy-hb-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--color-fg-muted); margin-top: 4px; }
+.anatomy-hb-trend { font-size: 12px; color: var(--color-success-alt); font-weight: 600; }
+
+/* ── Cell state anatomy ─────────────────────────────────── */
+.cell-state-demos {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+.cell-demo {
+  border-radius: 6px;
+  padding: 10px 8px 8px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 80px;
+  font-family: monospace;
+}
+.cell-demo.passing { background: var(--cell-passing-bg); border: 1px solid var(--cell-passing-border); }
+.cell-demo.failing { background: var(--cell-failing-bg); border: 1px solid var(--cell-failing-border); }
+.cell-demo.running { background: var(--cell-running-bg); border: 1px solid var(--cell-running-border); }
+.cell-demo.no-ci   { background: var(--cell-noci-bg); border: 1px solid transparent; }
+.cell-demo-name  { font-size: 11px; line-height: 1.3; word-break: break-all; }
+.cell-demo.passing .cell-demo-name { color: var(--cell-passing-text); }
+.cell-demo.failing .cell-demo-name { color: var(--cell-failing-text); font-weight: 600; }
+.cell-demo.running .cell-demo-name { color: var(--cell-running-text); }
+.cell-demo.no-ci   .cell-demo-name { color: var(--cell-noci-text); }
+.cell-demo-status { font-size: 10px; font-weight: 600; text-align: right; }
+.cell-demo.passing .cell-demo-status { color: var(--cell-passing-text); }
+.cell-demo.failing .cell-demo-status { color: var(--cell-failing-text); }
+.cell-demo.running .cell-demo-status { color: var(--cell-running-text); }
+.cell-demo.no-ci   .cell-demo-status { color: var(--cell-noci-text); }
+
+/* ── Leaderboard row anatomy ─────────────────────────────── */
+.lb-anatomy-rows { display: flex; flex-direction: column; gap: 6px; }
+.lb-anatomy-row  {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  background: var(--color-canvas-default);
+  border: 1px solid var(--color-border-default);
+  border-radius: 6px;
+}
+.lb-a-rank { width: 24px; font-size: 18px; font-weight: 600; color: var(--color-fg-muted); text-align: center; }
+.lb-a-rank.top { color: var(--color-accent-fg); }
+.lb-a-avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; color: #fff; flex-shrink: 0; }
+.lb-a-name { flex: 1; font-size: 15px; color: var(--color-fg-default); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lb-a-bar-wrap { width: 120px; height: 6px; background: var(--color-border-default); border-radius: 3px; overflow: hidden; flex-shrink: 0; }
+.lb-a-bar { height: 100%; border-radius: 3px; background: var(--color-success-alt); }
+.lb-a-count { width: 36px; font-size: 18px; font-weight: 600; text-align: right; color: var(--color-fg-default); font-variant-numeric: tabular-nums; }
+
+/* ── Ticker anatomy ─────────────────────────────────────── */
+.ticker-anatomy-demo {
+  height: 52px;
+  background: var(--color-canvas-subtle);
+  border: 1px solid var(--color-border-default);
+  border-radius: 6px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+}
+.ticker-anatomy-label {
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--color-fg-muted);
+  padding: 0 12px;
+  border-right: 1px solid var(--color-border-default);
+  height: 100%;
+  display: flex;
+  align-items: center;
+  background: var(--color-canvas-default);
+}
+.ticker-anatomy-item {
+  padding: 0 16px;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+/* =========================================================
+   State Variations
+   ========================================================= */
+.state-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+.state-card {
+  background: var(--color-canvas-subtle);
+  border: 1px solid var(--color-border-default);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.state-card-label {
+  padding: 8px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border-bottom: 1px solid var(--color-border-default);
+  background: var(--color-canvas-default);
+}
+.state-card-label.loading  { color: var(--color-fg-muted); }
+.state-card-label.populated{ color: var(--color-success-alt); }
+.state-card-label.stale    { color: var(--color-attention-alt); }
+.state-card-body { padding: 16px; }
+
+/* Skeleton shimmer */
+.skeleton {
+  background: linear-gradient(90deg, var(--color-border-default) 25%, var(--color-border-strong) 50%, var(--color-border-default) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: 4px;
+}
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.skeleton-number { height: 44px; width: 80px; margin-bottom: 6px; }
+.skeleton-label  { height: 12px; width: 60px; }
+.skeleton-row    { height: 48px; width: 100%; margin-bottom: 4px; }
+
+/* Stale badge */
+.stale-badge {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-attention-alt);
+  background: rgba(191, 135, 0, 0.15);
+  border: 1px solid rgba(210, 153, 34, 0.3);
+  border-radius: 4px;
+  padding: 2px 6px;
+  margin-left: 8px;
+}
+
+/* =========================================================
+   Color Token Reference
+   ========================================================= */
+.token-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 8px;
+}
+.token-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: var(--color-canvas-subtle);
+  border: 1px solid var(--color-border-default);
+  border-radius: 6px;
+}
+.token-swatch {
+  width: 28px; height: 28px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+.token-info { min-width: 0; }
+.token-name  { font-size: 11px; font-weight: 600; color: var(--color-fg-muted); display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.token-value { font-size: 12px; color: var(--color-fg-subtle); font-family: monospace; }
+</style>
+</head>
+<body>
+<div class="mockup-doc">
+
+  <!-- =====================================================
+       SECTION 1: Full Page Simulation
+       ===================================================== -->
+  <div class="mockup-section-title">Section 1 — Full Page Simulation (1920 × 1080)</div>
+  <p class="mockup-note">Exact pixel dimensions. Scroll right to see full width. This is what appears on the TV.</p>
+
+  <div class="kiosk-frame-wrapper">
+  <div class="kiosk-frame">
+
+    <!-- Global progress bar -->
+    <div class="progress-bar-rail"><div class="progress-bar-fill"></div></div>
+
+    <!-- Global header -->
+    <div class="global-header">
+      <h1>R&D Tools Updates</h1>
+      <div class="header-ticker-zone">
+        <div class="header-ticker-text">
+          ⚠ GitHub Actions — Degraded Performance · Workflow runs may be delayed &nbsp;&nbsp;&nbsp;·&nbsp;&nbsp;&nbsp;
+          ⚠ GitHub Actions — Degraded Performance · Workflow runs may be delayed &nbsp;&nbsp;&nbsp;·&nbsp;&nbsp;&nbsp;
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="live-badge"><div class="live-dot"></div>Live</div>
+        <button class="header-btn">⏸ Pause</button>
+        <button class="header-btn">⚙️</button>
+        <div class="header-time">2:47 PM</div>
+      </div>
+    </div>
+
+    <!-- Dashboard container -->
+    <div class="dashboard-container">
+
+      <!-- Page header: ORG STATS -->
+      <div class="page-header-bar">
+        <span class="page-title">Org Stats</span>
+        <div class="page-dots">
+          <div class="page-dot"></div>
+          <div class="page-dot"></div>
+          <div class="page-dot"></div>
+          <div class="page-dot active"></div>
+          <div class="page-dot"></div>
+        </div>
+        <span class="last-updated">Updated 2 min ago</span>
+      </div>
+
+      <!-- Heartbeat numbers -->
+      <div class="heartbeat-bar">
+        <div class="heartbeat-stat">
+          <div class="heartbeat-number">1.2k</div>
+          <div class="heartbeat-label">Commits · 7d</div>
+          <div class="heartbeat-trend">↑ 14% vs last week</div>
+        </div>
+        <div class="heartbeat-stat">
+          <div class="heartbeat-number">89</div>
+          <div class="heartbeat-label">PRs Opened · 7d</div>
+          <div class="heartbeat-trend">↑ 6%</div>
+        </div>
+        <div class="heartbeat-stat">
+          <div class="heartbeat-number">67</div>
+          <div class="heartbeat-label">PRs Merged · 7d</div>
+          <div class="heartbeat-trend">↑ 8%</div>
+        </div>
+        <div class="heartbeat-stat">
+          <div class="heartbeat-number has-failure">
+            <span>234</span>
+            <span class="heartbeat-failure">✗ 12</span>
+          </div>
+          <div class="heartbeat-label">Pipeline Runs · 7d</div>
+          <div class="heartbeat-trend down">↑ failures</div>
+        </div>
+      </div>
+
+      <!-- Main content: heatmap + leaderboard -->
+      <div class="main-content-zone">
+
+        <!-- Pipeline heatmap -->
+        <div class="heatmap-panel">
+          <div class="widget-header">
+            <span class="widget-title">Pipeline Health</span>
+            <span class="widget-meta">234 runs · 12 failed · 7d · 97 repos</span>
+          </div>
+          <div class="heatmap-grid" id="heatmapGrid"></div>
+          <div class="heatmap-legend">
+            <div class="legend-item"><div class="legend-dot passing"></div> Passing</div>
+            <div class="legend-item"><div class="legend-dot failing"></div> Failing</div>
+            <div class="legend-item"><div class="legend-dot running"></div> Running</div>
+            <div class="legend-item"><div class="legend-dot no-ci"></div> No CI</div>
+          </div>
+        </div>
+
+        <!-- Leaderboard -->
+        <div class="leaderboard-panel">
+          <div class="widget-header">
+            <span class="widget-title">Top Contributors</span>
+            <span class="widget-meta">7d · by commits</span>
+          </div>
+          <div class="leaderboard-rows" id="leaderboardRows"></div>
+        </div>
+
+      </div><!-- /main-content-zone -->
+
+      <!-- PR Merge Ticker -->
+      <div class="pr-ticker-bar">
+        <div class="pr-ticker-label">Merges</div>
+        <div class="pr-ticker-track" id="tickerTrack"></div>
+      </div>
+
+    </div><!-- /dashboard-container -->
+  </div><!-- /kiosk-frame -->
+  </div><!-- /kiosk-frame-wrapper -->
+
+
+  <!-- =====================================================
+       SECTION 2: Widget Anatomy Breakdowns
+       ===================================================== -->
+  <div class="mockup-section-title">Section 2 — Widget Anatomy (Enlarged)</div>
+
+  <div class="anatomy-grid">
+
+    <!-- Heartbeat Numbers -->
+    <div class="anatomy-card" style="grid-column: span 2;">
+      <div class="anatomy-card-header">
+        <span>Widget 1 — Org Heartbeat Numbers</span>
+        <span style="font-weight:400; text-transform:none; letter-spacing:0; color: var(--color-fg-subtle);">Full width · 96px height · 4 stat boxes</span>
+      </div>
+      <div class="anatomy-card-body">
+        <div class="anatomy-heartbeat-demo">
+          <div class="anatomy-hb-stat">
+            <div class="anatomy-hb-num">1.2k</div>
+            <div class="anatomy-hb-label">Commits · 7d</div>
+            <div class="anatomy-hb-trend">↑ 14% vs prior week</div>
+          </div>
+          <div class="anatomy-hb-stat">
+            <div class="anatomy-hb-num">89</div>
+            <div class="anatomy-hb-label">PRs Opened · 7d</div>
+            <div class="anatomy-hb-trend">↑ 6%</div>
+          </div>
+          <div class="anatomy-hb-stat">
+            <div class="anatomy-hb-num">67</div>
+            <div class="anatomy-hb-label">PRs Merged · 7d</div>
+            <div class="anatomy-hb-trend">↑ 8%</div>
+          </div>
+          <div class="anatomy-hb-stat">
+            <div style="display:flex; align-items:baseline; gap:10px;">
+              <div class="anatomy-hb-num">234</div>
+              <div class="anatomy-hb-fail-sub">✗ 12 failed</div>
+            </div>
+            <div class="anatomy-hb-label">Pipeline Runs · 7d</div>
+            <div class="anatomy-hb-trend" style="color: var(--color-attention-alt);">↑ failures vs prior week</div>
+          </div>
+        </div>
+        <div style="margin-top:12px; font-size:12px; color: var(--color-fg-muted);">
+          Token: <code style="font-family:monospace; background: var(--color-canvas-default); padding: 2px 6px; border-radius:3px;">--fontsize-h1 (44px scaled)</code> for stat numbers ·
+          <code style="font-family:monospace; background: var(--color-canvas-default); padding: 2px 6px; border-radius:3px;">--color-danger-alt</code> for failure count ·
+          Vertical dividers: <code style="font-family:monospace; background: var(--color-canvas-default); padding: 2px 6px; border-radius:3px;">--color-border-default</code>
+        </div>
+      </div>
+    </div>
+
+    <!-- Heatmap Cell States -->
+    <div class="anatomy-card">
+      <div class="anatomy-card-header">
+        <span>Widget 2 — Pipeline Heatmap Cell States</span>
+      </div>
+      <div class="anatomy-card-body">
+        <span class="anatomy-label">4 CI Status States</span>
+        <div class="cell-state-demos">
+          <div>
+            <div class="cell-demo passing">
+              <div class="cell-demo-name">platform-api</div>
+              <div class="cell-demo-status">✓ pass</div>
+            </div>
+            <div style="margin-top:6px; font-size:11px; color: var(--color-fg-muted); text-align:center;">Passing</div>
+          </div>
+          <div>
+            <div class="cell-demo failing">
+              <div class="cell-demo-name">auth-service</div>
+              <div class="cell-demo-status">✗ fail</div>
+            </div>
+            <div style="margin-top:6px; font-size:11px; color: var(--color-fg-muted); text-align:center;">Failing</div>
+          </div>
+          <div>
+            <div class="cell-demo running">
+              <div class="cell-demo-name">data-ingestion</div>
+              <div class="cell-demo-status">⟳ run</div>
+            </div>
+            <div style="margin-top:6px; font-size:11px; color: var(--color-fg-muted); text-align:center;">Running</div>
+          </div>
+          <div>
+            <div class="cell-demo no-ci">
+              <div class="cell-demo-name">docs-site</div>
+              <div class="cell-demo-status">— n/a</div>
+            </div>
+            <div style="margin-top:6px; font-size:11px; color: var(--color-fg-muted); text-align:center;">No CI</div>
+          </div>
+        </div>
+        <div style="margin-top:16px; font-size:12px; color: var(--color-fg-muted); line-height: 1.6;">
+          Grid: CSS <code style="font-family:monospace; background: var(--color-canvas-default); padding: 2px 4px; border-radius:3px;">repeat(10, 1fr)</code>, 4px gap ·
+          Cell min-height: 60px · Repo names: 9px monospace, 2-line clamp ·
+          Color is the primary signal — labels are supplementary
+        </div>
+      </div>
+    </div>
+
+    <!-- Leaderboard Rows -->
+    <div class="anatomy-card">
+      <div class="anatomy-card-header">
+        <span>Widget 3 — Commit Leaderboard Rows</span>
+      </div>
+      <div class="anatomy-card-body">
+        <span class="anatomy-label">Top 5 of 10 rows shown</span>
+        <div class="lb-anatomy-rows">
+          <div class="lb-anatomy-row">
+            <div class="lb-a-rank top">1</div>
+            <div class="lb-a-avatar" style="background:#238636;">PK</div>
+            <div class="lb-a-name">Priya Krishnan</div>
+            <div class="lb-a-bar-wrap"><div class="lb-a-bar" style="width:100%"></div></div>
+            <div class="lb-a-count">42</div>
+          </div>
+          <div class="lb-anatomy-row">
+            <div class="lb-a-rank top">2</div>
+            <div class="lb-a-avatar" style="background:#1f6feb;">SM</div>
+            <div class="lb-a-name">Sarah Mitchell</div>
+            <div class="lb-a-bar-wrap"><div class="lb-a-bar" style="width:76%"></div></div>
+            <div class="lb-a-count">32</div>
+          </div>
+          <div class="lb-anatomy-row">
+            <div class="lb-a-rank top">3</div>
+            <div class="lb-a-avatar" style="background:#8250df;">DH</div>
+            <div class="lb-a-name">Devon Harrison</div>
+            <div class="lb-a-bar-wrap"><div class="lb-a-bar" style="width:67%"></div></div>
+            <div class="lb-a-count">28</div>
+          </div>
+          <div class="lb-anatomy-row">
+            <div class="lb-a-rank">4</div>
+            <div class="lb-a-avatar" style="background:#bf8700;">JL</div>
+            <div class="lb-a-name">James Li</div>
+            <div class="lb-a-bar-wrap"><div class="lb-a-bar" style="width:52%"></div></div>
+            <div class="lb-a-count">22</div>
+          </div>
+          <div class="lb-anatomy-row">
+            <div class="lb-a-rank">5</div>
+            <div class="lb-a-avatar" style="background:#cf222e;">AT</div>
+            <div class="lb-a-name">Ana Torres</div>
+            <div class="lb-a-bar-wrap"><div class="lb-a-bar" style="width:43%"></div></div>
+            <div class="lb-a-count">18</div>
+          </div>
+        </div>
+        <div style="margin-top:12px; font-size:12px; color: var(--color-fg-muted);">
+          Rank 1–3: <code style="font-family:monospace; background: var(--color-canvas-default); padding: 2px 4px; border-radius:3px;">--color-accent-fg</code> ·
+          Avatar: 38px circle with initials fallback ·
+          Bar width: proportional to leader's count
+        </div>
+      </div>
+    </div>
+
+    <!-- PR Ticker -->
+    <div class="anatomy-card" style="grid-column: span 2;">
+      <div class="anatomy-card-header">
+        <span>Widget 4 — PR Merge Celebration Ticker</span>
+        <span style="font-weight:400; text-transform:none; letter-spacing:0; color: var(--color-fg-subtle);">Full width · 52px height · CSS marquee animation</span>
+      </div>
+      <div class="anatomy-card-body">
+        <div class="ticker-anatomy-demo">
+          <div class="ticker-anatomy-label">Merges</div>
+          <div class="ticker-anatomy-item">
+            <span class="emoji">🎉</span>
+            <span class="author">sarah</span>
+            <span class="merged-word"> merged </span>
+            <span class="pr-title">'feat: new auth flow'</span>
+            <span class="arrow">→</span>
+            <span class="repo-name">platform-api</span>
+            <span class="time-ago">3m ago</span>
+            <span class="pr-ticker-separator">·</span>
+            <span class="emoji">🎉</span>
+            <span class="author">marcus</span>
+            <span class="merged-word"> merged </span>
+            <span class="pr-title">'fix: retry logic on timeout'</span>
+            <span class="arrow">→</span>
+            <span class="repo-name">data-pipeline</span>
+            <span class="time-ago">12m ago</span>
+            <span class="pr-ticker-separator">·</span>
+            <span class="emoji">🎉</span>
+            <span class="author">priya</span>
+            <span class="merged-word"> merged </span>
+            <span class="pr-title">'chore: upgrade node 20'</span>
+            <span class="arrow">→</span>
+            <span class="repo-name">auth-service</span>
+            <span class="time-ago">28m ago</span>
+          </div>
+        </div>
+        <div style="margin-top:12px; font-size:12px; color: var(--color-fg-muted);">
+          Author: <code style="font-family:monospace; background: var(--color-canvas-default); padding: 2px 4px; border-radius:3px;">--color-accent-fg</code> ·
+          Title: <code style="font-family:monospace; background: var(--color-canvas-default); padding: 2px 4px; border-radius:3px;">--color-fg-default</code> ·
+          Repo: <code style="font-family:monospace; background: var(--color-canvas-default); padding: 2px 4px; border-radius:3px;">--color-fg-muted</code> ·
+          Animation: CSS @keyframes translateX, ~80px/sec, loop
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /anatomy-grid -->
+
+
+  <!-- =====================================================
+       SECTION 3: State Variations
+       ===================================================== -->
+  <div class="mockup-section-title">Section 3 — Widget State Variations</div>
+  <p class="mockup-note">All widgets share the same 3-state pattern: loading skeleton → populated → stale (on API failure).</p>
+
+  <div class="state-grid">
+
+    <!-- Loading state -->
+    <div class="state-card">
+      <div class="state-card-label loading">⟳ Loading State</div>
+      <div class="state-card-body">
+        <span class="anatomy-label">Heartbeat — skeleton</span>
+        <div style="display:grid; grid-template-columns: repeat(4,1fr); gap:1px; background: var(--color-border-default); border-radius:4px; overflow:hidden; margin-bottom:16px;">
+          <div style="background: var(--color-canvas-default); padding:16px;">
+            <div class="skeleton skeleton-number"></div>
+            <div class="skeleton skeleton-label"></div>
+          </div>
+          <div style="background: var(--color-canvas-default); padding:16px;">
+            <div class="skeleton skeleton-number"></div>
+            <div class="skeleton skeleton-label"></div>
+          </div>
+          <div style="background: var(--color-canvas-default); padding:16px;">
+            <div class="skeleton skeleton-number"></div>
+            <div class="skeleton skeleton-label"></div>
+          </div>
+          <div style="background: var(--color-canvas-default); padding:16px;">
+            <div class="skeleton skeleton-number"></div>
+            <div class="skeleton skeleton-label"></div>
+          </div>
+        </div>
+        <span class="anatomy-label">Leaderboard — skeleton</span>
+        <div style="display:flex; flex-direction:column; gap:4px;">
+          <div class="skeleton skeleton-row"></div>
+          <div class="skeleton skeleton-row"></div>
+          <div class="skeleton skeleton-row"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Populated state -->
+    <div class="state-card">
+      <div class="state-card-label populated">✓ Populated State</div>
+      <div class="state-card-body">
+        <span class="anatomy-label">Normal data display</span>
+        <div class="anatomy-heartbeat-demo" style="margin-bottom:16px;">
+          <div class="anatomy-hb-stat">
+            <div class="anatomy-hb-num">1.2k</div>
+            <div class="anatomy-hb-label">Commits · 7d</div>
+          </div>
+          <div class="anatomy-hb-stat">
+            <div class="anatomy-hb-num">89</div>
+            <div class="anatomy-hb-label">PRs Opened</div>
+          </div>
+          <div class="anatomy-hb-stat">
+            <div class="anatomy-hb-num">67</div>
+            <div class="anatomy-hb-label">PRs Merged</div>
+          </div>
+          <div class="anatomy-hb-stat">
+            <div style="display:flex; align-items:baseline; gap:8px;">
+              <div class="anatomy-hb-num">234</div>
+              <div style="font-size:18px; font-weight:600; color: var(--color-danger-alt);">✗ 12</div>
+            </div>
+            <div class="anatomy-hb-label">Pipelines</div>
+          </div>
+        </div>
+        <div class="lb-anatomy-rows">
+          <div class="lb-anatomy-row">
+            <div class="lb-a-rank top">1</div>
+            <div class="lb-a-avatar" style="background:#238636;">PK</div>
+            <div class="lb-a-name">Priya Krishnan</div>
+            <div class="lb-a-bar-wrap"><div class="lb-a-bar" style="width:100%"></div></div>
+            <div class="lb-a-count">42</div>
+          </div>
+          <div class="lb-anatomy-row">
+            <div class="lb-a-rank top">2</div>
+            <div class="lb-a-avatar" style="background:#1f6feb;">SM</div>
+            <div class="lb-a-name">Sarah Mitchell</div>
+            <div class="lb-a-bar-wrap"><div class="lb-a-bar" style="width:76%"></div></div>
+            <div class="lb-a-count">32</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stale state -->
+    <div class="state-card">
+      <div class="state-card-label stale">⚠ Stale State (API Failure)</div>
+      <div class="state-card-body">
+        <span class="anatomy-label">Last good data shown + stale badge</span>
+        <div class="anatomy-heartbeat-demo" style="margin-bottom:16px; opacity: 0.65;">
+          <div class="anatomy-hb-stat">
+            <div style="display:flex; align-items:center; gap:4px;">
+              <div class="anatomy-hb-num" style="font-size:28px;">1.2k</div>
+              <span class="stale-badge">stale</span>
+            </div>
+            <div class="anatomy-hb-label">Commits · 7d</div>
+          </div>
+          <div class="anatomy-hb-stat">
+            <div class="anatomy-hb-num" style="font-size:28px;">89</div>
+            <div class="anatomy-hb-label">PRs Opened</div>
+          </div>
+          <div class="anatomy-hb-stat">
+            <div class="anatomy-hb-num" style="font-size:28px;">67</div>
+            <div class="anatomy-hb-label">PRs Merged</div>
+          </div>
+          <div class="anatomy-hb-stat">
+            <div class="anatomy-hb-num" style="font-size:28px;">234</div>
+            <div class="anatomy-hb-label">Pipelines</div>
+          </div>
+        </div>
+        <div style="text-align:center; padding: 20px; background: var(--color-canvas-default); border-radius:6px; border: 1px solid var(--color-border-default);">
+          <div style="font-size:13px; color: var(--color-attention-alt); font-weight:600; margin-bottom:4px;">⚠ Data is stale</div>
+          <div style="font-size:12px; color: var(--color-fg-muted);">Last updated 8 min ago · API unreachable</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /state-grid -->
+
+
+  <!-- =====================================================
+       SECTION 4: Page Layout Grid Annotation
+       ===================================================== -->
+  <div class="mockup-section-title">Section 4 — Layout Grid (1920 × 1080 Annotated)</div>
+
+  <div style="background: var(--color-canvas-subtle); border: 1px solid var(--color-border-default); border-radius:8px; padding: 24px; font-family: 'SFMono-Regular', Consolas, monospace; font-size: 13px; color: var(--color-fg-muted); line-height: 1.8; white-space: pre;">
+┌──────────────────────────────────────────────────────────────────────────── 1920px ────────────────────────────────────────────────────────────────────────────┐
+│ [progress bar 4px]                                                                                                                                              │
+│ ┌──────────────────────────────────────────────── header 64px ───────────────────────────────────────────────────────────────────────────────────────────────┐ │
+│ │  R&D Tools Updates                     [persistent outage ticker]                                              [● Live]  [⏸ Pause]  [⚙️]  14:47            │ │
+│ └─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘ │
+│ ┌──────────────────────────────────── dashboard container (1872px × 1012px) ────────────────────────────────────────────────────────────────────────────────┐   │
+│ │ ┌─────────────────────────────────────── page header 40px ─────────────────────────────────────────────────────────────────────────────────────────────┐  │   │
+│ │ │  ORG STATS  [page dots ●●●●○]                                                                                                     Updated 2 min ago  │  │   │
+│ │ └────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘  │   │
+│ │ ┌─────────────────────────────────────── heartbeat numbers 96px ───────────────────────────────────────────────────────────────────────────────────────┐  │   │
+│ │ │  1.2k COMMITS · 7D    │    89 PRs OPENED · 7D    │    67 PRs MERGED · 7D    │    234 PIPELINE RUNS · ✗12                                             │  │   │
+│ │ └────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘  │   │
+│ │ ┌──────────────────────────── 60% = 1123px ───────────────────┬────────────── 40% = 749px ──────────────────┐                                              │   │
+│ │ │                                                             │                                              │  712px                                       │   │
+│ │ │  PIPELINE HEALTH                   234 runs · 12 failed    │  TOP CONTRIBUTORS  ·  7d                     │                                              │   │
+│ │ │  ┌───┬───┬───┬───┬───┬───┬───┬───┬───┬───┐                │  1  [PK]  Priya Krishnan      ████████  42  │                                              │   │
+│ │ │  │███│███│███│   │███│███│███│███│███│███│                │  2  [SM]  Sarah Mitchell       ██████░░  32  │                                              │   │
+│ │ │  ├───┼───┼───┼───┼───┼───┼───┼───┼───┼───┤                │  3  [DH]  Devon Harrison      █████░░░  28  │                                              │   │
+│ │ │  │███│███│   │███│███│███│███│███│███│███│                │  4  [JL]  James Li            ████░░░░  22  │                                              │   │
+│ │ │  ├───┼───┼───┼───┼───┼───┼───┼───┼───┼───┤                │  5  [AT]  Ana Torres          ███░░░░░  18  │                                              │   │
+│ │ │  │███│███│███│███│███│███│   │███│███│███│                │  6  [RB]  Ryan Belmont         ██░░░░░░  15  │                                              │   │
+│ │ │  ├───┼───┼───┼───┼───┼───┼───┼───┼───┼───┤                │  7  [NW]  Nina Wong           ██░░░░░░  13  │                                              │   │
+│ │ │  │███│███│███│███│███│███│███│███│███│███│                │  8  [CG]  Carlos Garcia        █░░░░░░░  11  │                                              │   │
+│ │ │  ├───┼───┼───┼───┼───┼───┼───┼───┼───┼───┤                │  9  [LM]  Lena Mueller         █░░░░░░░   9  │                                              │   │
+│ │ │  │███│███│███│███│███│███│███│███│███│███│                │ 10  [TK]  Tariq Khan           █░░░░░░░   7  │                                              │   │
+│ │ │  ├───┼───┼───┼───┼───┼───┼───┼───┼───┼───┤                └──────────────────────────────────────────────┘                                              │   │
+│ │ │  │███│███│███│███│███│███│███│███│███│███│                                                                                                                │   │
+│ │ │  └───────────────────────────────────────────┘                                                                                                            │   │
+│ │ │  ● pass  ● fail  ● running  ○ no CI                                                                                                                       │   │
+│ │ └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘  │   │
+│ │ ┌─────────────────────────────────────── PR merge ticker 48px ─────────────────────────────────────────────────────────────────────────────────────────┐  │   │
+│ │ │ MERGES │ 🎉 sarah merged 'feat: new auth flow' → platform-api · 3m ago  ·  🎉 marcus merged 'fix: retry logic' → data-pipeline · 12m ago  ·  ……      │  │   │
+│ │ └────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘  │   │
+│ └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+  </div>
+
+
+  <!-- =====================================================
+       SECTION 5: Color Token Reference
+       ===================================================== -->
+  <div class="mockup-section-title">Section 5 — Design Tokens Used in This Page</div>
+
+  <div class="token-grid">
+    <div class="token-item"><div class="token-swatch" style="background:#0d1117"></div><div class="token-info"><span class="token-name">--color-canvas-default</span><span class="token-value">#0d1117 · page background</span></div></div>
+    <div class="token-item"><div class="token-swatch" style="background:#161b22"></div><div class="token-info"><span class="token-name">--color-canvas-subtle</span><span class="token-value">#161b22 · widget backgrounds</span></div></div>
+    <div class="token-item"><div class="token-swatch" style="background:#c9d1d9"></div><div class="token-info"><span class="token-name">--color-fg-default</span><span class="token-value">#c9d1d9 · primary text</span></div></div>
+    <div class="token-item"><div class="token-swatch" style="background:#7d8590"></div><div class="token-info"><span class="token-name">--color-fg-muted</span><span class="token-value">#7d8590 · labels, metadata</span></div></div>
+    <div class="token-item"><div class="token-swatch" style="background:#21262d"></div><div class="token-info"><span class="token-name">--color-border-default</span><span class="token-value">#21262d · dividers, borders</span></div></div>
+    <div class="token-item"><div class="token-swatch" style="background:#30363d"></div><div class="token-info"><span class="token-name">--color-border-strong</span><span class="token-value">#30363d · stronger borders</span></div></div>
+    <div class="token-item"><div class="token-swatch" style="background:#58a6ff"></div><div class="token-info"><span class="token-name">--color-accent-fg</span><span class="token-value">#58a6ff · rank 1–3, author names</span></div></div>
+    <div class="token-item"><div class="token-swatch" style="background:#2da44e"></div><div class="token-info"><span class="token-name">--color-success-fg</span><span class="token-value">#2da44e · passing cell bg tint</span></div></div>
+    <div class="token-item"><div class="token-swatch" style="background:#3fb950"></div><div class="token-info"><span class="token-name">--color-success-alt</span><span class="token-value">#3fb950 · passing cell text, commit bar</span></div></div>
+    <div class="token-item"><div class="token-swatch" style="background:#bf8700"></div><div class="token-info"><span class="token-name">--color-attention-fg</span><span class="token-value">#bf8700 · running cell bg tint</span></div></div>
+    <div class="token-item"><div class="token-swatch" style="background:#d29922"></div><div class="token-info"><span class="token-name">--color-attention-alt</span><span class="token-value">#d29922 · running cell text</span></div></div>
+    <div class="token-item"><div class="token-swatch" style="background:#cf222e"></div><div class="token-info"><span class="token-name">--color-danger-fg</span><span class="token-value">#cf222e · failing cell bg tint</span></div></div>
+    <div class="token-item"><div class="token-swatch" style="background:#f85149"></div><div class="token-info"><span class="token-name">--color-danger-alt</span><span class="token-value">#f85149 · failing text, failure count</span></div></div>
+    <div class="token-item"><div class="token-swatch" style="background:#f0883e"></div><div class="token-info"><span class="token-name">--color-org-stats-accent</span><span class="token-value">#f0883e · page title, widget headers</span></div></div>
+  </div>
+
+
+</div><!-- /mockup-doc -->
+
+<script>
+/* =========================================================
+   Generate Heatmap Grid — ~100 repos with realistic data
+   ========================================================= */
+const repos = [
+  // services namespace (some failures here)
+  {name:'services/auth',       status:'failing'},
+  {name:'services/gateway',    status:'passing'},
+  {name:'services/payments',   status:'failing'},
+  {name:'services/notifs',     status:'passing'},
+  {name:'services/search',     status:'running'},
+  {name:'services/email',      status:'passing'},
+  {name:'services/audit',      status:'passing'},
+  {name:'services/webhooks',   status:'failing'},
+  {name:'services/billing',    status:'passing'},
+  {name:'services/metrics',    status:'passing'},
+  // platform namespace
+  {name:'platform/api',        status:'passing'},
+  {name:'platform/sdk-js',     status:'passing'},
+  {name:'platform/sdk-py',     status:'passing'},
+  {name:'platform/cli',        status:'passing'},
+  {name:'platform/workers',    status:'running'},
+  {name:'platform/scheduler',  status:'passing'},
+  {name:'platform/event-bus',  status:'passing'},
+  {name:'platform/cache',      status:'passing'},
+  {name:'platform/config',     status:'passing'},
+  {name:'platform/secrets',    status:'passing'},
+  // data namespace
+  {name:'data/ingestion',      status:'running'},
+  {name:'data/pipeline',       status:'passing'},
+  {name:'data/warehouse',      status:'passing'},
+  {name:'data/analytics',      status:'passing'},
+  {name:'data/ml-training',    status:'passing'},
+  {name:'data/feature-store',  status:'passing'},
+  {name:'data/exports',        status:'passing'},
+  {name:'data/quality',        status:'running'},
+  {name:'data/lake',           status:'passing'},
+  {name:'data/streaming',      status:'passing'},
+  // infra namespace
+  {name:'infra/terraform',     status:'passing'},
+  {name:'infra/k8s-configs',   status:'passing'},
+  {name:'infra/monitoring',    status:'passing'},
+  {name:'infra/alerting',      status:'failing'},
+  {name:'infra/secrets-mgmt',  status:'passing'},
+  {name:'infra/networking',    status:'passing'},
+  {name:'infra/ci-runners',    status:'passing'},
+  {name:'infra/cost-mgmt',     status:'passing'},
+  {name:'infra/backup',        status:'passing'},
+  {name:'infra/security-scan', status:'running'},
+  // frontend namespace
+  {name:'web/dashboard',       status:'passing'},
+  {name:'web/admin-portal',    status:'passing'},
+  {name:'web/marketing-site',  status:'passing'},
+  {name:'web/design-system',   status:'passing'},
+  {name:'web/storybook',       status:'no-ci'},
+  {name:'web/mobile-app',      status:'passing'},
+  {name:'web/browser-ext',     status:'passing'},
+  {name:'web/email-templates', status:'no-ci'},
+  {name:'web/landing-pages',   status:'no-ci'},
+  {name:'web/docs-site',       status:'passing'},
+  // tools namespace
+  {name:'tools/deploy-scripts',status:'no-ci'},
+  {name:'tools/data-migrate',  status:'passing'},
+  {name:'tools/db-backfill',   status:'passing'},
+  {name:'tools/log-parser',    status:'passing'},
+  {name:'tools/perf-bench',    status:'passing'},
+  {name:'tools/test-utils',    status:'passing'},
+  {name:'tools/api-mocks',     status:'passing'},
+  {name:'tools/seed-data',     status:'no-ci'},
+  {name:'tools/db-cleaner',    status:'passing'},
+  {name:'tools/health-check',  status:'passing'},
+  // libs namespace
+  {name:'libs/auth-client',    status:'passing'},
+  {name:'libs/api-client',     status:'passing'},
+  {name:'libs/ui-components',  status:'passing'},
+  {name:'libs/logger',         status:'passing'},
+  {name:'libs/config-loader',  status:'passing'},
+  {name:'libs/crypto-utils',   status:'passing'},
+  {name:'libs/validation',     status:'passing'},
+  {name:'libs/retry',          status:'passing'},
+  {name:'libs/rate-limiter',   status:'passing'},
+  {name:'libs/errors',         status:'passing'},
+  // docs/misc
+  {name:'docs/api-reference',  status:'no-ci'},
+  {name:'docs/runbooks',       status:'no-ci'},
+  {name:'docs/adr',            status:'no-ci'},
+  {name:'docs/architecture',   status:'no-ci'},
+  {name:'experiments/ai-poc',  status:'passing'},
+  {name:'experiments/ml-demo', status:'no-ci'},
+  {name:'sandbox/training',    status:'no-ci'},
+  {name:'sandbox/prototypes',  status:'no-ci'},
+  {name:'apps/internal-tools', status:'passing'},
+  {name:'apps/chatbot',        status:'passing'},
+  {name:'apps/dashboard-v2',   status:'running'},
+  {name:'apps/admin-tools',    status:'passing'},
+  {name:'apps/reporting',      status:'passing'},
+  {name:'apps/audit-viewer',   status:'passing'},
+  {name:'shared/env-configs',  status:'no-ci'},
+  {name:'shared/schemas',      status:'passing'},
+  {name:'shared/proto-defs',   status:'passing'},
+  {name:'shared/openapi-specs',status:'no-ci'},
+  {name:'ops/incident-runbook',status:'no-ci'},
+  {name:'ops/on-call-tools',   status:'passing'},
+  {name:'ops/postmortem-tmpl', status:'no-ci'},
+  {name:'ops/slo-dashboards',  status:'passing'},
+  {name:'security/scanners',   status:'passing'},
+  {name:'security/policies',   status:'no-ci'},
+  {name:'security/audit-logs', status:'passing'},
+  {name:'security/vuln-track', status:'passing'},
+  {name:'releases/release-mgr',status:'passing'},
+  {name:'releases/changelog',  status:'no-ci'},
+  {name:'releases/versioning', status:'passing'},
+];
+
+const grid = document.getElementById('heatmapGrid');
+repos.forEach(repo => {
+  const cell = document.createElement('div');
+  cell.className = 'heatmap-cell ' + repo.status;
+  const name = document.createElement('div');
+  name.className = 'cell-repo-name';
+  // Show just the short part after the namespace slash
+  const shortName = repo.name.includes('/') ? repo.name.split('/')[1] : repo.name;
+  name.textContent = shortName;
+  const dot = document.createElement('div');
+  dot.className = 'cell-status-dot';
+  cell.appendChild(name);
+  cell.appendChild(dot);
+  grid.appendChild(cell);
+});
+
+/* =========================================================
+   Generate Leaderboard Rows
+   ========================================================= */
+const contributors = [
+  {initials:'PK', name:'Priya Krishnan',   commits:42, color:'#238636', pct:100},
+  {initials:'SM', name:'Sarah Mitchell',   commits:32, color:'#1f6feb', pct:76},
+  {initials:'DH', name:'Devon Harrison',   commits:28, color:'#8250df', pct:67},
+  {initials:'JL', name:'James Li',         commits:22, color:'#bf8700', pct:52},
+  {initials:'AT', name:'Ana Torres',       commits:18, color:'#cf222e', pct:43},
+  {initials:'RB', name:'Ryan Belmont',     commits:15, color:'#1a7f37', pct:36},
+  {initials:'NW', name:'Nina Wong',        commits:13, color:'#0969da', pct:31},
+  {initials:'CG', name:'Carlos Garcia',   commits:11, color:'#6e40c9', pct:26},
+  {initials:'LM', name:'Lena Mueller',    commits: 9, color:'#953800', pct:21},
+  {initials:'TK', name:'Tariq Khan',      commits: 7, color:'#a40e26', pct:17},
+];
+
+const lbContainer = document.getElementById('leaderboardRows');
+contributors.forEach((c, i) => {
+  const row = document.createElement('div');
+  row.className = 'leaderboard-row';
+
+  const rank = document.createElement('div');
+  rank.className = 'lb-rank' + (i < 3 ? ' top' : '');
+  rank.textContent = i + 1;
+
+  const avatar = document.createElement('div');
+  avatar.className = 'lb-avatar';
+  avatar.style.background = c.color;
+  avatar.textContent = c.initials;
+
+  const name = document.createElement('div');
+  name.className = 'lb-name';
+  name.textContent = c.name;
+
+  const barWrap = document.createElement('div');
+  barWrap.className = 'lb-bar-wrap';
+  const bar = document.createElement('div');
+  bar.className = 'lb-bar';
+  bar.style.width = c.pct + '%';
+  barWrap.appendChild(bar);
+
+  const count = document.createElement('div');
+  count.className = 'lb-count';
+  count.textContent = c.commits;
+
+  row.appendChild(rank);
+  row.appendChild(avatar);
+  row.appendChild(name);
+  row.appendChild(barWrap);
+  row.appendChild(count);
+  lbContainer.appendChild(row);
+});
+
+/* =========================================================
+   Generate Ticker Items
+   ========================================================= */
+const merges = [
+  {author:'sarah',  title:"feat: new auth flow",            repo:'platform-api',    time:'3m ago'},
+  {author:'marcus', title:"fix: retry logic on timeout",    repo:'data-pipeline',   time:'12m ago'},
+  {author:'priya',  title:"chore: upgrade to node 20",      repo:'auth-service',    time:'28m ago'},
+  {author:'devon',  title:"feat: rate limiter v2",           repo:'libs/rate-limiter', time:'41m ago'},
+  {author:'nina',   title:"fix: memory leak in event handler", repo:'platform/workers', time:'54m ago'},
+  {author:'james',  title:"docs: update API reference",     repo:'docs/api-reference', time:'1h ago'},
+  {author:'ana',    title:"feat: CSV export support",       repo:'data/exports',    time:'1h 12m ago'},
+  {author:'ryan',   title:"fix: null pointer in billing",   repo:'services/billing', time:'2h ago'},
+];
+
+function buildTickerItem(m) {
+  return `<span class="pr-ticker-item">` +
+    `<span class="emoji">🎉</span>` +
+    `<span class="author">${m.author}</span>` +
+    `<span class="merged-word"> merged </span>` +
+    `<span class="pr-title">'${m.title}'</span>` +
+    `<span class="arrow"> → </span>` +
+    `<span class="repo-name">${m.repo}</span>` +
+    `<span class="time-ago"> · ${m.time}</span>` +
+    `</span>` +
+    `<span class="pr-ticker-separator">  ·  </span>`;
+}
+
+const track = document.getElementById('tickerTrack');
+// Build double-length for seamless loop
+const itemsHTML = merges.map(buildTickerItem).join('');
+track.innerHTML = itemsHTML + itemsHTML;
+</script>
+</body>
+</html>

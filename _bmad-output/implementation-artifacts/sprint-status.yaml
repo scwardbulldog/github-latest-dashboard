@@ -1,8 +1,9 @@
 # generated: 2026-03-02
+# last_updated: 2026-05-13
 # project: github-latest-dashboard
 # project_key: NOKEY
 # tracking_system: file-system
-# story_location: /Users/shaneward/Documents/Repos/github-latest-dashboard/_bmad-output/implementation-artifacts
+# story_location: _bmad-output/implementation-artifacts
 
 # STATUS DEFINITIONS:
 # ==================
@@ -30,16 +31,19 @@
 # ===============
 # - Epic transitions to 'in-progress' automatically when first story is created
 # - Stories can be worked in parallel if team capacity allows
-# - SM typically creates next story after previous one is 'done' to incorporate learnings
+# - Developer typically creates next story after previous one is 'done' to incorporate learnings
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-03-02
+last_updated: 2026-05-13
 project: github-latest-dashboard
 project_key: NOKEY
 tracking_system: file-system
-story_location: /Users/shaneward/Documents/Repos/github-latest-dashboard/_bmad-output/implementation-artifacts
+story_location: _bmad-output/implementation-artifacts
 
 development_status:
+  # ── Base Platform (Epics 1–4) ────────────────────────────────────────────────
+
   epic-1: in-progress
   1-1-initialize-vite-build-system: done
   1-2-migrate-current-mvp-to-source-structure: done
@@ -71,3 +75,27 @@ development_status:
   4-5-implement-burn-in-testing-validation: done
   4-6-implement-documentation-deployment-guide: done
   epic-4-retrospective: optional
+
+  # ── Org Stats Carousel Page — MVP Phase 1 (Epics 5–7) ───────────────────────
+  # Source: _bmad-output/planning-artifacts/epics-org-stats.md
+  # Epic numbering continues from base platform (orig epic-1/2/3 → epic-5/6/7)
+
+  epic-5: backlog
+  5-1-secrets-infrastructure-carousel-page-shell: backlog
+  5-2-org-repo-list-fetch-rate-limited-batch-infrastructure: backlog
+  5-3-heartbeat-numbers-data-fetch-rendering: backlog
+  5-4-background-refresh-timer-lifecycle: backlog
+  epic-5-retrospective: optional
+
+  epic-6: backlog
+  6-1-pipeline-status-data-fetch: backlog
+  6-2-heatmap-grid-rendering: backlog
+  6-3-heatmap-widget-header-legend: backlog
+  6-4-heatmap-pipeline-counts-feed-to-heartbeat: backlog
+  epic-6-retrospective: optional
+
+  epic-7: backlog
+  7-1-commit-leaderboard-rendering: backlog
+  7-2-pr-merge-celebration-ticker: backlog
+  7-3-ticker-2-minute-polling-animation-refresh: backlog
+  epic-7-retrospective: optional
