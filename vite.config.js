@@ -58,7 +58,12 @@ export default defineConfig({
   plugins: [gitHashPlugin(), viteSingleFile(), serveImgPlugin()],
   server: {
     port: 5173,
-    open: true
+    host: true,   // Bind to 0.0.0.0 so Coder port-forwarding can reach it
+    open: false   // No browser to open in headless/Coder environments
+  },
+  preview: {
+    port: 4173,
+    host: true,   // Bind to 0.0.0.0 so Coder port-forwarding can reach it
   },
   build: {
     // Build to dist/ folder (Vite best practice)
