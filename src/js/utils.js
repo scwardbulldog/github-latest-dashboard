@@ -73,6 +73,23 @@ export function truncate(text, maxLength) {
 }
 
 /**
+ * Escape HTML entities in untrusted text before inserting into innerHTML
+ * @param {string} text - Raw text that may contain HTML characters
+ * @returns {string} HTML-escaped text safe for interpolation in HTML templates
+ */
+export function escapeHtml(text) {
+    const htmlEntities = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        '\'': '&#39;'
+    };
+    
+    return String(text).replace(/[&<>"']/g, character => htmlEntities[character]);
+}
+
+/**
  * Format duration between two dates as human-readable string
  * @param {string} startDateString - ISO date string for start time
  * @param {string} endDateString - ISO date string for end time

@@ -1,5 +1,5 @@
 // Import utility functions
-import { formatDate, stripHtml, truncate, formatDuration } from './utils.js';
+import { formatDate, stripHtml, truncate, formatDuration, escapeHtml } from './utils.js';
 
 // Component skeletons imported for Epic 2+ implementation
 // Current MVP functionality remains using existing code below
@@ -508,10 +508,10 @@ function renderStatusList(statusData) {
             itemEl.innerHTML = `
                 <div class="list-item-title">
                     <span class="status-indicator ${statusClass}"></span>
-                    ${incident.name || 'Incident'}
+                    ${escapeHtml(incident.name || 'Incident')}
                 </div>
                 <div class="list-item-timestamp">${timestamp}</div>
-                <div class="list-item-description">${truncate(statusText, 100)}</div>
+                <div class="list-item-description">${escapeHtml(truncate(statusText, 100))}</div>
             `;
             
             // Append to fragment (no DOM reflow)
@@ -569,7 +569,7 @@ function renderStatusList(statusData) {
             let cardHtml = `
                 <div class="incident-history-card-header">
                     <span class="incident-severity-icon">${severityIcon}</span>
-                    <span class="incident-history-title">${truncate(incident.name || 'Incident', 80)}</span>
+                    <span class="incident-history-title">${escapeHtml(truncate(incident.name || 'Incident', 80))}</span>
                 </div>
                 <div class="incident-history-meta">
                     <span class="incident-meta-item">
@@ -587,7 +587,7 @@ function renderStatusList(statusData) {
                 cardHtml += `
                 <div class="incident-services">
                     ${affectedServices.slice(0, 3).map(service => 
-                        `<span class="incident-service-tag">${service}</span>`
+                        `<span class="incident-service-tag">${escapeHtml(service)}</span>`
                     ).join('')}
                     ${affectedServices.length > 3 ? `<span class="incident-service-tag">+${affectedServices.length - 3} more</span>` : ''}
                 </div>`;
